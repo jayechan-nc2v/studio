@@ -40,6 +40,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 
@@ -113,11 +119,10 @@ export default function WorkOrdersPage() {
           </Button>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
+        <div className="space-y-8">
             <Card>
               <CardHeader>
-                <CardTitle>1. Basic Information</CardTitle>
+                <CardTitle>Basic Information</CardTitle>
                 <CardDescription>
                   Enter the core details of the work order.
                 </CardDescription>
@@ -251,100 +256,108 @@ export default function WorkOrdersPage() {
               </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>2. Bundle Details</CardTitle>
-                    <CardDescription>
-                        Define how to bundle the items for production.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid sm:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="quantityPerBundle"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Quantity per Bundle</FormLabel>
-                                <FormControl>
-                                    <Input type="number" placeholder="25" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <div className="space-y-2">
-                        <Label>Total Bundles</Label>
-                        <Input value={totalBundles} disabled className="font-bold"/>
-                        <FormDescription>
-                            Calculated from Order Quantity and Quantity per Bundle.
-                        </FormDescription>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>3. Special Instructions</CardTitle>
-                    <CardDescription>
-                        Add any specific notes or instructions for this work order.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <FormField
-                        control={form.control}
-                        name="instructions"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <Textarea
-                                        placeholder="e.g., Use special thread color #5BCEFA. Double-check sleeve measurements."
-                                        className="resize-y"
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </CardContent>
-            </Card>
-          </div>
-
-          <div className="lg:col-span-1">
-            <Card className="sticky top-20">
-                <CardHeader>
-                    <CardTitle>4. Line Detail</CardTitle>
-                    <CardDescription>
-                        Assign this work order to a production line.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <FormField
-                        control={form.control}
-                        name="productionLine"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Production Line</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Tabs defaultValue="bundle" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="bundle">Bundle Details</TabsTrigger>
+                <TabsTrigger value="instructions">Instructions</TabsTrigger>
+                <TabsTrigger value="line-detail">Line Detail</TabsTrigger>
+              </TabsList>
+              <TabsContent value="bundle">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Bundle Details</CardTitle>
+                        <CardDescription>
+                            Define how to bundle the items for production.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid sm:grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="quantityPerBundle"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Quantity per Bundle</FormLabel>
                                     <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a production line" />
-                                        </SelectTrigger>
+                                        <Input type="number" placeholder="25" {...field} />
                                     </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="line-1">Line 1 - T-Shirts</SelectItem>
-                                        <SelectItem value="line-2">Line 2 - Hoodies</SelectItem>
-                                        <SelectItem value="line-3">Line 3 - Denim</SelectItem>
-                                        <SelectItem value="line-4">Line 4 - Specialty</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </CardContent>
-            </Card>
-          </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <div className="space-y-2">
+                            <Label>Total Bundles</Label>
+                            <Input value={totalBundles} disabled className="font-bold"/>
+                            <FormDescription>
+                                Calculated from Order Quantity and Quantity per Bundle.
+                            </FormDescription>
+                        </div>
+                    </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="instructions">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Special Instructions</CardTitle>
+                        <CardDescription>
+                            Add any specific notes or instructions for this work order.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <FormField
+                            control={form.control}
+                            name="instructions"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Textarea
+                                            placeholder="e.g., Use special thread color #5BCEFA. Double-check sleeve measurements."
+                                            className="resize-y"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="line-detail">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Line Detail</CardTitle>
+                        <CardDescription>
+                            Assign this work order to a production line.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <FormField
+                            control={form.control}
+                            name="productionLine"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Production Line</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a production line" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="line-1">Line 1 - T-Shirts</SelectItem>
+                                            <SelectItem value="line-2">Line 2 - Hoodies</SelectItem>
+                                            <SelectItem value="line-3">Line 3 - Denim</SelectItem>
+                                            <SelectItem value="line-4">Line 4 - Specialty</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
         </div>
       </form>
     </Form>
