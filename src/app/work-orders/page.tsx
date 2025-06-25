@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,20 @@ import {
 } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
+
+const sizeSchema = z.object({
+  size: z.string().min(1, "Size is required."),
+  quantity: z.coerce.number().min(1, "Quantity must be at least 1."),
+});
 
 const workOrderSchema = z.object({
   workOrderNo: z.string().min(1, "Work Order No. is required."),
@@ -58,7 +71,7 @@ const workOrderSchema = z.object({
   shipmentDate: z.date({
     required_error: "A shipment date is required.",
   }),
-  totalQty: z.coerce.number().min(1, "Total Qty must be at least 1."),
+  sizes: z.array(sizeSchema).min(1, "At least one size breakdown is required."),
   qtyPerBundle: z.coerce.number().min(1, "Qty Per Bundle must be at least 1."),
   startDate: z.date({
     required_error: "A start date is required.",
@@ -73,21 +86,48 @@ const workOrderSchema = z.object({
 
 type WorkOrderFormValues = z.infer<typeof workOrderSchema>;
 
+const generateBundles = (totalQuantity: number, bundleSize: number) => {
+    if (!totalQuantity || !bundleSize || totalQuantity <= 0 || bundleSize <= 0) {
+      return [];
+    }
+    const bundles = [];
+    let remainingQty = totalQuantity;
+    let bundleNumber = 1;
+    while (remainingQty > 0) {
+      const bundleQty = Math.min(remainingQty, bundleSize);
+      bundles.push({
+        number: bundleNumber,
+        quantityInBundle: bundleQty,
+      });
+      remainingQty -= bundleQty;
+      bundleNumber++;
+    }
+    return bundles;
+  };
+
 export default function WorkOrdersPage() {
     const { toast } = useToast();
   const form = useForm<WorkOrderFormValues>({
     resolver: zodResolver(workOrderSchema),
     defaultValues: {
       workOrderNo: `WO-${Date.now().toString().slice(-5)}`,
-      styleNo: "",
-      garmentType: "",
-      productionNoteNo: "",
-      totalQty: 1000,
-      qtyPerBundle: 25,
-      targetOutputQtyPerDay: 200,
-      instructions: "",
-      productionLine: "",
+      styleNo: "DNM-JKT-01",
+      garmentType: "Denim Jacket",
+      productionNoteNo: "PN-001",
+      sizes: [
+        { size: "34B", quantity: 100 },
+        { size: "34D", quantity: 90 },
+      ],
+      qtyPerBundle: 24,
+      targetOutputQtyPerDay: 50,
+      instructions: "Special wash required for denim fabric.",
+      productionLine: "line-3",
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "sizes",
   });
 
   function onSubmit(data: WorkOrderFormValues) {
@@ -98,18 +138,16 @@ export default function WorkOrdersPage() {
     })
     form.reset();
      form.setValue('workOrderNo', `WO-${Date.now().toString().slice(-5)}`);
+     form.setValue('sizes', [{ size: '', quantity: 0}]);
 
   }
 
-  const totalBundles = React.useMemo(() => {
-    const quantity = form.watch("totalQty");
-    const bundleSize = form.watch("qtyPerBundle");
-    if (quantity > 0 && bundleSize > 0) {
-      return Math.ceil(quantity / bundleSize);
-    }
-    return 0;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.watch("totalQty"), form.watch("qtyPerBundle")]);
+  const watchedSizes = form.watch("sizes");
+  const watchedQtyPerBundle = form.watch("qtyPerBundle");
+
+  const totalQty = React.useMemo(() => {
+    return watchedSizes.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
+  }, [watchedSizes]);
 
   return (
     <Form {...form}>
@@ -191,19 +229,11 @@ export default function WorkOrdersPage() {
                         </FormItem>
                       )}
                     />
-                      <FormField
-                      control={form.control}
-                      name="totalQty"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Total Qty</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="1000" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                     <div className="space-y-2">
+                      <Label>Total Qty</Label>
+                      <Input type="number" value={totalQty} disabled />
+                      <FormDescription>Calculated from size breakdown.</FormDescription>
+                    </div>
                      <FormField
                       control={form.control}
                       name="qtyPerBundle"
@@ -362,21 +392,123 @@ export default function WorkOrdersPage() {
               </TabsList>
               <TabsContent value="bundle">
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Bundle Details</CardTitle>
-                        <CardDescription>
-                            Define how to bundle the items for production.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Total Bundles</Label>
-                            <Input value={totalBundles} disabled className="font-bold"/>
-                            <FormDescription>
-                                Calculated from Total Qty and Qty per Bundle.
-                            </FormDescription>
+                  <CardHeader>
+                    <CardTitle>Size Breakdown</CardTitle>
+                    <CardDescription>
+                      Define the quantity for each size in this work order.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      {fields.map((field, index) => (
+                        <div key={field.id} className="flex items-start gap-2">
+                          <FormField
+                            control={form.control}
+                            name={`sizes.${index}.size`}
+                            render={({ field }) => (
+                              <FormItem className="flex-1">
+                                <FormLabel className={cn(index !== 0 && "sr-only")}>Size</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., 34B, M" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`sizes.${index}.quantity`}
+                            render={({ field }) => (
+                              <FormItem className="flex-1">
+                                <FormLabel className={cn(index !== 0 && "sr-only")}>Quantity</FormLabel>
+                                <FormControl>
+                                  <Input type="number" placeholder="100" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className={cn(index !== 0 ? "pt-8" : "pt-8", "flex items-center")}>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => remove(index)}
+                              disabled={fields.length <= 1}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                               <span className="sr-only">Remove size</span>
+                            </Button>
+                          </div>
                         </div>
-                    </CardContent>
+                      ))}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => append({ size: "", quantity: 0 })}
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Size
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle>Bundle Breakdown</CardTitle>
+                    <CardDescription>
+                      Generated bundles based on size breakdown and quantity per bundle.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      {watchedSizes.map((sizeItem, index) => {
+                        if (
+                          !sizeItem.size ||
+                          !sizeItem.quantity ||
+                          sizeItem.quantity <= 0 ||
+                          !watchedQtyPerBundle ||
+                          watchedQtyPerBundle <= 0
+                        )
+                          return null;
+
+                        const bundles = generateBundles(
+                          sizeItem.quantity,
+                          watchedQtyPerBundle
+                        );
+
+                        return (
+                          <div key={index} className="border rounded-lg">
+                            <h4 className="font-semibold text-center bg-muted p-2 rounded-t-md">
+                              {sizeItem.size} ({sizeItem.quantity})
+                            </h4>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Bundle No.</TableHead>
+                                  <TableHead className="text-right">Qty</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {bundles.map((bundle, bundleIndex) => (
+                                  <TableRow key={bundleIndex}>
+                                    <TableCell className="font-medium">
+                                      {bundle.number} ({bundle.quantityInBundle})
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {bundle.quantityInBundle}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
                 </Card>
               </TabsContent>
               <TabsContent value="instructions">
