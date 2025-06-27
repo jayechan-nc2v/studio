@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { WorkOrderFormValues } from '@/lib/schemas';
-import { presetInstructions } from '@/lib/data';
+import { presetInstructions, mockMachineTypes, type MachineTypeDetail } from '@/lib/data';
 
 interface WorkOrderState {
   workOrders: WorkOrderFormValues[];
@@ -69,4 +69,26 @@ export const useWorkOrderStore = create<WorkOrderState>((set) => ({
   addWorkOrder: (order) => set((state) => ({ 
       workOrders: [order, ...state.workOrders] 
   })),
+}));
+
+// Store for Machine Types
+interface MachineTypeState {
+  machineTypes: MachineTypeDetail[];
+  addMachineType: (typeName: string) => void;
+}
+
+export const useMachineTypeStore = create<MachineTypeState>((set) => ({
+  machineTypes: mockMachineTypes,
+  addMachineType: (typeName: string) =>
+    set((state) => {
+      const newId = `MT-${(state.machineTypes.length + 1)
+        .toString()
+        .padStart(3, "0")}`;
+      const newMachineType: MachineTypeDetail = {
+        id: newId,
+        typeName: typeName,
+        machines: [], // New types start with no machines
+      };
+      return { machineTypes: [newMachineType, ...state.machineTypes] };
+    }),
 }));
