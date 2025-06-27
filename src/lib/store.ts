@@ -74,21 +74,21 @@ export const useWorkOrderStore = create<WorkOrderState>((set) => ({
 // Store for Machine Types
 interface MachineTypeState {
   machineTypes: MachineTypeDetail[];
-  addMachineType: (typeName: string) => void;
+  addMachineType: (typeName: string) => string;
 }
 
-export const useMachineTypeStore = create<MachineTypeState>((set) => ({
+export const useMachineTypeStore = create<MachineTypeState>((set, get) => ({
   machineTypes: mockMachineTypes,
-  addMachineType: (typeName: string) =>
-    set((state) => {
-      const newId = `MT-${(state.machineTypes.length + 1)
-        .toString()
-        .padStart(3, "0")}`;
-      const newMachineType: MachineTypeDetail = {
-        id: newId,
-        typeName: typeName,
-        machines: [], // New types start with no machines
-      };
-      return { machineTypes: [newMachineType, ...state.machineTypes] };
-    }),
+  addMachineType: (typeName: string) => {
+    const newId = `MT-${(get().machineTypes.length + 1)
+      .toString()
+      .padStart(3, "0")}`;
+    const newMachineType: MachineTypeDetail = {
+      id: newId,
+      typeName: typeName,
+      machines: [], // New types start with no machines
+    };
+    set((state) => ({ machineTypes: [newMachineType, ...state.machineTypes] }));
+    return newId;
+  },
 }));
