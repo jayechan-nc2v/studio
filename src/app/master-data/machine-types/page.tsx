@@ -124,12 +124,30 @@ export default function MachineTypesPage() {
           {machineTypes.map((machineType) => (
             <AccordionItem value={machineType.id} key={machineType.id}>
               <AccordionTrigger>
-                <div className="flex flex-col items-start">
-                  <span className="font-semibold text-lg">{machineType.typeName}</span>
-                  <span className="font-normal text-sm text-muted-foreground">System ID: {machineType.id}</span>
-                </div>
+                <span className="font-semibold text-lg">{machineType.typeName}</span>
               </AccordionTrigger>
               <AccordionContent>
+                 <div className="space-y-6">
+                   <Card>
+                    <CardHeader>
+                      <CardTitle>Machine Type Information</CardTitle>
+                      <CardDescription>
+                        Core details for the "{machineType.typeName}" type.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label>System ID</Label>
+                          <Input value={machineType.id} disabled />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Type Name</Label>
+                          <Input value={machineType.typeName} disabled />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                  <Card>
                     <CardHeader>
                       <CardTitle className="text-xl">Machines of this Type</CardTitle>
@@ -184,6 +202,7 @@ export default function MachineTypesPage() {
                       </div>
                     </CardContent>
                  </Card>
+                </div>
               </AccordionContent>
             </AccordionItem>
           ))}
