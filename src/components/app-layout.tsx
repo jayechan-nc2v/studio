@@ -58,7 +58,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </svg>
             </Button>
             <h1 className="text-xl font-semibold text-primary font-headline">
-              GarmentFlow
+              BFN Production
             </h1>
           </div>
         </SidebarHeader>

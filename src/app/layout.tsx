@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "GarmentFlow",
-  description: "AI-Powered Garment Production Management",
+  title: "BFN Production",
+  description: "AI-Powered Production Management",
 };
 
 export default function RootLayout({
