@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { WorkOrderFormValues } from '@/lib/schemas';
+import { presetOperations } from '@/lib/data';
 
 interface WorkOrderState {
   workOrders: WorkOrderFormValues[];
@@ -9,7 +10,7 @@ interface WorkOrderState {
 const initialWorkOrders: WorkOrderFormValues[] = [
     {
         workOrderNo: 'WO-00125',
-        styleNo: "Men's Classic Tee",
+        styleNo: "TEE-CLASSIC",
         garmentType: "T-Shirt",
         productionNoteNo: "PN-002",
         shipmentDate: new Date(new Date().setDate(new Date().getDate() + 10)),
@@ -21,13 +22,13 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         startDate: new Date(),
         endDate: new Date(new Date().setDate(new Date().getDate() + 5)),
         targetOutputQtyPerDay: 100,
-        productionLine: 'line-3',
+        productionLine: 'line-1',
         status: 'Sewing',
-        instructions: '',
+        operations: presetOperations["TEE-CLASSIC"],
     },
     {
         workOrderNo: 'WO-00124',
-        styleNo: "Women's Denim Jacket",
+        styleNo: "DNM-JKT-01",
         garmentType: "Jacket",
         productionNoteNo: "PN-001",
         shipmentDate: new Date(new Date().setDate(new Date().getDate() + 15)),
@@ -39,9 +40,9 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         startDate: new Date(),
         endDate: new Date(new Date().setDate(new Date().getDate() + 7)),
         targetOutputQtyPerDay: 50,
-        productionLine: 'line-1',
+        productionLine: 'line-3',
         status: 'QC',
-        instructions: '',
+        operations: presetOperations["DNM-JKT-01"],
     },
     {
         workOrderNo: 'WO-00123',
@@ -56,7 +57,10 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         targetOutputQtyPerDay: 200,
         productionLine: 'line-2',
         status: 'Cutting',
-        instructions: '',
+        operations: [
+            { machineType: "Fabric Spreader", operationDescription: "Spread fabric", smv: 0.2, target: 300},
+            { machineType: "Sewing Machine (Brother)", operationDescription: "Main body sewing", smv: 1.2, target: 60},
+        ],
     },
 ];
 

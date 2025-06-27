@@ -25,7 +25,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -57,7 +56,7 @@ import {
 } from "@/components/ui/table";
 import { useWorkOrderStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
-import { productionLines } from "@/lib/data";
+import { productionLines, presetOperations } from "@/lib/data";
 
 
 const generateBundles = (totalQuantity: number, bundleSize: number) => {
@@ -96,7 +95,7 @@ export default function WorkOrdersPage() {
       ],
       qtyPerBundle: 24,
       targetOutputQtyPerDay: 50,
-      instructions: "Special wash required for denim fabric.",
+      operations: presetOperations["DNM-JKT-01"] || [],
       productionLine: "line-3",
       status: "Cutting",
       lineStations: productionLines.find(line => line.id === "line-3")?.stations || [],
@@ -106,6 +105,11 @@ export default function WorkOrdersPage() {
   const { fields: sizeFields, append: appendSize, remove: removeSize } = useFieldArray({
     control: form.control,
     name: "sizes",
+  });
+
+  const { fields: operationFields, append: appendOperation, remove: removeOperation } = useFieldArray({
+    control: form.control,
+    name: "operations",
   });
 
   const { fields: stationFields, append: appendStation, remove: removeStation, replace: replaceStations } = useFieldArray({
@@ -124,6 +128,7 @@ export default function WorkOrdersPage() {
     form.reset();
      form.setValue('workOrderNo', `WO-${Date.now().toString().slice(-5)}`);
      form.setValue('sizes', [{ size: '', quantity: 0}]);
+     form.setValue('operations', []);
      form.setValue('status', 'Cutting');
      form.setValue('lineStations', []);
   }
@@ -131,6 +136,7 @@ export default function WorkOrdersPage() {
   const watchedSizes = form.watch("sizes");
   const watchedQtyPerBundle = form.watch("qtyPerBundle");
   const watchedProductionLine = form.watch("productionLine");
+  const watchedStyleNo = form.watch("styleNo");
 
   React.useEffect(() => {
     const selectedLine = productionLines.find(line => line.id === watchedProductionLine);
@@ -140,6 +146,15 @@ export default function WorkOrdersPage() {
       replaceStations([]);
     }
   }, [watchedProductionLine, replaceStations]);
+
+  React.useEffect(() => {
+    if (watchedStyleNo && presetOperations[watchedStyleNo]) {
+        form.setValue('operations', presetOperations[watchedStyleNo]);
+    } else {
+        form.setValue('operations', [{ machineType: '', operationDescription: '', smv: 0.1, target: 100 }]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedStyleNo, form.setValue]);
 
   const totalQty = React.useMemo(() => {
     return watchedSizes.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
@@ -193,7 +208,7 @@ export default function WorkOrdersPage() {
                         <FormItem>
                           <FormLabel>Style No.</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., S-123" {...field} />
+                            <Input placeholder="e.g., DNM-JKT-01" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -237,7 +252,7 @@ export default function WorkOrdersPage() {
                         <FormItem>
                           <FormLabel>Qty Per Bundle</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="25" {...field} />
+                            <Input type="number" placeholder="25" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -250,7 +265,7 @@ export default function WorkOrdersPage() {
                         <FormItem>
                           <FormLabel>Target Output Qty / Day</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="200" {...field} />
+                            <Input type="number" placeholder="200" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -383,7 +398,7 @@ export default function WorkOrdersPage() {
             <Tabs defaultValue="bundle" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="bundle">Bundle Details</TabsTrigger>
-                <TabsTrigger value="instructions">Instructions</TabsTrigger>
+                <TabsTrigger value="instructions">Operations</TabsTrigger>
                 <TabsTrigger value="line-detail">Line Detail</TabsTrigger>
               </TabsList>
               <TabsContent value="bundle">
@@ -418,7 +433,7 @@ export default function WorkOrdersPage() {
                               <FormItem className="flex-1">
                                 <FormLabel className={cn(index !== 0 && "sr-only")}>Quantity</FormLabel>
                                 <FormControl>
-                                  <Input type="number" placeholder="100" {...field} />
+                                  <Input type="number" placeholder="100" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -491,7 +506,7 @@ export default function WorkOrdersPage() {
                                 {bundles.map((bundle, bundleIndex) => (
                                   <TableRow key={bundleIndex}>
                                     <TableCell className="font-medium">
-                                      {bundle.number} ({bundle.quantityInBundle})
+                                      {bundle.number}
                                     </TableCell>
                                     <TableCell className="text-right">
                                       {bundle.quantityInBundle}
@@ -508,30 +523,109 @@ export default function WorkOrdersPage() {
                 </Card>
               </TabsContent>
               <TabsContent value="instructions">
-                <Card>
+                 <Card>
                     <CardHeader>
-                        <CardTitle>Special Instructions</CardTitle>
+                        <CardTitle>Operation Breakdown</CardTitle>
                         <CardDescription>
-                            Add any specific notes or instructions for this work order.
+                            Define the operational steps for this work order. These are often preset by style.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                         <FormField
-                            control={form.control}
-                            name="instructions"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="e.g., Use special thread color #5BCEFA. Double-check sleeve measurements."
-                                            className="resize-y"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                    <CardContent className="space-y-4">
+                        <div className="border rounded-md">
+                           <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[150px]">Machine Type</TableHead>
+                                        <TableHead>Operation Description</TableHead>
+                                        <TableHead className="w-[100px]">SMV</TableHead>
+                                        <TableHead className="w-[100px]">Target</TableHead>
+                                        <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {operationFields.map((field, index) => (
+                                        <TableRow key={field.id}>
+                                            <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`operations.${index}.machineType`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormControl>
+                                                                <Input {...field} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                             <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`operations.${index}.operationDescription`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormControl>
+                                                                <Input {...field} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`operations.${index}.smv`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormControl>
+                                                                <Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`operations.${index}.target`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormControl>
+                                                                <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Button
+                                                  type="button"
+                                                  variant="destructive"
+                                                  size="icon"
+                                                  onClick={() => removeOperation(index)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                    <span className="sr-only">Remove Operation</span>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                         <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => appendOperation({ machineType: '', operationDescription: '', smv: 0.1, target: 100 })}
+                        >
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add Operation
+                        </Button>
                     </CardContent>
                 </Card>
               </TabsContent>

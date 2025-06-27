@@ -54,3 +54,24 @@ export const productionLines: ProductionLine[] = [
       ]
   }
 ];
+
+export interface Operation {
+    machineType: string;
+    operationDescription: string;
+    smv: number;
+    target: number;
+}
+
+export const presetOperations: Record<string, Operation[]> = {
+    "DNM-JKT-01": [
+        { machineType: "Single Needle", operationDescription: "Front pocket attach", smv: 0.55, target: 120 },
+        { machineType: "Overlock", operationDescription: "Side seam join", smv: 0.80, target: 90 },
+        { machineType: "Buttonhole", operationDescription: "Create buttonholes", smv: 0.30, target: 200 },
+        { machineType: "Bar Tack", operationDescription: "Reinforce stress points", smv: 0.20, target: 250 },
+    ],
+    "TEE-CLASSIC": [
+        { machineType: "Single Needle", operationDescription: "Attach collar", smv: 0.60, target: 110 },
+        { machineType: "Overlock", operationDescription: "Sleeve join", smv: 0.75, target: 95 },
+        { machineType: "Coverstitch", operationDescription: "Hem bottom", smv: 0.45, target: 140 },
+    ]
+};
