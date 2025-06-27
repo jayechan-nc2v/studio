@@ -3,7 +3,6 @@
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
-import * as z from "zod";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 
@@ -58,6 +57,7 @@ import {
 } from "@/components/ui/table";
 import { useWorkOrderStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
+import { productionLines } from "@/lib/data";
 
 
 const generateBundles = (totalQuantity: number, bundleSize: number) => {
@@ -99,13 +99,20 @@ export default function WorkOrdersPage() {
       instructions: "Special wash required for denim fabric.",
       productionLine: "line-3",
       status: "Cutting",
+      lineStations: productionLines.find(line => line.id === "line-3")?.stations || [],
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields: sizeFields, append: appendSize, remove: removeSize } = useFieldArray({
     control: form.control,
     name: "sizes",
   });
+
+  const { fields: stationFields, append: appendStation, remove: removeStation, replace: replaceStations } = useFieldArray({
+    control: form.control,
+    name: "lineStations",
+  });
+
 
   function onSubmit(data: WorkOrderFormValues) {
     console.log(data);
@@ -118,11 +125,21 @@ export default function WorkOrdersPage() {
      form.setValue('workOrderNo', `WO-${Date.now().toString().slice(-5)}`);
      form.setValue('sizes', [{ size: '', quantity: 0}]);
      form.setValue('status', 'Cutting');
-
+     form.setValue('lineStations', []);
   }
 
   const watchedSizes = form.watch("sizes");
   const watchedQtyPerBundle = form.watch("qtyPerBundle");
+  const watchedProductionLine = form.watch("productionLine");
+
+  React.useEffect(() => {
+    const selectedLine = productionLines.find(line => line.id === watchedProductionLine);
+    if (selectedLine) {
+      replaceStations(selectedLine.stations);
+    } else {
+      replaceStations([]);
+    }
+  }, [watchedProductionLine, replaceStations]);
 
   const totalQty = React.useMemo(() => {
     return watchedSizes.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
@@ -379,7 +396,7 @@ export default function WorkOrdersPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      {fields.map((field, index) => (
+                      {sizeFields.map((field, index) => (
                         <div key={field.id} className="flex items-start gap-2">
                           <FormField
                             control={form.control}
@@ -412,8 +429,8 @@ export default function WorkOrdersPage() {
                               type="button"
                               variant="destructive"
                               size="icon"
-                              onClick={() => remove(index)}
-                              disabled={fields.length <= 1}
+                              onClick={() => removeSize(index)}
+                              disabled={sizeFields.length <= 1}
                             >
                               <Trash2 className="h-4 w-4" />
                                <span className="sr-only">Remove size</span>
@@ -426,7 +443,7 @@ export default function WorkOrdersPage() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => append({ size: "", quantity: 0 })}
+                      onClick={() => appendSize({ size: "", quantity: 0 })}
                     >
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Add Size
@@ -523,10 +540,10 @@ export default function WorkOrdersPage() {
                     <CardHeader>
                         <CardTitle>Line Detail</CardTitle>
                         <CardDescription>
-                            Assign this work order to a production line.
+                           Assign this work order to a production line. The station details will be copied from the line template and can be adjusted below.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
                         <FormField
                             control={form.control}
                             name="productionLine"
@@ -540,16 +557,96 @@ export default function WorkOrdersPage() {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="line-1">Line 1 - T-Shirts</SelectItem>
-                                            <SelectItem value="line-2">Line 2 - Hoodies</SelectItem>
-                                            <SelectItem value="line-3">Line 3 - Denim</SelectItem>
-                                            <SelectItem value="line-4">Line 4 - Specialty</SelectItem>
+                                            {productionLines.map(line => (
+                                                <SelectItem key={line.id} value={line.id}>{line.name}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
+
+                        <div className="border rounded-md">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Machine Type</TableHead>
+                                        <TableHead>Assigned Worker</TableHead>
+                                        <TableHead>Worker ID</TableHead>
+                                        <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {stationFields.map((field, index) => (
+                                        <TableRow key={field.id}>
+                                            <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`lineStations.${index}.machineType`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormControl>
+                                                                <Input {...field} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`lineStations.${index}.assignedWorker`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormControl>
+                                                                <Input {...field} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`lineStations.${index}.workerId`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormControl>
+                                                                <Input {...field} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Button
+                                                  type="button"
+                                                  variant="destructive"
+                                                  size="icon"
+                                                  onClick={() => removeStation(index)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                    <span className="sr-only">Remove Station</span>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => appendStation({ id: `new-${Date.now()}`, machineType: '', assignedWorker: '', workerId: '' })}
+                        >
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add Station
+                        </Button>
                     </CardContent>
                 </Card>
               </TabsContent>

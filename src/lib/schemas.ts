@@ -5,6 +5,14 @@ export const sizeSchema = z.object({
   quantity: z.coerce.number().min(1, "Quantity must be at least 1."),
 });
 
+export const stationSchema = z.object({
+  id: z.string(),
+  machineType: z.string().min(1, "Machine type is required."),
+  assignedWorker: z.string().min(1, "Worker is required."),
+  workerId: z.string().min(1, "Worker ID is required."),
+});
+
+
 export const workOrderSchema = z.object({
   workOrderNo: z.string().min(1, "Work Order No. is required."),
   styleNo: z.string().min(1, "Style No. is required."),
@@ -25,6 +33,7 @@ export const workOrderSchema = z.object({
   instructions: z.string().optional(),
   productionLine: z.string().min(1, "Production Line is required."),
   status: z.string(),
+  lineStations: z.array(stationSchema).optional(),
 });
 
 export type WorkOrderFormValues = z.infer<typeof workOrderSchema>;
