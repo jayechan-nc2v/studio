@@ -3,14 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  ChevronDown,
   ClipboardCheck,
   ClipboardList,
   Cpu,
   Database,
+  HardDrive,
   LayoutDashboard,
   QrCode,
+  Route,
   StickyNote,
 } from 'lucide-react';
+import * as React from 'react';
 
 import {
   Sidebar,
@@ -20,10 +24,14 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -31,12 +39,38 @@ const navItems = [
   { href: '/work-orders', label: 'Work Orders', icon: ClipboardList },
   { href: '/tracking', label: 'Tracking', icon: QrCode },
   { href: '/quality-control', label: 'Quality Control', icon: ClipboardCheck },
-  { href: '/master-data', label: 'Master Data', icon: Database },
+  {
+    href: '/master-data',
+    label: 'Master Data',
+    icon: Database,
+    children: [
+      { href: '/master-data/machines', label: 'Machines', icon: HardDrive },
+      { href: '/master-data/lines', label: 'Production Lines', icon: Route },
+    ],
+  },
   { href: '/ai-tools', label: 'AI Tools', icon: Cpu },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+
+  const [openSubmenus, setOpenSubmenus] = React.useState<Record<string, boolean>>({});
+
+  React.useEffect(() => {
+    const activeSubmenus: Record<string, boolean> = {};
+    navItems.forEach((item) => {
+      if (item.children && pathname.startsWith(item.href)) {
+        activeSubmenus[item.href] = true;
+      }
+    });
+    setOpenSubmenus(activeSubmenus);
+  }, [pathname]);
+
+  const toggleSubmenu = (href: string) => {
+    setOpenSubmenus((prev) => ({
+      [href]: !prev[href],
+    }));
+  };
 
   return (
     <SidebarProvider>
@@ -66,16 +100,60 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/')}
-                  tooltip={item.label}
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
+                {item.children ? (
+                  <>
+                    <SidebarMenuButton
+                      onClick={() => toggleSubmenu(item.href)}
+                      isActive={pathname.startsWith(item.href)}
+                      tooltip={item.label}
+                      className="justify-between"
+                      data-state={openSubmenus[item.href] ? 'open' : 'closed'}
+                    >
+                      <div className="flex items-center gap-2">
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </div>
+                      <ChevronDown
+                        className={cn(
+                          'h-4 w-4 shrink-0 transition-transform',
+                          openSubmenus[item.href] && 'rotate-180'
+                        )}
+                      />
+                    </SidebarMenuButton>
+
+                    {openSubmenus[item.href] && (
+                      <SidebarMenuSub>
+                        {item.children.map((child) => (
+                          <SidebarMenuSubItem key={child.href}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={pathname === child.href}
+                            >
+                              <Link href={child.href}>
+                                {child.icon && <child.icon />}
+                                <span>{child.label}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    )}
+                  </>
+                ) : (
+                  <SidebarMenuButton
+                    asChild
+                    isActive={
+                      pathname.startsWith(item.href) &&
+                      (item.href !== '/' || pathname === '/')
+                    }
+                    tooltip={item.label}
+                  >
+                    <Link href={item.href}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                )}
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
