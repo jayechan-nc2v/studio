@@ -558,7 +558,7 @@ export default function WorkOrdersPage() {
                                     <TableRow>
                                         <TableHead className="w-[200px]">Machine Type</TableHead>
                                         <TableHead>Instruction Description</TableHead>
-                                        <TableHead className="w-[100px]">SMV</TableHead>
+                                        <TableHead className="w-[120px]">SMV</TableHead>
                                         <TableHead className="w-[100px]">Target</TableHead>
                                         <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
                                     </TableRow>
@@ -612,7 +612,7 @@ export default function WorkOrdersPage() {
                                                     render={({ field }) => (
                                                         <FormItem>
                                                             <FormControl>
-                                                                <Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                                                                <Input type="number" step="0.0001" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
