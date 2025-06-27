@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { WorkOrderFormValues } from '@/lib/schemas';
-import { presetOperations } from '@/lib/data';
+import { presetInstructions } from '@/lib/data';
 
 interface WorkOrderState {
   workOrders: WorkOrderFormValues[];
@@ -24,7 +24,7 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         targetOutputQtyPerDay: 100,
         productionLine: 'line-1',
         status: 'Sewing',
-        operations: presetOperations["TEE-CLASSIC"],
+        instructions: presetInstructions["TEE-CLASSIC"],
     },
     {
         workOrderNo: 'WO-00124',
@@ -42,7 +42,7 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         targetOutputQtyPerDay: 50,
         productionLine: 'line-3',
         status: 'QC',
-        operations: presetOperations["DNM-JKT-01"],
+        instructions: presetInstructions["DNM-JKT-01"],
     },
     {
         workOrderNo: 'WO-00123',
@@ -57,9 +57,9 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         targetOutputQtyPerDay: 200,
         productionLine: 'line-2',
         status: 'Cutting',
-        operations: [
-            { machineType: "Fabric Spreader", operationDescription: "Spread fabric", smv: 0.2, target: 300},
-            { machineType: "Sewing Machine (Brother)", operationDescription: "Main body sewing", smv: 1.2, target: 60},
+        instructions: [
+            { machineType: "Fabric Spreader", instructionDescription: "Spread fabric", smv: 0.2, target: 300},
+            { machineType: "Sewing Machine (Brother)", instructionDescription: "Main body sewing", smv: 1.2, target: 60},
         ],
     },
 ];

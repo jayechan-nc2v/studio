@@ -12,9 +12,9 @@ export const stationSchema = z.object({
   workerId: z.string().min(1, "Worker ID is required."),
 });
 
-export const operationSchema = z.object({
+export const instructionSchema = z.object({
   machineType: z.string().min(1, "Machine type is required."),
-  operationDescription: z.string().min(1, "Description is required."),
+  instructionDescription: z.string().min(1, "Description is required."),
   smv: z.coerce.number().positive("SMV must be a positive number."),
   target: z.coerce.number().int().positive("Target must be a positive number."),
 });
@@ -37,7 +37,7 @@ export const workOrderSchema = z.object({
     required_error: "An end date is required.",
   }),
   targetOutputQtyPerDay: z.coerce.number().min(1, "Target Output Qty / Day must be at least 1."),
-  operations: z.array(operationSchema).min(1, "At least one operation is required."),
+  instructions: z.array(instructionSchema).min(1, "At least one instruction is required."),
   productionLine: z.string().min(1, "Production Line is required."),
   status: z.string(),
   lineStations: z.array(stationSchema).optional(),

@@ -56,7 +56,7 @@ import {
 } from "@/components/ui/table";
 import { useWorkOrderStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
-import { productionLines, presetOperations } from "@/lib/data";
+import { productionLines, presetInstructions } from "@/lib/data";
 
 
 const generateBundles = (totalQuantity: number, bundleSize: number) => {
@@ -95,7 +95,7 @@ export default function WorkOrdersPage() {
       ],
       qtyPerBundle: 24,
       targetOutputQtyPerDay: 50,
-      operations: presetOperations["DNM-JKT-01"] || [],
+      instructions: presetInstructions["DNM-JKT-01"] || [],
       productionLine: "line-3",
       status: "Cutting",
       lineStations: productionLines.find(line => line.id === "line-3")?.stations || [],
@@ -107,9 +107,9 @@ export default function WorkOrdersPage() {
     name: "sizes",
   });
 
-  const { fields: operationFields, append: appendOperation, remove: removeOperation } = useFieldArray({
+  const { fields: instructionFields, append: appendInstruction, remove: removeInstruction } = useFieldArray({
     control: form.control,
-    name: "operations",
+    name: "instructions",
   });
 
   const { fields: stationFields, append: appendStation, remove: removeStation, replace: replaceStations } = useFieldArray({
@@ -128,7 +128,7 @@ export default function WorkOrdersPage() {
     form.reset();
      form.setValue('workOrderNo', `WO-${Date.now().toString().slice(-5)}`);
      form.setValue('sizes', [{ size: '', quantity: 0}]);
-     form.setValue('operations', []);
+     form.setValue('instructions', []);
      form.setValue('status', 'Cutting');
      form.setValue('lineStations', []);
   }
@@ -137,6 +137,18 @@ export default function WorkOrdersPage() {
   const watchedQtyPerBundle = form.watch("qtyPerBundle");
   const watchedProductionLine = form.watch("productionLine");
   const watchedStyleNo = form.watch("styleNo");
+
+  const machineTypes = React.useMemo(
+    () =>
+      [
+        ...new Set(
+          productionLines.flatMap((line) =>
+            line.stations.map((station) => station.machineType)
+          )
+        ),
+      ].sort(),
+    []
+  );
 
   React.useEffect(() => {
     const selectedLine = productionLines.find(line => line.id === watchedProductionLine);
@@ -148,10 +160,10 @@ export default function WorkOrdersPage() {
   }, [watchedProductionLine, replaceStations]);
 
   React.useEffect(() => {
-    if (watchedStyleNo && presetOperations[watchedStyleNo]) {
-        form.setValue('operations', presetOperations[watchedStyleNo]);
+    if (watchedStyleNo && presetInstructions[watchedStyleNo]) {
+        form.setValue('instructions', presetInstructions[watchedStyleNo]);
     } else {
-        form.setValue('operations', [{ machineType: '', operationDescription: '', smv: 0.1, target: 100 }]);
+        form.setValue('instructions', [{ machineType: '', instructionDescription: '', smv: 0.1, target: 100 }]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedStyleNo, form.setValue]);
@@ -207,9 +219,18 @@ export default function WorkOrdersPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Style No.</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., DNM-JKT-01" {...field} />
-                          </FormControl>
+                           <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a style" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.keys(presetInstructions).map(style => (
+                                <SelectItem key={style} value={style}>{style}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -398,7 +419,7 @@ export default function WorkOrdersPage() {
             <Tabs defaultValue="bundle" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="bundle">Bundle Details</TabsTrigger>
-                <TabsTrigger value="instructions">Operations</TabsTrigger>
+                <TabsTrigger value="instructions">Instructions</TabsTrigger>
                 <TabsTrigger value="line-detail">Line Detail</TabsTrigger>
               </TabsList>
               <TabsContent value="bundle">
@@ -525,9 +546,9 @@ export default function WorkOrdersPage() {
               <TabsContent value="instructions">
                  <Card>
                     <CardHeader>
-                        <CardTitle>Operation Breakdown</CardTitle>
+                        <CardTitle>Instruction Breakdown</CardTitle>
                         <CardDescription>
-                            Define the operational steps for this work order. These are often preset by style.
+                            Define the instructional steps for this work order. These are often preset by style.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -535,34 +556,45 @@ export default function WorkOrdersPage() {
                            <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-[150px]">Machine Type</TableHead>
-                                        <TableHead>Operation Description</TableHead>
+                                        <TableHead className="w-[200px]">Machine Type</TableHead>
+                                        <TableHead>Instruction Description</TableHead>
                                         <TableHead className="w-[100px]">SMV</TableHead>
                                         <TableHead className="w-[100px]">Target</TableHead>
                                         <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {operationFields.map((field, index) => (
+                                    {instructionFields.map((field, index) => (
                                         <TableRow key={field.id}>
                                             <TableCell>
                                                 <FormField
                                                     control={form.control}
-                                                    name={`operations.${index}.machineType`}
+                                                    name={`instructions.${index}.machineType`}
                                                     render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormControl>
-                                                                <Input {...field} />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
+                                                      <FormItem>
+                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                          <FormControl>
+                                                            <SelectTrigger>
+                                                              <SelectValue placeholder="Select machine" />
+                                                            </SelectTrigger>
+                                                          </FormControl>
+                                                          <SelectContent>
+                                                            {machineTypes.map((type) => (
+                                                              <SelectItem key={type} value={type}>
+                                                                {type}
+                                                              </SelectItem>
+                                                            ))}
+                                                          </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                      </FormItem>
                                                     )}
                                                 />
                                             </TableCell>
                                              <TableCell>
                                                 <FormField
                                                     control={form.control}
-                                                    name={`operations.${index}.operationDescription`}
+                                                    name={`instructions.${index}.instructionDescription`}
                                                     render={({ field }) => (
                                                         <FormItem>
                                                             <FormControl>
@@ -576,7 +608,7 @@ export default function WorkOrdersPage() {
                                             <TableCell>
                                                 <FormField
                                                     control={form.control}
-                                                    name={`operations.${index}.smv`}
+                                                    name={`instructions.${index}.smv`}
                                                     render={({ field }) => (
                                                         <FormItem>
                                                             <FormControl>
@@ -590,7 +622,7 @@ export default function WorkOrdersPage() {
                                             <TableCell>
                                                 <FormField
                                                     control={form.control}
-                                                    name={`operations.${index}.target`}
+                                                    name={`instructions.${index}.target`}
                                                     render={({ field }) => (
                                                         <FormItem>
                                                             <FormControl>
@@ -606,10 +638,10 @@ export default function WorkOrdersPage() {
                                                   type="button"
                                                   variant="destructive"
                                                   size="icon"
-                                                  onClick={() => removeOperation(index)}
+                                                  onClick={() => removeInstruction(index)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
-                                                    <span className="sr-only">Remove Operation</span>
+                                                    <span className="sr-only">Remove Instruction</span>
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -621,10 +653,10 @@ export default function WorkOrdersPage() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => appendOperation({ machineType: '', operationDescription: '', smv: 0.1, target: 100 })}
+                          onClick={() => appendInstruction({ machineType: '', instructionDescription: '', smv: 0.1, target: 100 })}
                         >
                           <PlusCircle className="mr-2 h-4 w-4" />
-                          Add Operation
+                          Add Instruction
                         </Button>
                     </CardContent>
                 </Card>
@@ -680,11 +712,22 @@ export default function WorkOrdersPage() {
                                                     name={`lineStations.${index}.machineType`}
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormControl>
-                                                                <Input {...field} />
-                                                            </FormControl>
+                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                              <FormControl>
+                                                                <SelectTrigger>
+                                                                  <SelectValue placeholder="Select machine" />
+                                                                </SelectTrigger>
+                                                              </FormControl>
+                                                              <SelectContent>
+                                                                {machineTypes.map((type) => (
+                                                                  <SelectItem key={type} value={type}>
+                                                                    {type}
+                                                                  </SelectItem>
+                                                                ))}
+                                                              </SelectContent>
+                                                            </Select>
                                                             <FormMessage />
-                                                        </FormItem>
+                                                          </FormItem>
                                                     )}
                                                 />
                                             </TableCell>
