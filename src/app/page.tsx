@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/chart";
 import { LineChart, Users, Warehouse } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { useWorkOrderStore } from "@/lib/store";
 
 const kpiData = [
   {
@@ -62,44 +63,6 @@ const chartConfig: ChartConfig = {
   },
 };
 
-const recentWorkOrders = [
-  {
-    id: "WO-00125",
-    style: "Men's Classic Tee",
-    quantity: 500,
-    line: "Line 3",
-    status: "Sewing",
-  },
-  {
-    id: "WO-00124",
-    style: "Women's Denim Jacket",
-    quantity: 250,
-    line: "Line 1",
-    status: "QC",
-  },
-  {
-    id: "WO-00123",
-    style: "Kids Graphic Hoodie",
-    quantity: 700,
-    line: "Line 2",
-    status: "Cutting",
-  },
-  {
-    id: "WO-00122",
-    style: "Men's Classic Tee",
-    quantity: 500,
-    line: "Line 3",
-    status: "Completed",
-  },
-  {
-    id: "WO-00121",
-    style: "Women's Leggings",
-    quantity: 1200,
-    line: "Line 1",
-    status: "Failed QC",
-  },
-];
-
 const statusVariantMap: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
     Sewing: 'secondary',
     QC: 'default',
@@ -110,6 +73,16 @@ const statusVariantMap: { [key: string]: "default" | "secondary" | "destructive"
 
 
 export default function DashboardPage() {
+  const { workOrders } = useWorkOrderStore();
+
+  const recentWorkOrders = workOrders
+    .map((order) => ({
+      id: order.workOrderNo,
+      style: order.styleNo,
+      status: order.status,
+    }))
+    .slice(0, 5);
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -182,15 +155,23 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentWorkOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium font-code">{order.id}</TableCell>
-                    <TableCell>{order.style}</TableCell>
-                    <TableCell className="text-right">
-                       <Badge variant={statusVariantMap[order.status] || 'default'} className="capitalize">{order.status}</Badge>
+                {recentWorkOrders.length > 0 ? (
+                  recentWorkOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium font-code">{order.id}</TableCell>
+                      <TableCell>{order.style}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant={statusVariantMap[order.status] || 'default'} className="capitalize">{order.status}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center">
+                      No recent work orders.
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </CardContent>
