@@ -13,6 +13,7 @@ import {
   QrCode,
   Route,
   StickyNote,
+  Tags,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -46,6 +47,7 @@ const navItems = [
     children: [
       { href: '/master-data/machines', label: 'Machines', icon: HardDrive },
       { href: '/master-data/lines', label: 'Production Lines', icon: Route },
+      { href: '/master-data/machine-types', label: 'Machine Types', icon: Tags },
     ],
   },
   { href: '/ai-tools', label: 'AI Tools', icon: Cpu },

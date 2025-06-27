@@ -78,3 +78,144 @@ export const presetInstructions: Record<string, Instruction[]> = {
         { machineType: "Coverstitch", instructionDescription: "Hem bottom", smv: 0.45, target: 140 },
     ]
 };
+
+// --- New Master Data Structures ---
+
+export interface Machine {
+  id: string;
+  name: string;
+  type: string; // Corresponds to a MachineType's name
+  serialNo: string;
+  inWarranty: boolean;
+  warrantyExpiryDate: Date | null;
+  purchaseDate: Date;
+  supplier: string;
+  isAvailable: boolean;
+  currentLine?: string; // Name of the production line
+}
+
+export interface MaintenanceRecord {
+  startDate: Date;
+  finishDate: Date;
+  company: string;
+  inCharge: string;
+  refNo: string;
+}
+
+export interface AllocationRecord {
+  action: 'Allocate' | 'Return';
+  date: Date;
+  productionLine: string;
+  worker: string;
+}
+
+export interface MachineTypeDetail {
+  id: string;
+  typeName: string;
+  machines: Machine[];
+}
+
+// Mock Data for Machines
+export const mockMachines: Machine[] = [
+  {
+    id: "MC-001",
+    name: "Juki DDL-8700",
+    type: "Sewing Machine (Juki)",
+    serialNo: "SN-J87A001",
+    inWarranty: true,
+    warrantyExpiryDate: new Date("2025-12-31"),
+    purchaseDate: new Date("2023-12-31"),
+    supplier: "Juki Central",
+    isAvailable: false,
+    currentLine: "Line 1 - T-Shirts",
+  },
+  {
+    id: "MC-002",
+    name: "Brother S-7200",
+    type: "Sewing Machine (Brother)",
+    serialNo: "SN-B72B002",
+    inWarranty: false,
+    warrantyExpiryDate: null,
+    purchaseDate: new Date("2022-05-15"),
+    supplier: "Sewing Supplies Inc.",
+    isAvailable: true,
+  },
+  {
+    id: "MC-003",
+    name: "Gerber GTxL Cutter",
+    type: "Cutting Machine",
+    serialNo: "SN-GTC003",
+    inWarranty: true,
+    warrantyExpiryDate: new Date("2026-08-01"),
+    purchaseDate: new Date("2024-08-01"),
+    supplier: "Gerber Technology",
+    isAvailable: true,
+  },
+   {
+    id: "MC-004",
+    name: "Pegasus M900",
+    type: "Overlock Machine",
+    serialNo: "SN-PM9004",
+    inWarranty: false,
+    warrantyExpiryDate: null,
+    purchaseDate: new Date("2021-02-20"),
+    supplier: "Global Sewing Machines",
+    isAvailable: false,
+    currentLine: "Line 1 - T-Shirts",
+  }
+];
+
+// Mock Data for Maintenance
+export const mockMaintenanceHistory: MaintenanceRecord[] = [
+    {
+        startDate: new Date("2024-05-10"),
+        finishDate: new Date("2024-05-12"),
+        company: "Juki Services",
+        inCharge: "John Doe",
+        refNo: "MAINT-0524-001"
+    },
+    {
+        startDate: new Date("2023-11-20"),
+        finishDate: new Date("2023-11-21"),
+        company: "In-house",
+        inCharge: "Maintenance Team",
+        refNo: "MAINT-1123-005"
+    }
+];
+
+// Mock Data for Allocation
+export const mockAllocationHistory: AllocationRecord[] = [
+    {
+        action: "Allocate",
+        date: new Date("2024-01-15"),
+        productionLine: "Line 1 - T-Shirts",
+        worker: "Bob (E-002)"
+    },
+     {
+        action: "Return",
+        date: new Date("2023-12-20"),
+        productionLine: "Line 1 - T-Shirts",
+        worker: "Anna (E-021)"
+    },
+    {
+        action: "Allocate",
+        date: new Date("2023-08-01"),
+        productionLine: "Line 1 - T-Shirts",
+        worker: "Anna (E-021)"
+    }
+];
+
+
+// Mock Data for Machine Types page
+export const mockMachineTypes: MachineTypeDetail[] = [
+    {
+        id: "MT-001",
+        typeName: "Sewing Machine (Juki)",
+        machines: mockMachines.filter(m => m.type === 'Sewing Machine (Juki)')
+    },
+    {
+        id: "MT-002",
+        typeName: "Cutting Machine",
+        machines: mockMachines.filter(m => m.type === 'Cutting Machine')
+    },
+];
