@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, ArrowUp, PlusCircle, Trash2 } from "lucide-react";
+import { GripVertical, PlusCircle, Trash2 } from "lucide-react";
 import { mockLineWorkerHistory, mockLinePerformanceData, mockWorkers } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -56,6 +56,8 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
+import { cn } from "@/lib/utils";
 
 
 const chartConfig: ChartConfig = {
@@ -109,6 +111,13 @@ export default function ProductionLinesPage() {
       title: "Line Updated",
       description: `Production line "${data.name}" has been saved.`,
     });
+  };
+
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) {
+      return;
+    }
+    move(result.source.index, result.destination.index);
   };
 
   return (
@@ -201,107 +210,111 @@ export default function ProductionLinesPage() {
                             <TableHead className="w-[50px]">Action</TableHead>
                           </TableRow>
                         </TableHeader>
-                        <TableBody>
-                          {fields.map((field, index) => (
-                            <TableRow key={field.id}>
-                              <TableCell className="align-top font-medium">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-4">{index + 1}</span>
-                                  <div className="flex flex-col gap-1 items-center justify-center">
-                                    <Button
-                                      type="button"
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={() => move(index, index - 1)}
-                                      disabled={index === 0}
-                                      className="h-6 w-6"
-                                    >
-                                      <ArrowUp className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={() => move(index, index + 1)}
-                                      disabled={index === fields.length - 1}
-                                      className="h-6 w-6"
-                                    >
-                                      <ArrowDown className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="align-top">
-                                <FormField
-                                  control={form.control}
-                                  name={`stations.${index}.machineType`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Select machine" />
-                                          </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                          {availableMachineTypes.map((type) => (
-                                            <SelectItem key={type} value={type}>
-                                              {type}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                              </TableCell>
-                              <TableCell className="align-top">
-                                <FormField
-                                  control={form.control}
-                                  name={`stations.${index}.workerId`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormControl>
-                                         <Input {...field} onChange={(e) => {
-                                             const workerId = e.target.value;
-                                             field.onChange(workerId);
-                                             const worker = mockWorkers.find(w => w.id.toLowerCase() === workerId.toLowerCase());
-                                             form.setValue(`stations.${index}.assignedWorker`, worker ? worker.name : '');
-                                         }} />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                              </TableCell>
-                              <TableCell className="align-top">
-                                <FormField
-                                  control={form.control}
-                                  name={`stations.${index}.assignedWorker`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormControl>
-                                        <Input {...field} disabled />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                              </TableCell>
-                              <TableCell className="align-top">
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="destructive"
-                                  onClick={() => remove(index)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
+                        <DragDropContext onDragEnd={onDragEnd}>
+                          <Droppable droppableId="stations-list">
+                            {(provided) => (
+                              <TableBody
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
+                              >
+                                {fields.map((field, index) => (
+                                  <Draggable
+                                    key={field.id}
+                                    draggableId={field.id}
+                                    index={index}
+                                  >
+                                    {(provided, snapshot) => (
+                                      <TableRow
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        className={cn(snapshot.isDragging && "bg-accent")}
+                                      >
+                                        <TableCell
+                                          {...provided.dragHandleProps}
+                                          className="align-top font-medium cursor-grab"
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <GripVertical className="h-5 w-5 text-muted-foreground" />
+                                            <span>{index + 1}</span>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="align-top">
+                                          <FormField
+                                            control={form.control}
+                                            name={`stations.${index}.machineType`}
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                  <FormControl>
+                                                    <SelectTrigger>
+                                                      <SelectValue placeholder="Select machine" />
+                                                    </SelectTrigger>
+                                                  </FormControl>
+                                                  <SelectContent>
+                                                    {availableMachineTypes.map((type) => (
+                                                      <SelectItem key={type} value={type}>
+                                                        {type}
+                                                      </SelectItem>
+                                                    ))}
+                                                  </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                        </TableCell>
+                                        <TableCell className="align-top">
+                                          <FormField
+                                            control={form.control}
+                                            name={`stations.${index}.workerId`}
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormControl>
+                                                  <Input {...field} onChange={(e) => {
+                                                      const workerId = e.target.value;
+                                                      field.onChange(workerId);
+                                                      const worker = mockWorkers.find(w => w.id.toLowerCase() === workerId.toLowerCase());
+                                                      form.setValue(`stations.${index}.assignedWorker`, worker ? worker.name : '');
+                                                  }} />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                        </TableCell>
+                                        <TableCell className="align-top">
+                                          <FormField
+                                            control={form.control}
+                                            name={`stations.${index}.assignedWorker`}
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormControl>
+                                                  <Input {...field} disabled />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                        </TableCell>
+                                        <TableCell className="align-top">
+                                          <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="destructive"
+                                            onClick={() => remove(index)}
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </TableBody>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
                       </Table>
                     </div>
                     <Button
