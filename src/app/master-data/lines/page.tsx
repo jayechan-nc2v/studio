@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowUp, PlusCircle, Trash2 } from "lucide-react";
-import { mockLineWorkerHistory, mockLinePerformanceData } from "@/lib/data";
+import { mockLineWorkerHistory, mockLinePerformanceData, mockWorkers } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -194,52 +194,42 @@ export default function ProductionLinesPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="w-[60px]">Order</TableHead>
-                            <TableHead>Station ID</TableHead>
+                            <TableHead className="w-[120px]">Station #</TableHead>
                             <TableHead>Machine Type</TableHead>
-                            <TableHead>Assigned Worker</TableHead>
                             <TableHead>Worker ID</TableHead>
+                            <TableHead>Assigned Worker</TableHead>
                             <TableHead className="w-[50px]">Action</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {fields.map((field, index) => (
                             <TableRow key={field.id}>
-                              <TableCell className="align-top">
-                                <div className="flex flex-col gap-1 items-center justify-center h-full">
-                                  <Button
-                                    type="button"
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => move(index, index - 1)}
-                                    disabled={index === 0}
-                                  >
-                                    <ArrowUp className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => move(index, index + 1)}
-                                    disabled={index === fields.length - 1}
-                                  >
-                                    <ArrowDown className="h-4 w-4" />
-                                  </Button>
+                              <TableCell className="align-top font-medium">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-4">{index + 1}</span>
+                                  <div className="flex flex-col gap-1 items-center justify-center">
+                                    <Button
+                                      type="button"
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() => move(index, index - 1)}
+                                      disabled={index === 0}
+                                      className="h-6 w-6"
+                                    >
+                                      <ArrowUp className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() => move(index, index + 1)}
+                                      disabled={index === fields.length - 1}
+                                      className="h-6 w-6"
+                                    >
+                                      <ArrowDown className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
-                              </TableCell>
-                              <TableCell className="align-top">
-                                <FormField
-                                  control={form.control}
-                                  name={`stations.${index}.id`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormControl>
-                                        <Input {...field} />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
                               </TableCell>
                               <TableCell className="align-top">
                                 <FormField
@@ -269,11 +259,16 @@ export default function ProductionLinesPage() {
                               <TableCell className="align-top">
                                 <FormField
                                   control={form.control}
-                                  name={`stations.${index}.assignedWorker`}
+                                  name={`stations.${index}.workerId`}
                                   render={({ field }) => (
                                     <FormItem>
                                       <FormControl>
-                                        <Input {...field} />
+                                         <Input {...field} onChange={(e) => {
+                                             const workerId = e.target.value;
+                                             field.onChange(workerId);
+                                             const worker = mockWorkers.find(w => w.id.toLowerCase() === workerId.toLowerCase());
+                                             form.setValue(`stations.${index}.assignedWorker`, worker ? worker.name : '');
+                                         }} />
                                       </FormControl>
                                       <FormMessage />
                                     </FormItem>
@@ -283,11 +278,11 @@ export default function ProductionLinesPage() {
                               <TableCell className="align-top">
                                 <FormField
                                   control={form.control}
-                                  name={`stations.${index}.workerId`}
+                                  name={`stations.${index}.assignedWorker`}
                                   render={({ field }) => (
                                     <FormItem>
                                       <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field} disabled />
                                       </FormControl>
                                       <FormMessage />
                                     </FormItem>
@@ -409,4 +404,3 @@ export default function ProductionLinesPage() {
     </FormProvider>
   );
 }
-

@@ -1,4 +1,5 @@
 
+
 export interface Station {
   id: string;
   machineType: string;
@@ -62,6 +63,22 @@ export const productionLines: ProductionLine[] = [
       ]
   }
 ];
+
+export interface Worker {
+  id: string;
+  name: string;
+}
+
+const allWorkers = new Map<string, string>();
+productionLines.forEach(line => {
+    line.stations.forEach(station => {
+        if (!allWorkers.has(station.workerId)) {
+            allWorkers.set(station.workerId, station.assignedWorker);
+        }
+    });
+});
+export const mockWorkers: Worker[] = Array.from(allWorkers, ([id, name]) => ({ id, name }));
+
 
 export interface Instruction {
     machineType: string;
