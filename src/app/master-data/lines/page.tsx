@@ -112,7 +112,8 @@ export default function ProductionLinesPage() {
 
   const form = useForm<ProductionLineFormValues>({
     resolver: zodResolver(productionLineSchema),
-    defaultValues: selectedLine,
+    // Provide a fallback for the initial render if no line is selected
+    defaultValues: selectedLine || { id: '', name: '', lineManager: '', stations: [] },
   });
 
   const addLineForm = useForm<NewLineFormValues>({
@@ -144,11 +145,19 @@ export default function ProductionLinesPage() {
     return ids;
   }, [lines, selectedLineId]);
 
+  // Use form.reset to update the form when the selected line changes
   React.useEffect(() => {
     if (selectedLine) {
       form.reset(selectedLine);
+    } else if (lines.length > 0) {
+      // If the selectedLine is gone, select the first available line
+      setSelectedLineId(lines[0].id);
+    } else {
+      // Clear form if no lines are available at all
+      form.reset({ id: '', name: '', lineManager: '', stations: [] });
     }
-  }, [selectedLine, form]);
+  }, [selectedLine, lines, form.reset]);
+
 
   const onSubmit = (data: ProductionLineFormValues) => {
     updateLine(data.id, data);
