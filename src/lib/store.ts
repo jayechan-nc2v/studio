@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues } from '@/lib/schemas';
+import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues } from '@/lib/schemas';
 import { 
     presetInstructions, 
     mockMachineTypes, 
@@ -9,7 +9,9 @@ import {
     mockMachines, 
     type Machine,
     mockProductionInstructions,
-    type ProductionInstruction
+    type ProductionInstruction,
+    mockQcFailureReasons,
+    type QcFailureReason
 } from '@/lib/data';
 
 interface WorkOrderState {
@@ -186,6 +188,40 @@ export const useProductionInstructionStore = create<ProductionInstructionState>(
     deleteInstruction: (id) => {
         set((state) => ({
             instructions: state.instructions.filter(inst => inst.id !== id)
+        }));
+    }
+}));
+
+
+// Store for QC Failure Reasons
+interface QcFailureReasonState {
+    reasons: QcFailureReason[];
+    addReason: (data: NewQcFailureReasonFormValues) => void;
+    updateReason: (id: string, data: NewQcFailureReasonFormValues) => void;
+    deleteReason: (id: string) => void;
+}
+
+export const useQcFailureReasonStore = create<QcFailureReasonState>((set, get) => ({
+    reasons: mockQcFailureReasons,
+    addReason: (data) => {
+        const newId = `QCF-${(get().reasons.length + 1).toString().padStart(3, '0')}`;
+        const newReason: QcFailureReason = {
+            id: newId,
+            ...data,
+            description: data.description || '',
+        };
+        set((state) => ({ reasons: [newReason, ...state.reasons] }));
+    },
+    updateReason: (id, data) => {
+        set((state) => ({
+            reasons: state.reasons.map(r => 
+                r.id === id ? { ...r, ...data, description: data.description || '' } : r
+            )
+        }));
+    },
+    deleteReason: (id) => {
+        set((state) => ({
+            reasons: state.reasons.filter(r => r.id !== id)
         }));
     }
 }));

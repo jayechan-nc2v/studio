@@ -68,6 +68,13 @@ export interface ProductionInstruction {
   smv: number;
 }
 
+export interface QcFailureReason {
+  id: string;
+  reason: string;
+  description: string;
+  category: string;
+}
+
 
 // Mock Data for Machines
 export const mockMachines: Machine[] = [
@@ -325,4 +332,16 @@ export const mockProductionInstructions: ProductionInstruction[] = [
     { id: 'PI-005', name: 'Side Seam Join', garmentType: 'Denim Jacket', machineType: 'Overlock Machine', smv: 0.8000 },
     { id: 'PI-006', name: 'Create Buttonholes', garmentType: 'Denim Jacket', machineType: 'Buttonhole', smv: 0.3000 },
     { id: 'PI-007', name: 'Reinforce Stress Points', garmentType: 'Denim Jacket', machineType: 'Bar Tack', smv: 0.2000 },
+];
+
+
+export const mockQcFailureCategories = ["Sewing Defect", "Fabric Flaw", "Measurement Error", "Finishing Issue", "Component Mismatch"];
+
+export const mockQcFailureReasons: QcFailureReason[] = [
+  { id: 'QCF-001', reason: 'Broken Stitch', description: 'A stitch that is broken or not continuous.', category: 'Sewing Defect' },
+  { id: 'QCF-002', reason: 'Skipped Stitch', description: 'A stitch that has been missed by the needle.', category: 'Sewing Defect' },
+  { id: 'QCF-003', reason: 'Fabric Hole', description: 'A hole or tear in the fabric.', category: 'Fabric Flaw' },
+  { id: 'QCF-004', reason: 'Incorrect Measurement', description: 'Garment dimensions do not match the spec sheet.', category: 'Measurement Error' },
+  { id: 'QCF-005', reason: 'Poor Pressing', description: 'Garment is not neatly pressed or has creases.', category: 'Finishing Issue' },
+  { id: 'QCF-006', reason: 'Wrong Button Type', description: 'A different button was used than specified.', category: 'Component Mismatch' },
 ];

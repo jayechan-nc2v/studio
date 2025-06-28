@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { HardDrive, Route, ListChecks, Tags } from "lucide-react";
+import { HardDrive, Route, ListChecks, Tags, ClipboardX } from "lucide-react";
 
 export default function MasterDataPage() {
   return (
@@ -70,6 +70,21 @@ export default function MasterDataPage() {
             </p>
             <Button asChild variant="secondary">
               <Link href="/master-data/production-instructions">Manage Instructions</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <ClipboardX className="h-8 w-8 text-primary mb-2" />
+            <CardTitle>QC Failure Reasons</CardTitle>
+            <CardDescription>Define reasons for QC failures.</CardDescription>
+          </CardHeader>
+           <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Manage a standard list of reasons for tracking quality issues.
+            </p>
+            <Button asChild variant="secondary">
+              <Link href="/master-data/qc-failure-reason">Manage Reasons</Link>
             </Button>
           </CardContent>
         </Card>

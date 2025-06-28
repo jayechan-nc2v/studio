@@ -82,3 +82,11 @@ export const productionInstructionSchema = z.object({
 });
 
 export type NewProductionInstructionFormValues = z.infer<typeof productionInstructionSchema>;
+
+export const qcFailureReasonSchema = z.object({
+    reason: z.string().min(1, { message: "Reason is required." }),
+    description: z.string().optional(),
+    category: z.string().min(1, { message: "Category is required." }),
+});
+
+export type NewQcFailureReasonFormValues = z.infer<typeof qcFailureReasonSchema>;
