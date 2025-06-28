@@ -117,9 +117,25 @@ export default function ProductionLinesPage() {
 
   const form = useForm<ProductionLineFormValues>({
     resolver: zodResolver(productionLineSchema),
-    // Provide a fallback for the initial render if no line is selected
     defaultValues: selectedLine || { id: '', name: '', lineManager: '', stations: [] },
   });
+  
+  // Effect to sync the form when the selected line changes.
+  React.useEffect(() => {
+    if (selectedLine) {
+        form.reset(selectedLine);
+    } else {
+        form.reset({ id: '', name: '', lineManager: '', stations: [] });
+    }
+  }, [selectedLine, form]);
+
+  // Effect to handle fallback selection (e.g., after deletion or on initial load)
+  React.useEffect(() => {
+      if (!selectedLine && lines.length > 0) {
+          setSelectedLineId(lines[0].id);
+      }
+  }, [lines, selectedLine, setSelectedLineId]);
+
 
   const addLineForm = useForm<NewLineFormValues>({
     resolver: zodResolver(newLineSchema),
@@ -149,24 +165,6 @@ export default function ProductionLinesPage() {
     });
     return ids;
   }, [lines, selectedLineId]);
-
-  // This useEffect ensures the form is always in sync with the selected line.
-  // It also handles cases where the selected line is deleted or no line is selected.
-  React.useEffect(() => {
-    const lineToDisplay = lines.find((line) => line.id === selectedLineId);
-
-    if (lineToDisplay) {
-      // If the selected line exists in the current list of lines, reset the form.
-      form.reset(lineToDisplay);
-    } else if (lines.length > 0) {
-      // If the selected ID doesn't match any line (e.g., after deletion),
-      // select the first line in the list as a fallback.
-      setSelectedLineId(lines[0].id);
-    } else {
-      // If there are no lines at all, clear the form.
-      form.reset({ id: '', name: '', lineManager: '', stations: [] });
-    }
-  }, [selectedLineId, lines, form.reset]);
 
 
   const onSubmit = (data: ProductionLineFormValues) => {
@@ -828,3 +826,5 @@ export default function ProductionLinesPage() {
     </FormProvider>
   );
 }
+
+    
