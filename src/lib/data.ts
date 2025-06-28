@@ -9,6 +9,7 @@ export interface Station {
 export interface ProductionLine {
   id: string;
   name: string;
+  lineManager: string;
   stations: Station[];
 }
 
@@ -16,6 +17,7 @@ export const productionLines: ProductionLine[] = [
   {
     id: 'line-1',
     name: 'Line 1 - T-Shirts',
+    lineManager: 'Sarah Connor',
     stations: [
       { id: 's1-1', machineType: 'Cutting Machine', assignedWorker: 'Alice', workerId: 'E-001' },
       { id: 's1-2', machineType: 'Sewing Machine (Juki)', assignedWorker: 'Bob', workerId: 'E-002' },
@@ -27,6 +29,7 @@ export const productionLines: ProductionLine[] = [
   {
     id: 'line-2',
     name: 'Line 2 - Hoodies',
+    lineManager: 'John Rambo',
     stations: [
         { id: 's2-1', machineType: 'Fabric Spreader', assignedWorker: 'Eve', workerId: 'E-005' },
         { id: 's2-2', machineType: 'Sewing Machine (Brother)', assignedWorker: 'Frank', workerId: 'E-006' },
@@ -37,6 +40,7 @@ export const productionLines: ProductionLine[] = [
   {
       id: 'line-3',
       name: 'Line 3 - Denim',
+      lineManager: 'Ellen Ripley',
       stations: [
           { id: 's3-1', machineType: 'Heavy-Duty Cutting', assignedWorker: 'Ivan', workerId: 'E-009' },
           { id: 's3-2', machineType: 'Lockstitch Machine', assignedWorker: 'Judy', workerId: 'E-010' },
@@ -50,6 +54,7 @@ export const productionLines: ProductionLine[] = [
   {
       id: 'line-4',
       name: 'Line 4 - Specialty',
+      lineManager: 'Kyle Reese',
       stations: [
           { id: 's4-1', machineType: 'Laser Cutter', assignedWorker: 'Trent', workerId: 'E-014' },
           { id: 's4-2', machineType: 'Embroidery Machine', assignedWorker: 'Walter', workerId: 'E-015' },
@@ -219,3 +224,42 @@ export const mockMachineTypes: MachineTypeDetail[] = [
         machines: mockMachines.filter(m => m.type === 'Cutting Machine')
     },
 ];
+
+
+// New data for Production Lines page
+export interface LineWorkerHistory {
+  date: Date;
+  workerName: string;
+  workerId: string;
+  action: 'Assigned' | 'Removed';
+  stationId: string;
+}
+
+export const mockLineWorkerHistory: LineWorkerHistory[] = [
+    { date: new Date('2024-07-21'), workerName: 'Alicia', workerId: 'E-021', action: 'Assigned', stationId: 's1-1' },
+    { date: new Date('2024-07-20'), workerName: 'Alice', workerId: 'E-001', action: 'Removed', stationId: 's1-1' },
+    { date: new Date('2024-07-18'), workerName: 'Bobby', workerId: 'E-022', action: 'Assigned', stationId: 's1-2' },
+    { date: new Date('2024-07-17'), workerName: 'Bob', workerId: 'E-002', action: 'Removed', stationId: 's1-2' },
+    { date: new Date('2024-07-15'), workerName: 'Charles', workerId: 'E-023', action: 'Assigned', stationId: 's1-3' },
+    { date: new Date('2024-07-14'), workerName: 'Charlie', workerId: 'E-003', action: 'Removed', stationId: 's1-3' },
+];
+
+export interface LinePerformanceData {
+  date: string;
+  output: number;
+  efficiency: number;
+}
+
+// Get last 7 days for chart
+const today = new Date();
+const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    return d.toISOString().split('T')[0];
+}).reverse();
+
+export const mockLinePerformanceData: LinePerformanceData[] = last7Days.map(date => ({
+    date,
+    output: Math.floor(Math.random() * (120 - 80 + 1) + 80), // random between 80-120
+    efficiency: Math.floor(Math.random() * (95 - 85 + 1) + 85) // random between 85-95
+}));
