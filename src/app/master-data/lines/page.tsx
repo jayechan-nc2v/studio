@@ -469,9 +469,20 @@ export default function ProductionLinesPage() {
                                     mode="range"
                                     defaultMonth={historyDateRange?.from}
                                     selected={historyDateRange}
-                                    onSelect={setHistoryDateRange}
+                                    onSelect={(range) => {
+                                      setHistoryDateRange(range);
+                                      setVisibleHistoryCount(10);
+                                    }}
                                     numberOfMonths={2}
                                   />
+                                  <div className="flex justify-end p-2 border-t">
+                                      <Button variant="ghost" size="sm" onClick={() => {
+                                        setHistoryDateRange(undefined);
+                                        setVisibleHistoryCount(10);
+                                      }}>
+                                          Clear
+                                      </Button>
+                                  </div>
                                 </PopoverContent>
                               </Popover>
                         </div>
