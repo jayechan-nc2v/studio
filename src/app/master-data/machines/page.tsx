@@ -30,7 +30,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -50,11 +49,8 @@ import {
 export default function MachinesPage() {
   const { toast } = useToast();
 
-  const [searchBy, setSearchBy] = React.useState<"nameOrId" | "type">(
-    "nameOrId"
-  );
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [typeFilter, setTypeFilter] = React.useState<string>("");
+  const [typeFilter, setTypeFilter] = React.useState<string>("all");
 
   const [selectedMachine, setSelectedMachine] = React.useState<Machine | null>(
     mockMachines[0] || null
@@ -67,32 +63,22 @@ export default function MachinesPage() {
     []
   );
 
-  React.useEffect(() => {
-    if (machineTypes.length > 0) {
-      setTypeFilter(machineTypes[0]);
-    }
-  }, [machineTypes]);
-
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
-    let results: Machine[] = [];
+    let results: Machine[] = mockMachines;
 
-    if (searchBy === "nameOrId") {
-      if (!searchQuery.trim()) {
-        toast({
-          variant: "destructive",
-          title: "Search Error",
-          description: "Please enter a name or ID to search.",
-        });
-        return;
-      }
-      results = mockMachines.filter(
+    // Filter by search query (name or ID)
+    if (searchQuery.trim()) {
+      results = results.filter(
         (m) =>
           m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           m.id.toLowerCase().includes(searchQuery.toLowerCase())
       );
-    } else {
-      results = mockMachines.filter((m) => m.type === typeFilter);
+    }
+
+    // Further filter by type
+    if (typeFilter !== "all") {
+      results = results.filter((m) => m.type === typeFilter);
     }
 
     if (results.length === 0) {
@@ -139,30 +125,12 @@ export default function MachinesPage() {
           <CardHeader>
             <CardTitle>Search Machines</CardTitle>
             <CardDescription>
-              Find a machine by its name, ID, or type.
+              Find a machine by its name, ID, or type. Leave fields blank to see all machines.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <RadioGroup
-              value={searchBy}
-              onValueChange={(value) =>
-                setSearchBy(value as "nameOrId" | "type")
-              }
-              className="flex gap-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="nameOrId" id="nameOrId" />
-                <Label htmlFor="nameOrId">By Name or ID</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="type" id="type" />
-                <Label htmlFor="type">By Type</Label>
-              </div>
-            </RadioGroup>
-
-            {searchBy === "nameOrId" ? (
-              <div className="space-y-2">
-                <Label htmlFor="search-query">Search Query</Label>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="space-y-2">
+                <Label htmlFor="search-query">Search by Name or ID</Label>
                 <Input
                   id="search-query"
                   placeholder="Enter machine name or ID..."
@@ -170,14 +138,14 @@ export default function MachinesPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-            ) : (
               <div className="space-y-2">
-                <Label htmlFor="type-filter">Machine Type</Label>
+                <Label htmlFor="type-filter">Filter by Type</Label>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger id="type-filter">
                     <SelectValue placeholder="Select a type" />
                   </SelectTrigger>
                   <SelectContent>
+                     <SelectItem value="all">All Types</SelectItem>
                     {machineTypes.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}
@@ -186,7 +154,6 @@ export default function MachinesPage() {
                   </SelectContent>
                 </Select>
               </div>
-            )}
           </CardContent>
           <CardFooter>
             <Button type="submit">
