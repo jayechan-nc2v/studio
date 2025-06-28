@@ -56,7 +56,7 @@ import {
 } from "@/components/ui/table";
 import { useWorkOrderStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
-import { productionLines, presetInstructions } from "@/lib/data";
+import { productionLines, presetInstructions, mockMachines } from "@/lib/data";
 
 
 const generateBundles = (totalQuantity: number, bundleSize: number) => {
@@ -698,13 +698,20 @@ export default function WorkOrdersPage() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Machine Type</TableHead>
+                                        <TableHead>Machine</TableHead>
                                         <TableHead>Assigned Worker</TableHead>
                                         <TableHead>Worker ID</TableHead>
                                         <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {stationFields.map((field, index) => (
+                                    {stationFields.map((field, index) => {
+                                      const machineType = form.watch(`lineStations.${index}.machineType`);
+                                      const availableMachines = React.useMemo(() => {
+                                          return mockMachines.filter((m) => m.type === machineType);
+                                      }, [machineType]);
+
+                                      return (
                                         <TableRow key={field.id}>
                                             <TableCell>
                                                 <FormField
@@ -715,13 +722,38 @@ export default function WorkOrdersPage() {
                                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                               <FormControl>
                                                                 <SelectTrigger>
-                                                                  <SelectValue placeholder="Select machine" />
+                                                                  <SelectValue placeholder="Select machine type" />
                                                                 </SelectTrigger>
                                                               </FormControl>
                                                               <SelectContent>
                                                                 {machineTypes.map((type) => (
                                                                   <SelectItem key={type} value={type}>
                                                                     {type}
+                                                                  </SelectItem>
+                                                                ))}
+                                                              </SelectContent>
+                                                            </Select>
+                                                            <FormMessage />
+                                                          </FormItem>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`lineStations.${index}.machineId`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!machineType}>
+                                                              <FormControl>
+                                                                <SelectTrigger>
+                                                                  <SelectValue placeholder="Select machine" />
+                                                                </SelectTrigger>
+                                                              </FormControl>
+                                                              <SelectContent>
+                                                                {availableMachines.map((machine) => (
+                                                                  <SelectItem key={machine.id} value={machine.id}>
+                                                                    {machine.name}
                                                                   </SelectItem>
                                                                 ))}
                                                               </SelectContent>
@@ -771,7 +803,7 @@ export default function WorkOrdersPage() {
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )})}
                                 </TableBody>
                             </Table>
                         </div>
@@ -779,7 +811,7 @@ export default function WorkOrdersPage() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => appendStation({ id: `new-${Date.now()}`, machineType: '', assignedWorker: '', workerId: '' })}
+                          onClick={() => appendStation({ id: `new-${Date.now()}`, machineType: '', machineId: '', assignedWorker: '', workerId: '' })}
                         >
                           <PlusCircle className="mr-2 h-4 w-4" />
                           Add Station

@@ -8,7 +8,8 @@ export const sizeSchema = z.object({
 export const stationSchema = z.object({
   id: z.string(),
   machineType: z.string().min(1, "Machine type is required."),
-  assignedWorker: z.string().min(1, "Worker name is required."),
+  machineId: z.string().min(1, "Please select a machine."),
+  assignedWorker: z.string(),
   workerId: z.string().min(1, "Worker ID is required."),
 });
 

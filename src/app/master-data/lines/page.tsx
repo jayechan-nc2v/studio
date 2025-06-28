@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GripVertical, PlusCircle, Trash2 } from "lucide-react";
-import { mockLineWorkerHistory, mockLinePerformanceData, mockWorkers } from "@/lib/data";
+import { mockLineWorkerHistory, mockLinePerformanceData, mockWorkers, mockMachines } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -205,6 +205,7 @@ export default function ProductionLinesPage() {
                           <TableRow>
                             <TableHead className="w-[120px]">Station #</TableHead>
                             <TableHead>Machine Type</TableHead>
+                            <TableHead>Machine</TableHead>
                             <TableHead>Worker ID</TableHead>
                             <TableHead>Assigned Worker</TableHead>
                             <TableHead className="w-[50px]">Action</TableHead>
@@ -217,7 +218,13 @@ export default function ProductionLinesPage() {
                                 ref={provided.innerRef}
                                 {...provided.droppableProps}
                               >
-                                {fields.map((field, index) => (
+                                {fields.map((field, index) => {
+                                  const machineType = form.watch(`stations.${index}.machineType`);
+                                  const availableMachines = React.useMemo(() => {
+                                      return mockMachines.filter((m) => m.type === machineType);
+                                  }, [machineType]);
+                                  
+                                  return (
                                   <Draggable
                                     key={field.id}
                                     draggableId={field.id}
@@ -244,16 +251,44 @@ export default function ProductionLinesPage() {
                                             name={`stations.${index}.machineType`}
                                             render={({ field }) => (
                                               <FormItem>
-                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                <Select onValueChange={(value) => {
+                                                  field.onChange(value);
+                                                  form.setValue(`stations.${index}.machineId`, '');
+                                                }} value={field.value}>
                                                   <FormControl>
                                                     <SelectTrigger>
-                                                      <SelectValue placeholder="Select machine" />
+                                                      <SelectValue placeholder="Select machine type" />
                                                     </SelectTrigger>
                                                   </FormControl>
                                                   <SelectContent>
                                                     {availableMachineTypes.map((type) => (
                                                       <SelectItem key={type} value={type}>
                                                         {type}
+                                                      </SelectItem>
+                                                    ))}
+                                                  </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+                                        </TableCell>
+                                        <TableCell className="align-top">
+                                          <FormField
+                                            control={form.control}
+                                            name={`stations.${index}.machineId`}
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <Select onValueChange={field.onChange} value={field.value} disabled={!machineType}>
+                                                  <FormControl>
+                                                    <SelectTrigger>
+                                                      <SelectValue placeholder="Select machine" />
+                                                    </SelectTrigger>
+                                                  </FormControl>
+                                                  <SelectContent>
+                                                    {availableMachines.map((machine) => (
+                                                      <SelectItem key={machine.id} value={machine.id}>
+                                                        {machine.name}
                                                       </SelectItem>
                                                     ))}
                                                   </SelectContent>
@@ -309,7 +344,7 @@ export default function ProductionLinesPage() {
                                       </TableRow>
                                     )}
                                   </Draggable>
-                                ))}
+                                )})}
                                 {provided.placeholder}
                               </TableBody>
                             )}
@@ -321,7 +356,7 @@ export default function ProductionLinesPage() {
                       type="button"
                       variant="outline"
                       className="mt-4"
-                      onClick={() => append({ id: `station-${Date.now()}`, machineType: '', assignedWorker: '', workerId: '' })}
+                      onClick={() => append({ id: `station-${Date.now()}`, machineType: '', machineId: '', assignedWorker: '', workerId: '' })}
                     >
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Add Station
