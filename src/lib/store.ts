@@ -162,6 +162,8 @@ export const useMachineStore = create<MachineState>((set, get) => ({
 interface ProductionInstructionState {
     instructions: ProductionInstruction[];
     addInstruction: (data: NewProductionInstructionFormValues) => void;
+    updateInstruction: (id: string, data: NewProductionInstructionFormValues) => void;
+    deleteInstruction: (id: string) => void;
 }
 
 export const useProductionInstructionStore = create<ProductionInstructionState>((set, get) => ({
@@ -173,5 +175,17 @@ export const useProductionInstructionStore = create<ProductionInstructionState>(
             ...data
         };
         set((state) => ({ instructions: [newInstruction, ...state.instructions] }));
+    },
+    updateInstruction: (id, data) => {
+        set((state) => ({
+            instructions: state.instructions.map(inst => 
+                inst.id === id ? { ...inst, ...data } : inst
+            )
+        }));
+    },
+    deleteInstruction: (id) => {
+        set((state) => ({
+            instructions: state.instructions.filter(inst => inst.id !== id)
+        }));
     }
 }));

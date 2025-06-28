@@ -315,6 +315,8 @@ export const mockLinePerformanceData: LinePerformanceData[] = last30Days.map(dat
     efficiency: Math.floor(Math.random() * (95 - 85 + 1) + 85) // random between 85-95
 }));
 
+export const mockGarmentTypes = ["T-Shirt", "Denim Jacket", "Hoodie", "Polo Shirt", "Trousers"];
+
 export const mockProductionInstructions: ProductionInstruction[] = [
     { id: 'PI-001', name: 'Attach Collar', garmentType: 'T-Shirt', machineType: 'Sewing Machine (Juki)', smv: 0.6000 },
     { id: 'PI-002', name: 'Sleeve Join', garmentType: 'T-Shirt', machineType: 'Overlock Machine', smv: 0.7500 },
