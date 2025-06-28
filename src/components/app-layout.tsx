@@ -11,6 +11,7 @@ import {
   Globe,
   HardDrive,
   LayoutDashboard,
+  ListChecks,
   LogOut,
   QrCode,
   Route,
@@ -64,6 +65,7 @@ const navItems = [
       { href: '/master-data/machines', label: 'Machines', icon: HardDrive },
       { href: '/master-data/lines', label: 'Production Lines', icon: Route },
       { href: '/master-data/machine-types', label: 'Machine Types', icon: Tags },
+      { href: '/master-data/production-instructions', label: 'Instructions', icon: ListChecks },
     ],
   },
   { href: '/ai-tools', label: 'AI Tools', icon: Cpu },
@@ -86,6 +88,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const toggleSubmenu = (href: string) => {
     setOpenSubmenus((prev) => ({
+      ...prev,
       [href]: !prev[href],
     }));
   };

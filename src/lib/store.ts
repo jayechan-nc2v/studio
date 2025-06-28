@@ -1,6 +1,16 @@
 import { create } from 'zustand';
-import type { WorkOrderFormValues, NewMachineFormValues } from '@/lib/schemas';
-import { presetInstructions, mockMachineTypes, type MachineTypeDetail, productionLines, type ProductionLine, mockMachines, type Machine } from '@/lib/data';
+import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues } from '@/lib/schemas';
+import { 
+    presetInstructions, 
+    mockMachineTypes, 
+    type MachineTypeDetail, 
+    productionLines, 
+    type ProductionLine, 
+    mockMachines, 
+    type Machine,
+    mockProductionInstructions,
+    type ProductionInstruction
+} from '@/lib/data';
 
 interface WorkOrderState {
   workOrders: WorkOrderFormValues[];
@@ -144,5 +154,24 @@ export const useMachineStore = create<MachineState>((set, get) => ({
         };
         set((state) => ({ machines: [newMachine, ...state.machines] }));
         return newMachine;
+    }
+}));
+
+
+// Store for Production Instructions
+interface ProductionInstructionState {
+    instructions: ProductionInstruction[];
+    addInstruction: (data: NewProductionInstructionFormValues) => void;
+}
+
+export const useProductionInstructionStore = create<ProductionInstructionState>((set, get) => ({
+    instructions: mockProductionInstructions,
+    addInstruction: (data) => {
+        const newId = `PI-${(get().instructions.length + 1).toString().padStart(3, '0')}`;
+        const newInstruction: ProductionInstruction = {
+            id: newId,
+            ...data
+        };
+        set((state) => ({ instructions: [newInstruction, ...state.instructions] }));
     }
 }));

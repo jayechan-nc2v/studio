@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { HardDrive, Route } from "lucide-react";
+import { HardDrive, Route, ListChecks, Tags } from "lucide-react";
 
 export default function MasterDataPage() {
   return (
@@ -40,6 +40,36 @@ export default function MasterDataPage() {
             </p>
             <Button asChild variant="secondary">
               <Link href="/master-data/lines">Manage Lines</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Tags className="h-8 w-8 text-primary mb-2" />
+            <CardTitle>Machine Types</CardTitle>
+            <CardDescription>Organize machines into categories.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Group machines by their function, e.g., "Sewing Machines".
+            </p>
+            <Button asChild variant="secondary">
+              <Link href="/master-data/machine-types">Manage Machine Types</Link>
+            </Button>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader>
+            <ListChecks className="h-8 w-8 text-primary mb-2" />
+            <CardTitle>Production Instructions</CardTitle>
+            <CardDescription>Manage standard operation instructions.</CardDescription>
+          </CardHeader>
+           <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Define standard times (SMV) for production steps.
+            </p>
+            <Button asChild variant="secondary">
+              <Link href="/master-data/production-instructions">Manage Instructions</Link>
             </Button>
           </CardContent>
         </Card>

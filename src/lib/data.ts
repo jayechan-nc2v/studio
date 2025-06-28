@@ -60,6 +60,15 @@ export interface MachineTypeDetail {
   machines: Machine[];
 }
 
+export interface ProductionInstruction {
+  id: string;
+  name: string;
+  garmentType: string;
+  machineType: string;
+  smv: number;
+}
+
+
 // Mock Data for Machines
 export const mockMachines: Machine[] = [
   {
@@ -305,3 +314,13 @@ export const mockLinePerformanceData: LinePerformanceData[] = last30Days.map(dat
     output: Math.floor(Math.random() * (120 - 80 + 1) + 80), // random between 80-120
     efficiency: Math.floor(Math.random() * (95 - 85 + 1) + 85) // random between 85-95
 }));
+
+export const mockProductionInstructions: ProductionInstruction[] = [
+    { id: 'PI-001', name: 'Attach Collar', garmentType: 'T-Shirt', machineType: 'Sewing Machine (Juki)', smv: 0.6000 },
+    { id: 'PI-002', name: 'Sleeve Join', garmentType: 'T-Shirt', machineType: 'Overlock Machine', smv: 0.7500 },
+    { id: 'PI-003', name: 'Hem Bottom', garmentType: 'T-Shirt', machineType: 'Coverstitch', smv: 0.4500 },
+    { id: 'PI-004', name: 'Front Pocket Attach', garmentType: 'Denim Jacket', machineType: 'Lockstitch Machine', smv: 0.5500 },
+    { id: 'PI-005', name: 'Side Seam Join', garmentType: 'Denim Jacket', machineType: 'Overlock Machine', smv: 0.8000 },
+    { id: 'PI-006', name: 'Create Buttonholes', garmentType: 'Denim Jacket', machineType: 'Buttonhole', smv: 0.3000 },
+    { id: 'PI-007', name: 'Reinforce Stress Points', garmentType: 'Denim Jacket', machineType: 'Bar Tack', smv: 0.2000 },
+];

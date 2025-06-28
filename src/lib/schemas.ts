@@ -73,3 +73,12 @@ export const newMachineSchema = z.object({
 });
 
 export type NewMachineFormValues = z.infer<typeof newMachineSchema>;
+
+export const productionInstructionSchema = z.object({
+    name: z.string().min(1, { message: "Instruction name is required." }),
+    garmentType: z.string().min(1, { message: "Garment type is required." }),
+    machineType: z.string().min(1, { message: "Machine type is required." }),
+    smv: z.coerce.number().positive({ message: "SMV must be a positive number." }),
+});
+
+export type NewProductionInstructionFormValues = z.infer<typeof productionInstructionSchema>;
