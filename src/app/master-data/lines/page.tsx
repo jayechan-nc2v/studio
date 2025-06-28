@@ -46,7 +46,7 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { useForm, useFieldArray, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { productionLineSchema, type ProductionLineFormValues } from "@/lib/schemas";
+import { productionLineSchema, newLineSchema, type ProductionLineFormValues, type NewLineFormValues } from "@/lib/schemas";
 import { useProductionLineStore, useMachineTypeStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -54,6 +54,7 @@ import {
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
@@ -61,6 +62,7 @@ import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 
 
 const chartConfig: ChartConfig = {
@@ -76,12 +78,14 @@ const chartConfig: ChartConfig = {
 
 export default function ProductionLinesPage() {
   const { toast } = useToast();
-  const { lines, updateLine } = useProductionLineStore();
+  const { lines, updateLine, addLine } = useProductionLineStore();
   const { machineTypes } = useMachineTypeStore();
   
   const [selectedLineId, setSelectedLineId] = React.useState<string>(
     lines[0]?.id || ""
   );
+  const [isAddLineOpen, setIsAddLineOpen] = React.useState(false);
+
 
   // State for history tab
   const [historyFilters, setHistoryFilters] = React.useState({
@@ -109,6 +113,14 @@ export default function ProductionLinesPage() {
   const form = useForm<ProductionLineFormValues>({
     resolver: zodResolver(productionLineSchema),
     defaultValues: selectedLine,
+  });
+
+  const addLineForm = useForm<NewLineFormValues>({
+    resolver: zodResolver(newLineSchema),
+    defaultValues: {
+      name: "",
+      lineManager: "",
+    },
   });
 
   const { fields, append, remove, move } = useFieldArray({
@@ -144,6 +156,17 @@ export default function ProductionLinesPage() {
       title: "Line Updated",
       description: `Production line "${data.name}" has been saved.`,
     });
+  };
+  
+  const handleAddLineSubmit = (data: NewLineFormValues) => {
+    const newId = addLine(data.name, data.lineManager);
+    toast({
+      title: "Line Created",
+      description: `Production line "${data.name}" has been created.`,
+    });
+    setSelectedLineId(newId);
+    setIsAddLineOpen(false);
+    addLineForm.reset();
   };
 
   const onDragEnd = (result: DropResult) => {
@@ -214,10 +237,60 @@ export default function ProductionLinesPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Line
-            </Button>
+            <Dialog open={isAddLineOpen} onOpenChange={setIsAddLineOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Line
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <Form {...addLineForm}>
+                  <form onSubmit={addLineForm.handleSubmit(handleAddLineSubmit)} className="space-y-4">
+                    <DialogHeader>
+                      <DialogTitle>Add New Production Line</DialogTitle>
+                      <DialogDescription>
+                          Enter the details for the new production line.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                      <FormField
+                        control={addLineForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Line Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., Line 5 - Special Ops" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={addLineForm.control}
+                        name="lineManager"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Line Manager</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., Jane Doe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button type="button" variant="secondary">Cancel</Button>
+                      </DialogClose>
+                      <Button type="submit">Create Line</Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
         </header>
 
@@ -232,18 +305,45 @@ export default function ProductionLinesPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label>System ID</Label>
-                    <Input {...form.register('id')} disabled />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Line Name</Label>
-                    <Input {...form.register('name')} disabled />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Line Manager</Label>
-                    <Input {...form.register('lineManager')} disabled />
-                  </div>
+                  <FormField
+                      control={form.control}
+                      name="id"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>System ID</FormLabel>
+                          <FormControl>
+                              <Input {...field} disabled />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+                  <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Line Name</FormLabel>
+                          <FormControl>
+                              <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+                   <FormField
+                      control={form.control}
+                      name="lineManager"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Line Manager</FormLabel>
+                          <FormControl>
+                              <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -690,7 +790,7 @@ export default function ProductionLinesPage() {
             <CardHeader>
               <CardTitle>No Line Selected</CardTitle>
               <CardDescription>
-                Please select a production line to view its details.
+                Please select a production line to view its details, or add a new one.
               </CardDescription>
             </CardHeader>
           </Card>

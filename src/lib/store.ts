@@ -97,11 +97,25 @@ export const useMachineTypeStore = create<MachineTypeState>((set, get) => ({
 // Store for Production Lines
 interface ProductionLineState {
   lines: ProductionLine[];
+  addLine: (name: string, lineManager: string) => string;
   updateLine: (lineId: string, updatedLine: ProductionLine) => void;
 }
 
 export const useProductionLineStore = create<ProductionLineState>((set) => ({
   lines: productionLines,
+  addLine: (name, lineManager) => {
+    const newId = `line-${Date.now().toString().slice(-6)}`;
+    const newLine: ProductionLine = {
+      id: newId,
+      name,
+      lineManager,
+      stations: [],
+    };
+    set((state) => ({
+      lines: [...state.lines, newLine],
+    }));
+    return newId;
+  },
   updateLine: (lineId, updatedLine) => set((state) => ({
     lines: state.lines.map(line => line.id === lineId ? updatedLine : line),
   })),

@@ -55,3 +55,10 @@ export const productionLineSchema = z.object({
 });
 
 export type ProductionLineFormValues = z.infer<typeof productionLineSchema>;
+
+export const newLineSchema = z.object({
+    name: z.string().min(1, { message: "Line Name is required." }),
+    lineManager: z.string().min(1, { message: "Line Manager is required." }),
+});
+
+export type NewLineFormValues = z.infer<typeof newLineSchema>;
