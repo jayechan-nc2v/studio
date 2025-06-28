@@ -11,13 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search } from "lucide-react";
-import {
-  mockMachines,
-  mockMaintenanceHistory,
-  mockAllocationHistory,
-  type Machine,
-} from "@/lib/data";
+import { Calendar as CalendarIcon, PlusCircle, Search } from "lucide-react";
+import { type Machine } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -45,6 +40,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Tabs,
@@ -52,30 +49,71 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-
+import { useMachineStore, useMachineTypeStore } from "@/lib/store";
+import {
+  mockMaintenanceHistory,
+  mockAllocationHistory,
+} from "@/lib/data";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { newMachineSchema, type NewMachineFormValues } from "@/lib/schemas";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 export default function MachinesPage() {
   const { toast } = useToast();
+  const { machines, addMachine } = useMachineStore();
+  const { machineTypes } = useMachineTypeStore();
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [typeFilter, setTypeFilter] = React.useState<string>("all");
 
-  const [selectedMachine, setSelectedMachine] = React.useState<Machine | null>(
-    mockMachines[0] || null
-  );
+  const [selectedMachine, setSelectedMachine] = React.useState<Machine | null>(null);
   const [searchResults, setSearchResults] = React.useState<Machine[]>([]);
   const [isResultDialogOpen, setIsResultDialogOpen] = React.useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
 
-  const machineTypes = React.useMemo(
-    () => [...new Set(mockMachines.map((m) => m.type))].sort(),
-    []
+  React.useEffect(() => {
+    if (machines.length > 0 && !selectedMachine) {
+        setSelectedMachine(machines[0]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [machines]);
+
+
+  const machineTypesForFilter = React.useMemo(
+    () => [...new Set(machines.map((m) => m.type))].sort(),
+    [machines]
   );
+  
+  const machineTypesForSelect = React.useMemo(
+    () => machineTypes.map(mt => mt.typeName).sort(),
+    [machineTypes]
+  );
+
+  const form = useForm<NewMachineFormValues>({
+      resolver: zodResolver(newMachineSchema),
+      defaultValues: {
+          name: "",
+          type: "",
+          serialNo: "",
+          supplier: "",
+      }
+  });
 
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
-    let results: Machine[] = mockMachines;
+    let results: Machine[] = machines;
 
-    // Filter by search query (name or ID)
     if (searchQuery.trim()) {
       results = results.filter(
         (m) =>
@@ -84,7 +122,6 @@ export default function MachinesPage() {
       );
     }
 
-    // Further filter by type
     if (typeFilter !== "all") {
       results = results.filter((m) => m.type === typeFilter);
     }
@@ -111,6 +148,17 @@ export default function MachinesPage() {
     setSelectedMachine(machine);
     setIsResultDialogOpen(false);
   };
+  
+  const handleAddMachine = (data: NewMachineFormValues) => {
+    const newMachine = addMachine(data);
+    setSelectedMachine(newMachine);
+    toast({
+        title: "Machine Created",
+        description: `Machine "${newMachine.name}" has been successfully created.`,
+    });
+    setIsAddDialogOpen(false);
+    form.reset();
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -121,10 +169,141 @@ export default function MachinesPage() {
             Search for a machine or add a new one.
           </p>
         </div>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Machine
-        </Button>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Machine
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Add New Machine</DialogTitle>
+                    <DialogDescription>
+                        Fill in the details below to add a new machine to the inventory.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleAddMachine)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Machine Name</FormLabel>
+                                    <FormControl>
+                                    <Input placeholder="e.g., Juki DDL-8700" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="type"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Machine Type</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="Select a type" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {machineTypesForSelect.map((type) => (
+                                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="serialNo"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Serial Number</FormLabel>
+                                    <FormControl>
+                                    <Input placeholder="e.g., SN-J87A001" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="supplier"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Supplier</FormLabel>
+                                    <FormControl>
+                                    <Input placeholder="e.g., Juki Central" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="purchaseDate"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col pt-2">
+                                        <FormLabel>Purchase Date</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="warrantyExpiryDate"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col pt-2">
+                                        <FormLabel>Warranty Expiry Date (Optional)</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                         <div className="flex justify-end gap-2 pt-4">
+                            <DialogClose asChild>
+                                <Button type="button" variant="secondary">Cancel</Button>
+                            </DialogClose>
+                            <Button type="submit">Create Machine</Button>
+                        </div>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
       </header>
 
       {/* Search Panel */}
@@ -154,7 +333,7 @@ export default function MachinesPage() {
                   </SelectTrigger>
                   <SelectContent>
                      <SelectItem value="all">All Types</SelectItem>
-                    {machineTypes.map((type) => (
+                    {machineTypesForFilter.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}
                       </SelectItem>
@@ -388,7 +567,7 @@ export default function MachinesPage() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
-              Please search for a machine to view its details.
+              Please search for a machine to view its details or add a new one.
             </p>
           </CardContent>
         </Card>

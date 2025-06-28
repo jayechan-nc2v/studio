@@ -62,3 +62,14 @@ export const newLineSchema = z.object({
 });
 
 export type NewLineFormValues = z.infer<typeof newLineSchema>;
+
+export const newMachineSchema = z.object({
+  name: z.string().min(1, { message: "Machine name is required." }),
+  type: z.string().min(1, { message: "Machine type is required." }),
+  serialNo: z.string().min(1, { message: "Serial number is required." }),
+  supplier: z.string().min(1, { message: "Supplier is required." }),
+  purchaseDate: z.date({ required_error: "Purchase date is required."}),
+  warrantyExpiryDate: z.date().optional(),
+});
+
+export type NewMachineFormValues = z.infer<typeof newMachineSchema>;

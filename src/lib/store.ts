@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { WorkOrderFormValues } from '@/lib/schemas';
-import { presetInstructions, mockMachineTypes, type MachineTypeDetail, productionLines, type ProductionLine } from '@/lib/data';
+import type { WorkOrderFormValues, NewMachineFormValues } from '@/lib/schemas';
+import { presetInstructions, mockMachineTypes, type MachineTypeDetail, productionLines, type ProductionLine, mockMachines, type Machine } from '@/lib/data';
 
 interface WorkOrderState {
   workOrders: WorkOrderFormValues[];
@@ -119,4 +119,30 @@ export const useProductionLineStore = create<ProductionLineState>((set) => ({
   updateLine: (lineId, updatedLine) => set((state) => ({
     lines: state.lines.map(line => line.id === lineId ? updatedLine : line),
   })),
+}));
+
+// Store for Machines
+interface MachineState {
+    machines: Machine[];
+    addMachine: (data: NewMachineFormValues) => Machine;
+}
+
+export const useMachineStore = create<MachineState>((set, get) => ({
+    machines: mockMachines,
+    addMachine: (data) => {
+        const newId = `MC-${(get().machines.length + 1).toString().padStart(3, '0')}`;
+        const newMachine: Machine = {
+            id: newId,
+            name: data.name,
+            type: data.type,
+            serialNo: data.serialNo,
+            supplier: data.supplier,
+            purchaseDate: data.purchaseDate,
+            warrantyExpiryDate: data.warrantyExpiryDate || null,
+            inWarranty: data.warrantyExpiryDate ? data.warrantyExpiryDate > new Date() : false,
+            isAvailable: true,
+        };
+        set((state) => ({ machines: [newMachine, ...state.machines] }));
+        return newMachine;
+    }
 }));
