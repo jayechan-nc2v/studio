@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -9,13 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import {
-  productionLines,
-  type ProductionLine,
-  mockLineWorkerHistory,
-  mockLinePerformanceData,
-} from "@/lib/data";
+import { ArrowDown, ArrowUp, PlusCircle, Trash2 } from "lucide-react";
+import { mockLineWorkerHistory, mockLinePerformanceData } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -48,6 +44,19 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { useForm, useFieldArray, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { productionLineSchema, type ProductionLineFormValues } from "@/lib/schemas";
+import { useProductionLineStore, useMachineTypeStore } from "@/lib/store";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
+
 
 const chartConfig: ChartConfig = {
   output: {
@@ -61,162 +70,307 @@ const chartConfig: ChartConfig = {
 };
 
 export default function ProductionLinesPage() {
+  const { toast } = useToast();
+  const { lines, updateLine } = useProductionLineStore();
+  const { machineTypes } = useMachineTypeStore();
+  
   const [selectedLineId, setSelectedLineId] = React.useState<string>(
-    productionLines[0]?.id || ""
+    lines[0]?.id || ""
+  );
+
+  const availableMachineTypes = React.useMemo(
+    () => machineTypes.map((mt) => mt.typeName).sort(),
+    [machineTypes]
   );
 
   const selectedLine = React.useMemo(() => {
-    return productionLines.find((line) => line.id === selectedLineId);
-  }, [selectedLineId]);
+    return lines.find((line) => line.id === selectedLineId);
+  }, [lines, selectedLineId]);
+
+  const form = useForm<ProductionLineFormValues>({
+    resolver: zodResolver(productionLineSchema),
+    defaultValues: selectedLine,
+  });
+
+  const { fields, append, remove, move } = useFieldArray({
+    control: form.control,
+    name: "stations",
+  });
+
+  React.useEffect(() => {
+    if (selectedLine) {
+      form.reset(selectedLine);
+    }
+  }, [selectedLine, form]);
+
+  const onSubmit = (data: ProductionLineFormValues) => {
+    updateLine(data.id, data);
+    toast({
+      title: "Line Updated",
+      description: `Production line "${data.name}" has been saved.`,
+    });
+  };
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Manage Production Lines
-          </h1>
-          <p className="text-muted-foreground">
-            Configure and manage your factory's production lines.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={selectedLineId} onValueChange={setSelectedLineId}>
-            <SelectTrigger className="w-[250px]">
-              <SelectValue placeholder="Select a line" />
-            </SelectTrigger>
-            <SelectContent>
-              {productionLines.map((line) => (
-                <SelectItem key={line.id} value={line.id}>
-                  {line.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Line
-          </Button>
-        </div>
-      </header>
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Manage Production Lines
+            </h1>
+            <p className="text-muted-foreground">
+              Configure and manage your factory's production lines.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={selectedLineId} onValueChange={setSelectedLineId}>
+              <SelectTrigger className="w-[250px]">
+                <SelectValue placeholder="Select a line" />
+              </SelectTrigger>
+              <SelectContent>
+                {lines.map((line) => (
+                  <SelectItem key={line.id} value={line.id}>
+                    {line.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Line
+            </Button>
+          </div>
+        </header>
 
-      {selectedLine ? (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Line Information</CardTitle>
-              <CardDescription>
-                Core details for "{selectedLine.name}".
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label>System ID</Label>
-                  <Input value={selectedLine.id} disabled />
-                </div>
-                <div className="space-y-2">
-                  <Label>Line Name</Label>
-                  <Input value={selectedLine.name} disabled />
-                </div>
-                <div className="space-y-2">
-                  <Label>Line Manager</Label>
-                  <Input value={selectedLine.lineManager} disabled />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Tabs defaultValue="workers" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="workers">Workers Assigned</TabsTrigger>
-              <TabsTrigger value="history">Assignment History</TabsTrigger>
-              <TabsTrigger value="performance">Line Performance</TabsTrigger>
-            </TabsList>
-            <TabsContent value="workers">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Current Workers Assigned</CardTitle>
-                  <CardDescription>
-                    List of workers currently assigned to stations on this line.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="border rounded-md">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Station ID</TableHead>
-                          <TableHead>Machine Type</TableHead>
-                          <TableHead>Assigned Worker</TableHead>
-                          <TableHead>Worker ID</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedLine.stations.map((station) => (
-                          <TableRow key={station.id}>
-                            <TableCell className="font-code">{station.id}</TableCell>
-                            <TableCell>{station.machineType}</TableCell>
-                            <TableCell>{station.assignedWorker}</TableCell>
-                            <TableCell className="font-code">{station.workerId}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+        {selectedLine ? (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Line Information</CardTitle>
+                <CardDescription>
+                  Core details for "{selectedLine.name}".
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label>System ID</Label>
+                    <Input {...form.register('id')} disabled />
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="history">
-              <Card>
-                <CardHeader>
-                  <CardTitle>History of Assigned Workers</CardTitle>
-                  <CardDescription>
-                    A log of all worker assignments and removals for this line.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                   <div className="border rounded-md">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                           <TableHead>Action</TableHead>
-                          <TableHead>Worker Name</TableHead>
-                          <TableHead>Worker ID</TableHead>
-                          <TableHead>Station ID</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {mockLineWorkerHistory.map((record, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{format(record.date, "PPP")}</TableCell>
-                            <TableCell>
+                  <div className="space-y-2">
+                    <Label>Line Name</Label>
+                    <Input {...form.register('name')} disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Line Manager</Label>
+                    <Input {...form.register('lineManager')} disabled />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Tabs defaultValue="workers" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="workers">Workers Assigned</TabsTrigger>
+                <TabsTrigger value="history">Assignment History</TabsTrigger>
+                <TabsTrigger value="performance">Line Performance</TabsTrigger>
+              </TabsList>
+              <TabsContent value="workers">
+                <Card>
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <CardTitle>Current Workers Assigned</CardTitle>
+                        <CardDescription>
+                          List of workers currently assigned to stations on this line.
+                        </CardDescription>
+                      </div>
+                      <Button type="submit">Save Changes</Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="border rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[60px]">Order</TableHead>
+                            <TableHead>Station ID</TableHead>
+                            <TableHead>Machine Type</TableHead>
+                            <TableHead>Assigned Worker</TableHead>
+                            <TableHead>Worker ID</TableHead>
+                            <TableHead className="w-[50px]">Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {fields.map((field, index) => (
+                            <TableRow key={field.id}>
+                              <TableCell className="align-top">
+                                <div className="flex flex-col gap-1 items-center justify-center h-full">
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => move(index, index - 1)}
+                                    disabled={index === 0}
+                                  >
+                                    <ArrowUp className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => move(index, index + 1)}
+                                    disabled={index === fields.length - 1}
+                                  >
+                                    <ArrowDown className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                              <TableCell className="align-top">
+                                <FormField
+                                  control={form.control}
+                                  name={`stations.${index}.id`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </TableCell>
+                              <TableCell className="align-top">
+                                <FormField
+                                  control={form.control}
+                                  name={`stations.${index}.machineType`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select machine" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {availableMachineTypes.map((type) => (
+                                            <SelectItem key={type} value={type}>
+                                              {type}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </TableCell>
+                              <TableCell className="align-top">
+                                <FormField
+                                  control={form.control}
+                                  name={`stations.${index}.assignedWorker`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </TableCell>
+                              <TableCell className="align-top">
+                                <FormField
+                                  control={form.control}
+                                  name={`stations.${index}.workerId`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </TableCell>
+                              <TableCell className="align-top">
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="destructive"
+                                  onClick={() => remove(index)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => append({ id: `station-${Date.now()}`, machineType: '', assignedWorker: '', workerId: '' })}
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Station
+                    </Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="history">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>History of Assigned Workers</CardTitle>
+                    <CardDescription>
+                      A log of all worker assignments and removals for this line.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="border rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Action</TableHead>
+                            <TableHead>Worker Name</TableHead>
+                            <TableHead>Worker ID</TableHead>
+                            <TableHead>Station ID</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {mockLineWorkerHistory.map((record, index) => (
+                            <TableRow key={index}>
+                              <TableCell>{format(record.date, "PPP")}</TableCell>
+                              <TableCell>
                                 <Badge variant={record.action === "Assigned" ? "secondary" : "outline"}>
-                                    {record.action}
+                                  {record.action}
                                 </Badge>
-                            </TableCell>
-                            <TableCell>{record.workerName}</TableCell>
-                             <TableCell className="font-code">{record.workerId}</TableCell>
-                            <TableCell className="font-code">{record.stationId}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="performance">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Line Performance</CardTitle>
-                  <CardDescription>
-                    Daily output and efficiency over the last 7 days.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pl-2">
-                   <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                              </TableCell>
+                              <TableCell>{record.workerName}</TableCell>
+                              <TableCell className="font-code">{record.workerId}</TableCell>
+                              <TableCell className="font-code">{record.stationId}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="performance">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Line Performance</CardTitle>
+                    <CardDescription>
+                      Daily output and efficiency over the last 7 days.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pl-2">
+                    <ChartContainer config={chartConfig} className="h-[300px] w-full">
                       <BarChart accessibilityLayer data={mockLinePerformanceData}>
                         <CartesianGrid vertical={false} />
                         <XAxis
@@ -227,30 +381,32 @@ export default function ProductionLinesPage() {
                           tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { weekday: 'short' })}
                         />
                         <YAxis yAxisId="left" orientation="left" stroke="var(--color-output)" />
-                        <YAxis yAxisId="right" orientation="right" stroke="var(--color-efficiency)" tickFormatter={(value) => `${value}%`}/>
+                        <YAxis yAxisId="right" orientation="right" stroke="var(--color-efficiency)" tickFormatter={(value) => `${value}%`} />
                         <ChartTooltip
                           cursor={false}
                           content={<ChartTooltipContent indicator="dashed" />}
                         />
                         <Bar yAxisId="left" dataKey="output" fill="var(--color-output)" radius={4} />
-                         <Bar yAxisId="right" dataKey="efficiency" fill="var(--color-efficiency)" radius={4} />
+                        <Bar yAxisId="right" dataKey="efficiency" fill="var(--color-efficiency)" radius={4} />
                       </BarChart>
                     </ChartContainer>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      ) : (
-         <Card>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        ) : (
+          <Card>
             <CardHeader>
-            <CardTitle>No Line Selected</CardTitle>
-            <CardDescription>
+              <CardTitle>No Line Selected</CardTitle>
+              <CardDescription>
                 Please select a production line to view its details.
-            </CardDescription>
+              </CardDescription>
             </CardHeader>
-        </Card>
-      )}
-    </div>
+          </Card>
+        )}
+      </form>
+    </FormProvider>
   );
 }
+

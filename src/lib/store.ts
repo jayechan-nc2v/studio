@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { WorkOrderFormValues } from '@/lib/schemas';
-import { presetInstructions, mockMachineTypes, type MachineTypeDetail } from '@/lib/data';
+import { presetInstructions, mockMachineTypes, type MachineTypeDetail, productionLines, type ProductionLine } from '@/lib/data';
 
 interface WorkOrderState {
   workOrders: WorkOrderFormValues[];
@@ -91,4 +91,18 @@ export const useMachineTypeStore = create<MachineTypeState>((set, get) => ({
     set((state) => ({ machineTypes: [newMachineType, ...state.machineTypes] }));
     return newId;
   },
+}));
+
+
+// Store for Production Lines
+interface ProductionLineState {
+  lines: ProductionLine[];
+  updateLine: (lineId: string, updatedLine: ProductionLine) => void;
+}
+
+export const useProductionLineStore = create<ProductionLineState>((set) => ({
+  lines: productionLines,
+  updateLine: (lineId, updatedLine) => set((state) => ({
+    lines: state.lines.map(line => line.id === lineId ? updatedLine : line),
+  })),
 }));

@@ -8,7 +8,7 @@ export const sizeSchema = z.object({
 export const stationSchema = z.object({
   id: z.string(),
   machineType: z.string().min(1, "Machine type is required."),
-  assignedWorker: z.string().min(1, "Worker is required."),
+  assignedWorker: z.string().min(1, "Worker name is required."),
   workerId: z.string().min(1, "Worker ID is required."),
 });
 
@@ -44,3 +44,13 @@ export const workOrderSchema = z.object({
 });
 
 export type WorkOrderFormValues = z.infer<typeof workOrderSchema>;
+
+
+export const productionLineSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1, "Line Name is required."),
+    lineManager: z.string().min(1, "Line Manager is required."),
+    stations: z.array(stationSchema),
+});
+
+export type ProductionLineFormValues = z.infer<typeof productionLineSchema>;
