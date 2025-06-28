@@ -292,15 +292,15 @@ export interface LinePerformanceData {
   efficiency: number;
 }
 
-// Get last 7 days for chart
+// Get last 30 days for chart
 const today = new Date();
-const last7Days = Array.from({ length: 7 }, (_, i) => {
+const last30Days = Array.from({ length: 30 }, (_, i) => {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     return d.toISOString().split('T')[0];
 }).reverse();
 
-export const mockLinePerformanceData: LinePerformanceData[] = last7Days.map(date => ({
+export const mockLinePerformanceData: LinePerformanceData[] = last30Days.map(date => ({
     date,
     output: Math.floor(Math.random() * (120 - 80 + 1) + 80), // random between 80-120
     efficiency: Math.floor(Math.random() * (95 - 85 + 1) + 85) // random between 85-95

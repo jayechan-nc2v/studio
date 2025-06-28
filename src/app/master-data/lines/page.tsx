@@ -36,7 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import {
   ChartContainer,
   ChartTooltip,
@@ -90,6 +90,12 @@ export default function ProductionLinesPage() {
   });
   const [historyDateRange, setHistoryDateRange] = React.useState<DateRange | undefined>();
   const [visibleHistoryCount, setVisibleHistoryCount] = React.useState(10);
+
+  // State for performance tab
+  const [performanceDateRange, setPerformanceDateRange] = React.useState<DateRange | undefined>({
+    from: subDays(new Date(), 6),
+    to: new Date(),
+  });
 
   const availableMachineTypes = React.useMemo(
     () => machineTypes.map((mt) => mt.typeName).sort(),
@@ -165,6 +171,23 @@ export default function ProductionLinesPage() {
       return workerMatch && machineTypeMatch && dateMatch;
     }).sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [historyFilters, historyDateRange]);
+
+  const filteredPerformanceData = React.useMemo(() => {
+    if (!performanceDateRange?.from) {
+      return [];
+    }
+    const from = performanceDateRange.from;
+    const to = performanceDateRange.to || from;
+
+    const fromDate = new Date(from.setHours(0, 0, 0, 0));
+    const toDate = new Date(to.setHours(0, 0, 0, 0));
+
+    return mockLinePerformanceData.filter(record => {
+      const [year, month, day] = record.date.split('-').map(Number);
+      const recordDate = new Date(year, month - 1, day);
+      return recordDate >= fromDate && recordDate <= toDate;
+    });
+  }, [performanceDateRange]);
 
   return (
     <FormProvider {...form}>
@@ -571,32 +594,92 @@ export default function ProductionLinesPage() {
               <TabsContent value="performance">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Line Performance</CardTitle>
-                    <CardDescription>
-                      Daily output and efficiency over the last 7 days.
-                    </CardDescription>
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+                      <div>
+                        <CardTitle>Line Performance</CardTitle>
+                        <CardDescription>
+                          {performanceDateRange?.from ? (
+                            <>
+                              Showing data from {format(performanceDateRange.from, "LLL dd, y")}
+                              {performanceDateRange.to ? ` to ${format(performanceDateRange.to, "LLL dd, y")}` : ''}
+                            </>
+                          ) : (
+                            'Daily output and efficiency. Select a date range.'
+                          )}
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              id="performance-date"
+                              variant={"outline"}
+                              className={cn(
+                                "w-full sm:w-[300px] justify-start text-left font-normal bg-background",
+                                !performanceDateRange && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {performanceDateRange?.from ? (
+                                performanceDateRange.to ? (
+                                  <>
+                                    {format(performanceDateRange.from, "LLL dd, y")} -{" "}
+                                    {format(performanceDateRange.to, "LLL dd, y")}
+                                  </>
+                                ) : (
+                                  format(performanceDateRange.from, "LLL dd, y")
+                                )
+                              ) : (
+                                <span>Pick a date range</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                              initialFocus
+                              mode="range"
+                              defaultMonth={performanceDateRange?.from}
+                              selected={performanceDateRange}
+                              onSelect={setPerformanceDateRange}
+                              numberOfMonths={2}
+                            />
+                            <div className="flex justify-end p-2 border-t">
+                              <Button variant="ghost" size="sm" onClick={() => setPerformanceDateRange(undefined)}>
+                                  Clear
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className="pl-2">
-                    <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                      <BarChart accessibilityLayer data={mockLinePerformanceData}>
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                          dataKey="date"
-                          tickLine={false}
-                          tickMargin={10}
-                          axisLine={false}
-                          tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { weekday: 'short' })}
-                        />
-                        <YAxis yAxisId="left" orientation="left" stroke="var(--color-output)" />
-                        <YAxis yAxisId="right" orientation="right" stroke="var(--color-efficiency)" tickFormatter={(value) => `${value}%`} />
-                        <ChartTooltip
-                          cursor={false}
-                          content={<ChartTooltipContent indicator="dashed" />}
-                        />
-                        <Bar yAxisId="left" dataKey="output" fill="var(--color-output)" radius={4} />
-                        <Bar yAxisId="right" dataKey="efficiency" fill="var(--color-efficiency)" radius={4} />
-                      </BarChart>
-                    </ChartContainer>
+                    {filteredPerformanceData.length > 0 ? (
+                      <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                        <BarChart accessibilityLayer data={filteredPerformanceData}>
+                          <CartesianGrid vertical={false} />
+                          <XAxis
+                            dataKey="date"
+                            tickLine={false}
+                            tickMargin={10}
+                            axisLine={false}
+                            tickFormatter={(value) => format(new Date(`${value}T00:00:00`), 'MMM d')}
+                          />
+                          <YAxis yAxisId="left" orientation="left" stroke="var(--color-output)" />
+                          <YAxis yAxisId="right" orientation="right" stroke="var(--color-efficiency)" tickFormatter={(value) => `${value}%`} />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="dashed" />}
+                          />
+                          <Bar yAxisId="left" dataKey="output" fill="var(--color-output)" radius={4} />
+                          <Bar yAxisId="right" dataKey="efficiency" fill="var(--color-efficiency)" radius={4} />
+                        </BarChart>
+                      </ChartContainer>
+                    ) : (
+                       <div className="h-[300px] flex items-center justify-center text-center text-muted-foreground">
+                          No performance data available for the selected range.
+                        </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
