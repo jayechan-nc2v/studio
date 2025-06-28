@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronsUpDown, PlusCircle } from "lucide-react";
+import { Check, ChevronsUpDown, PlusCircle, ArrowUp, ArrowDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useMachineTypeStore } from "@/lib/store";
+import { type Machine } from "@/lib/data";
 import {
   Command,
   CommandEmpty,
@@ -59,6 +61,8 @@ export default function MachineTypesPage() {
   );
 
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const [sortConfig, setSortConfig] = React.useState<{ key: keyof Machine, direction: 'ascending' | 'descending' } | null>({ key: 'id', direction: 'ascending' });
+
 
   React.useEffect(() => {
     if (machineTypes.length > 0 && !selectedTypeId) {
@@ -69,6 +73,31 @@ export default function MachineTypesPage() {
   const selectedMachineType = React.useMemo(() => {
     return machineTypes.find((mt) => mt.id === selectedTypeId) || null;
   }, [machineTypes, selectedTypeId]);
+  
+  const sortedMachines = React.useMemo(() => {
+    if (!selectedMachineType) return [];
+    const sortableItems = [...selectedMachineType.machines];
+    if (sortConfig !== null) {
+        sortableItems.sort((a, b) => {
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+
+            if (aValue == null) return 1;
+            if (bValue == null) return -1;
+            
+            let comparison = 0;
+            if (aValue > bValue) {
+                comparison = 1;
+            } else if (aValue < bValue) {
+                comparison = -1;
+            }
+            
+            return sortConfig.direction === 'ascending' ? comparison : -comparison;
+        });
+    }
+    return sortableItems;
+  }, [selectedMachineType, sortConfig]);
+
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -89,6 +118,29 @@ export default function MachineTypesPage() {
     setIsAddDialogOpen(false);
     setSelectedTypeId(newId);
   };
+  
+  const requestSort = (key: keyof Machine) => {
+      let direction: 'ascending' | 'descending' = 'ascending';
+      if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+          direction = 'descending';
+      }
+      setSortConfig({ key, direction });
+  };
+  
+  const SortableHeader = ({ label, sortKey }: { label: string; sortKey: keyof Machine; }) => {
+    const isSorted = sortConfig?.key === sortKey;
+    return (
+        <Button variant="ghost" onClick={() => requestSort(sortKey)} className="px-2">
+            {label}
+            {isSorted ? (
+                sortConfig?.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+            )}
+        </Button>
+    );
+  };
+
 
   return (
     <div className="flex flex-col gap-6">
@@ -230,17 +282,17 @@ export default function MachineTypesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Machine ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Available</TableHead>
-                      <TableHead>Current Line</TableHead>
-                      <TableHead>In Warranty</TableHead>
-                      <TableHead>Warranty Expires</TableHead>
+                      <TableHead><SortableHeader label="Machine ID" sortKey="id" /></TableHead>
+                      <TableHead><SortableHeader label="Name" sortKey="name" /></TableHead>
+                      <TableHead><SortableHeader label="Available" sortKey="isAvailable" /></TableHead>
+                      <TableHead><SortableHeader label="Current Line" sortKey="currentLine" /></TableHead>
+                      <TableHead><SortableHeader label="In Warranty" sortKey="inWarranty" /></TableHead>
+                      <TableHead><SortableHeader label="Warranty Expires" sortKey="warrantyExpiryDate" /></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedMachineType.machines.length > 0 ? (
-                      selectedMachineType.machines.map((machine) => (
+                    {sortedMachines.length > 0 ? (
+                      sortedMachines.map((machine) => (
                         <TableRow key={machine.id}>
                           <TableCell className="font-code">
                             {machine.id}
