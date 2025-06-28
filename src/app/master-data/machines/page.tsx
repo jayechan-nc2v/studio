@@ -45,6 +45,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+
 
 export default function MachinesPage() {
   const { toast } = useToast();
@@ -209,167 +216,173 @@ export default function MachinesPage() {
       </Dialog>
 
       {selectedMachine ? (
-        <div className="space-y-6">
-          {/* Machine Information Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Machine Information</CardTitle>
-              <CardDescription>
-                Detailed information for Machine ID: {selectedMachine.id}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="space-y-2">
-                  <Label>System ID</Label>
-                  <Input value={selectedMachine.id} disabled />
-                </div>
-                <div className="space-y-2">
-                  <Label>Name</Label>
-                  <Input value={selectedMachine.name} disabled />
-                </div>
-                <div className="space-y-2">
-                  <Label>Type</Label>
-                  <Input value={selectedMachine.type} disabled />
-                </div>
-                <div className="space-y-2">
-                  <Label>Serial No.</Label>
-                  <Input value={selectedMachine.serialNo} disabled />
-                </div>
-                <div className="space-y-2">
-                  <Label>Purchase Date</Label>
-                  <Input
-                    value={format(selectedMachine.purchaseDate, "PPP")}
-                    disabled
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Warranty Expiry Date</Label>
-                  <Input
-                    value={
-                      selectedMachine.warrantyExpiryDate
-                        ? format(selectedMachine.warrantyExpiryDate, "PPP")
-                        : "N/A"
-                    }
-                    disabled
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Supplier</Label>
-                  <Input value={selectedMachine.supplier} disabled />
-                </div>
-                <div className="flex flex-col gap-2 pt-2">
-                  <Label>In Warranty</Label>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="in-warranty"
-                      checked={selectedMachine.inWarranty}
+        <Tabs defaultValue="info" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="info">Information</TabsTrigger>
+            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+            <TabsTrigger value="allocation">Allocation History</TabsTrigger>
+          </TabsList>
+          <TabsContent value="info">
+            <Card>
+              <CardHeader>
+                <CardTitle>Machine Information</CardTitle>
+                <CardDescription>
+                  Detailed information for Machine ID: {selectedMachine.id}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="space-y-2">
+                    <Label>System ID</Label>
+                    <Input value={selectedMachine.id} disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Name</Label>
+                    <Input value={selectedMachine.name} disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Type</Label>
+                    <Input value={selectedMachine.type} disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Serial No.</Label>
+                    <Input value={selectedMachine.serialNo} disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Purchase Date</Label>
+                    <Input
+                      value={format(selectedMachine.purchaseDate, "PPP")}
                       disabled
                     />
-                    <Label htmlFor="in-warranty">
-                      {selectedMachine.inWarranty ? "Yes" : "No"}
-                    </Label>
                   </div>
-                </div>
-                <div className="flex flex-col gap-2 pt-2">
-                  <Label>Availability</Label>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="availability"
-                      checked={selectedMachine.isAvailable}
+                  <div className="space-y-2">
+                    <Label>Warranty Expiry Date</Label>
+                    <Input
+                      value={
+                        selectedMachine.warrantyExpiryDate
+                          ? format(selectedMachine.warrantyExpiryDate, "PPP")
+                          : "N/A"
+                      }
                       disabled
                     />
-                    <Label htmlFor="availability">
-                      {selectedMachine.isAvailable ? "Available" : "Unavailable"}
-                    </Label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Supplier</Label>
+                    <Input value={selectedMachine.supplier} disabled />
+                  </div>
+                  <div className="flex flex-col gap-2 pt-2">
+                    <Label>In Warranty</Label>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="in-warranty"
+                        checked={selectedMachine.inWarranty}
+                        disabled
+                      />
+                      <Label htmlFor="in-warranty">
+                        {selectedMachine.inWarranty ? "Yes" : "No"}
+                      </Label>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 pt-2">
+                    <Label>Availability</Label>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="availability"
+                        checked={selectedMachine.isAvailable}
+                        disabled
+                      />
+                      <Label htmlFor="availability">
+                        {selectedMachine.isAvailable ? "Available" : "Unavailable"}
+                      </Label>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Maintenance Schedule Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Maintenance Schedule</CardTitle>
-              <CardDescription>
-                History of maintenance records for this machine.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>Finish Date</TableHead>
-                      <TableHead>Company</TableHead>
-                      <TableHead>In Charge</TableHead>
-                      <TableHead>Ref No.</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mockMaintenanceHistory.map((record) => (
-                      <TableRow key={record.refNo}>
-                        <TableCell>{format(record.startDate, "PPP")}</TableCell>
-                        <TableCell>
-                          {format(record.finishDate, "PPP")}
-                        </TableCell>
-                        <TableCell>{record.company}</TableCell>
-                        <TableCell>{record.inCharge}</TableCell>
-                        <TableCell className="font-code">{record.refNo}</TableCell>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="maintenance">
+            <Card>
+              <CardHeader>
+                <CardTitle>Maintenance Schedule</CardTitle>
+                <CardDescription>
+                  History of maintenance records for this machine.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Start Date</TableHead>
+                        <TableHead>Finish Date</TableHead>
+                        <TableHead>Company</TableHead>
+                        <TableHead>In Charge</TableHead>
+                        <TableHead>Ref No.</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Machine Allocation List Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Machine Allocation History</CardTitle>
-              <CardDescription>
-                Record of which line and worker have used this machine.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Production Line</TableHead>
-                      <TableHead>Worker</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mockAllocationHistory.map((record, index) => (
-                      <TableRow key={index}>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              record.action === "Allocate"
-                                ? "default"
-                                : "secondary"
-                            }
-                          >
-                            {record.action}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{format(record.date, "PPP")}</TableCell>
-                        <TableCell>{record.productionLine}</TableCell>
-                        <TableCell>{record.worker}</TableCell>
+                    </TableHeader>
+                    <TableBody>
+                      {mockMaintenanceHistory.map((record) => (
+                        <TableRow key={record.refNo}>
+                          <TableCell>{format(record.startDate, "PPP")}</TableCell>
+                          <TableCell>
+                            {format(record.finishDate, "PPP")}
+                          </TableCell>
+                          <TableCell>{record.company}</TableCell>
+                          <TableCell>{record.inCharge}</TableCell>
+                          <TableCell className="font-code">{record.refNo}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="allocation">
+            <Card>
+              <CardHeader>
+                <CardTitle>Machine Allocation History</CardTitle>
+                <CardDescription>
+                  Record of which line and worker have used this machine.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Action</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Production Line</TableHead>
+                        <TableHead>Worker</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                    </TableHeader>
+                    <TableBody>
+                      {mockAllocationHistory.map((record, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                record.action === "Allocate"
+                                  ? "default"
+                                  : "secondary"
+                              }
+                            >
+                              {record.action}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{format(record.date, "PPP")}</TableCell>
+                          <TableCell>{record.productionLine}</TableCell>
+                          <TableCell>{record.worker}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       ) : (
         <Card>
           <CardContent className="pt-6">
