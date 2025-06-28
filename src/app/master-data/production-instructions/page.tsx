@@ -56,10 +56,11 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { Pencil, PlusCircle, Trash2, ChevronsUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useProductionInstructionStore, useMachineTypeStore } from "@/lib/store";
 import { productionInstructionSchema, type NewProductionInstructionFormValues } from "@/lib/schemas";
 import { mockGarmentTypes, type ProductionInstruction } from "@/lib/data";
+import { Label } from "@/components/ui/label";
 
 
 export default function ProductionInstructionsPage() {
@@ -72,9 +73,20 @@ export default function ProductionInstructionsPage() {
   const [dialogMode, setDialogMode] = React.useState<"add" | "edit">("add");
   const [selectedInstruction, setSelectedInstruction] = React.useState<ProductionInstruction | null>(null);
 
+  // State for filtering, sorting, pagination
+  const [filters, setFilters] = React.useState({ name: '', garmentType: 'all', machineType: 'all' });
+  const [sortConfig, setSortConfig] = React.useState<{ key: keyof ProductionInstruction, direction: 'ascending' | 'descending' } | null>({ key: 'id', direction: 'descending' });
+  const [visibleCount, setVisibleCount] = React.useState(30);
+
+
   const availableMachineTypes = React.useMemo(
     () => machineTypes.map((mt) => mt.typeName).sort(),
     [machineTypes]
+  );
+  
+  const availableGarmentTypes = React.useMemo(
+    () => [...new Set(instructions.map((i) => i.garmentType))].sort(),
+    [instructions]
   );
 
   const form = useForm<NewProductionInstructionFormValues>({
@@ -143,6 +155,73 @@ export default function ProductionInstructionsPage() {
     }
   };
 
+  const requestSort = (key: keyof ProductionInstruction) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const handleFilterChange = (filterName: string, value: string) => {
+    setFilters(prev => ({ ...prev, [filterName]: value }));
+    setVisibleCount(30);
+  }
+
+  const filteredInstructions = React.useMemo(() => {
+    return instructions
+      .filter((instruction) => {
+        const nameMatch = filters.name
+          ? instruction.name.toLowerCase().includes(filters.name.toLowerCase())
+          : true;
+        const garmentTypeMatch =
+          filters.garmentType !== 'all'
+            ? instruction.garmentType === filters.garmentType
+            : true;
+        const machineTypeMatch =
+          filters.machineType !== 'all'
+            ? instruction.machineType === filters.machineType
+            : true;
+        return nameMatch && garmentTypeMatch && machineTypeMatch;
+      })
+      .sort((a, b) => {
+        if (!sortConfig) return 0;
+        const { key, direction } = sortConfig;
+        
+        const aValue = a[key];
+        const bValue = b[key];
+
+        if (aValue < bValue) {
+          return direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+  }, [instructions, filters, sortConfig]);
+
+  const SortableHeader = ({
+      label,
+      sortKey
+  }: {
+      label: string;
+      sortKey: keyof ProductionInstruction;
+  }) => {
+      const isSorted = sortConfig?.key === sortKey;
+      return (
+          <Button variant="ghost" onClick={() => requestSort(sortKey)} className="px-2">
+              {label}
+              {isSorted ? (
+                  sortConfig?.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+              ) : (
+                  <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+              )}
+          </Button>
+      );
+  };
+
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex items-center justify-between">
@@ -159,6 +238,53 @@ export default function ProductionInstructionsPage() {
           Add Instruction
         </Button>
       </header>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Filter and Search</CardTitle>
+          <CardDescription>Narrow down the list of instructions.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 space-y-2">
+                <Label htmlFor="name-filter">Name</Label>
+                <Input
+                    id="name-filter"
+                    placeholder="Search by name..."
+                    value={filters.name}
+                    onChange={(e) => handleFilterChange('name', e.target.value)}
+                />
+            </div>
+            <div className="flex-1 space-y-2">
+                <Label htmlFor="garment-type-filter">Garment Type</Label>
+                 <Select value={filters.garmentType} onValueChange={(value) => handleFilterChange('garmentType', value)}>
+                    <SelectTrigger id="garment-type-filter">
+                        <SelectValue placeholder="Select a garment type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Garment Types</SelectItem>
+                        {availableGarmentTypes.map((type) => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+             <div className="flex-1 space-y-2">
+                <Label htmlFor="machine-type-filter">Machine Type</Label>
+                 <Select value={filters.machineType} onValueChange={(value) => handleFilterChange('machineType', value)}>
+                    <SelectTrigger id="machine-type-filter">
+                        <SelectValue placeholder="Select a machine type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Machine Types</SelectItem>
+                        {availableMachineTypes.map((type) => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader>
@@ -172,17 +298,17 @@ export default function ProductionInstructionsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>System ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Garment Type</TableHead>
-                  <TableHead>Machine Type</TableHead>
-                  <TableHead>SMV</TableHead>
+                  <TableHead><SortableHeader label="ID" sortKey="id" /></TableHead>
+                  <TableHead><SortableHeader label="Name" sortKey="name" /></TableHead>
+                  <TableHead><SortableHeader label="Garment Type" sortKey="garmentType" /></TableHead>
+                  <TableHead><SortableHeader label="Machine Type" sortKey="machineType" /></TableHead>
+                  <TableHead><SortableHeader label="SMV" sortKey="smv" /></TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {instructions.length > 0 ? (
-                  instructions.map((instruction) => (
+                {filteredInstructions.length > 0 ? (
+                  filteredInstructions.slice(0, visibleCount).map((instruction) => (
                     <TableRow key={instruction.id} onDoubleClick={() => handleEdit(instruction)}>
                       <TableCell className="font-code">{instruction.id}</TableCell>
                       <TableCell className="font-medium">{instruction.name}</TableCell>
@@ -202,13 +328,20 @@ export default function ProductionInstructionsPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      No instructions found. Get started by adding one.
+                      No instructions found matching your criteria.
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
+           {visibleCount < filteredInstructions.length && (
+                <div className="mt-4 flex justify-center">
+                    <Button variant="secondary" onClick={() => setVisibleCount(prev => prev + 30)}>
+                        Load More
+                    </Button>
+                </div>
+            )}
         </CardContent>
       </Card>
       
