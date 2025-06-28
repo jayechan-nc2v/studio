@@ -11,8 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, PlusCircle, Search } from "lucide-react";
-import { type Machine } from "@/lib/data";
+import { Calendar as CalendarIcon, PlusCircle, Search, ChevronsUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { type Machine, type MaintenanceRecord, type AllocationRecord } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -81,6 +81,11 @@ export default function MachinesPage() {
   const [searchResults, setSearchResults] = React.useState<Machine[]>([]);
   const [isResultDialogOpen, setIsResultDialogOpen] = React.useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
+
+  // Sorting state
+  const [maintenanceSortConfig, setMaintenanceSortConfig] = React.useState<{ key: keyof MaintenanceRecord, direction: 'ascending' | 'descending' } | null>({ key: 'startDate', direction: 'descending' });
+  const [allocationSortConfig, setAllocationSortConfig] = React.useState<{ key: keyof AllocationRecord, direction: 'ascending' | 'descending' } | null>({ key: 'date', direction: 'descending' });
+
 
   React.useEffect(() => {
     if (machines.length > 0 && !selectedMachine) {
@@ -159,6 +164,84 @@ export default function MachinesPage() {
     setIsAddDialogOpen(false);
     form.reset();
   };
+
+  const sortedMaintenanceHistory = React.useMemo(() => {
+      let sortableItems = [...mockMaintenanceHistory];
+      if (maintenanceSortConfig !== null) {
+          sortableItems.sort((a, b) => {
+              if (a[maintenanceSortConfig.key] < b[maintenanceSortConfig.key]) {
+                  return maintenanceSortConfig.direction === 'ascending' ? -1 : 1;
+              }
+              if (a[maintenanceSortConfig.key] > b[maintenanceSortConfig.key]) {
+                  return maintenanceSortConfig.direction === 'ascending' ? 1 : -1;
+              }
+              return 0;
+          });
+      }
+      return sortableItems;
+  }, [maintenanceSortConfig]);
+
+  const sortedAllocationHistory = React.useMemo(() => {
+      let sortableItems = [...mockAllocationHistory];
+      if (allocationSortConfig !== null) {
+          sortableItems.sort((a, b) => {
+              const aVal = a[allocationSortConfig.key];
+              const bVal = b[allocationSortConfig.key];
+              if (aVal < bVal) {
+                  return allocationSortConfig.direction === 'ascending' ? -1 : 1;
+              }
+              if (aVal > bVal) {
+                  return allocationSortConfig.direction === 'ascending' ? 1 : -1;
+              }
+              return 0;
+          });
+      }
+      return sortableItems;
+  }, [allocationSortConfig]);
+
+  const requestMaintenanceSort = (key: keyof MaintenanceRecord) => {
+      let direction: 'ascending' | 'descending' = 'ascending';
+      if (maintenanceSortConfig && maintenanceSortConfig.key === key && maintenanceSortConfig.direction === 'ascending') {
+          direction = 'descending';
+      }
+      setMaintenanceSortConfig({ key, direction });
+  };
+
+  const requestAllocationSort = (key: keyof AllocationRecord) => {
+      let direction: 'ascending' | 'descending' = 'ascending';
+      if (allocationSortConfig && allocationSortConfig.key === key && allocationSortConfig.direction === 'ascending') {
+          direction = 'descending';
+      }
+      setAllocationSortConfig({ key, direction });
+  };
+  
+  const MaintenanceSortableHeader = ({ label, sortKey }: { label: string; sortKey: keyof MaintenanceRecord; }) => {
+    const isSorted = maintenanceSortConfig?.key === sortKey;
+    return (
+        <Button variant="ghost" onClick={() => requestMaintenanceSort(sortKey)} className="px-2">
+            {label}
+            {isSorted ? (
+                maintenanceSortConfig?.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+            )}
+        </Button>
+    );
+  };
+
+  const AllocationSortableHeader = ({ label, sortKey }: { label: string; sortKey: keyof AllocationRecord; }) => {
+      const isSorted = allocationSortConfig?.key === sortKey;
+      return (
+          <Button variant="ghost" onClick={() => requestAllocationSort(sortKey)} className="px-2">
+              {label}
+              {isSorted ? (
+                  allocationSortConfig?.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+              ) : (
+                  <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+              )}
+          </Button>
+      );
+    };
 
   return (
     <div className="flex flex-col gap-6">
@@ -493,15 +576,15 @@ export default function MachinesPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Start Date</TableHead>
-                        <TableHead>Finish Date</TableHead>
-                        <TableHead>Company</TableHead>
-                        <TableHead>In Charge</TableHead>
-                        <TableHead>Ref No.</TableHead>
+                        <TableHead><MaintenanceSortableHeader label="Start Date" sortKey="startDate" /></TableHead>
+                        <TableHead><MaintenanceSortableHeader label="Finish Date" sortKey="finishDate" /></TableHead>
+                        <TableHead><MaintenanceSortableHeader label="Company" sortKey="company" /></TableHead>
+                        <TableHead><MaintenanceSortableHeader label="In Charge" sortKey="inCharge" /></TableHead>
+                        <TableHead><MaintenanceSortableHeader label="Ref No." sortKey="refNo" /></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {mockMaintenanceHistory.map((record) => (
+                      {sortedMaintenanceHistory.map((record) => (
                         <TableRow key={record.refNo}>
                           <TableCell>{format(record.startDate, "PPP")}</TableCell>
                           <TableCell>
@@ -531,14 +614,14 @@ export default function MachinesPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Action</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Production Line</TableHead>
-                        <TableHead>Worker</TableHead>
+                        <TableHead><AllocationSortableHeader label="Action" sortKey="action" /></TableHead>
+                        <TableHead><AllocationSortableHeader label="Date" sortKey="date" /></TableHead>
+                        <TableHead><AllocationSortableHeader label="Production Line" sortKey="productionLine" /></TableHead>
+                        <TableHead><AllocationSortableHeader label="Worker" sortKey="worker" /></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {mockAllocationHistory.map((record, index) => (
+                      {sortedAllocationHistory.map((record, index) => (
                         <TableRow key={index}>
                           <TableCell>
                             <Badge
