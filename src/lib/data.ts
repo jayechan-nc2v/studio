@@ -265,15 +265,25 @@ export interface LineWorkerHistory {
   workerId: string;
   action: 'Assigned' | 'Removed';
   stationId: string;
+  machineType: string;
 }
 
 export const mockLineWorkerHistory: LineWorkerHistory[] = [
-    { date: new Date('2024-07-21'), workerName: 'Alicia', workerId: 'E-021', action: 'Assigned', stationId: 's1-1' },
-    { date: new Date('2024-07-20'), workerName: 'Alice', workerId: 'E-001', action: 'Removed', stationId: 's1-1' },
-    { date: new Date('2024-07-18'), workerName: 'Bobby', workerId: 'E-022', action: 'Assigned', stationId: 's1-2' },
-    { date: new Date('2024-07-17'), workerName: 'Bob', workerId: 'E-002', action: 'Removed', stationId: 's1-2' },
-    { date: new Date('2024-07-15'), workerName: 'Charles', workerId: 'E-023', action: 'Assigned', stationId: 's1-3' },
-    { date: new Date('2024-07-14'), workerName: 'Charlie', workerId: 'E-003', action: 'Removed', stationId: 's1-3' },
+    { date: new Date('2024-07-21'), workerName: 'Alicia', workerId: 'E-021', action: 'Assigned', stationId: 's1-1', machineType: 'Cutting Machine' },
+    { date: new Date('2024-07-20'), workerName: 'Alice', workerId: 'E-001', action: 'Removed', stationId: 's1-1', machineType: 'Cutting Machine' },
+    { date: new Date('2024-07-18'), workerName: 'Bobby', workerId: 'E-022', action: 'Assigned', stationId: 's1-2', machineType: 'Sewing Machine (Juki)' },
+    { date: new Date('2024-07-17'), workerName: 'Bob', workerId: 'E-002', action: 'Removed', stationId: 's1-2', machineType: 'Sewing Machine (Juki)' },
+    { date: new Date('2024-07-15'), workerName: 'Charles', workerId: 'E-023', action: 'Assigned', stationId: 's1-3', machineType: 'Overlock Machine' },
+    { date: new Date('2024-07-14'), workerName: 'Charlie', workerId: 'E-003', action: 'Removed', stationId: 's1-3', machineType: 'Overlock Machine' },
+    { date: new Date('2024-07-13'), workerName: 'Diana', workerId: 'E-004', action: 'Assigned', stationId: 's1-4', machineType: 'QC Station' },
+    { date: new Date('2024-07-12'), workerName: 'Ethan', workerId: 'E-017', action: 'Assigned', stationId: 's1-5', machineType: 'Coverstitch' },
+    { date: new Date('2024-07-11'), workerName: 'Frank', workerId: 'E-006', action: 'Assigned', stationId: 's2-2', machineType: 'Sewing Machine (Brother)' },
+    { date: new Date('2024-07-10'), workerName: 'Grace', workerId: 'E-007', action: 'Assigned', stationId: 's2-3', machineType: 'Pocket Setter' },
+    { date: new Date('2024-07-09'), workerName: 'Heidi', workerId: 'E-008', action: 'Assigned', stationId: 's2-4', machineType: 'QC Station' },
+    { date: new Date('2024-07-08'), workerName: 'Ivan', workerId: 'E-009', action: 'Assigned', stationId: 's3-1', machineType: 'Heavy-Duty Cutting' },
+    { date: new Date('2024-07-07'), workerName: 'Judy', workerId: 'E-010', action: 'Assigned', stationId: 's3-2', machineType: 'Lockstitch Machine' },
+    { date: new Date('2024-07-06'), workerName: 'Mallory', workerId: 'E-011', action: 'Assigned', stationId: 's3-3', machineType: 'Rivet Machine' },
+    { date: new Date('2024-07-05'), workerName: 'Oscar', workerId: 'E-012', action: 'Assigned', stationId: 's3-4', machineType: 'Washing Unit' },
 ];
 
 export interface LinePerformanceData {

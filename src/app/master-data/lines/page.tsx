@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { GripVertical, PlusCircle, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, GripVertical, PlusCircle, Trash2 } from "lucide-react";
 import { mockLineWorkerHistory, mockLinePerformanceData, mockWorkers, mockMachines } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,9 @@ import {
 } from "@/components/ui/form";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 
 const chartConfig: ChartConfig = {
@@ -79,6 +82,14 @@ export default function ProductionLinesPage() {
   const [selectedLineId, setSelectedLineId] = React.useState<string>(
     lines[0]?.id || ""
   );
+
+  // State for history tab
+  const [historyFilters, setHistoryFilters] = React.useState({
+    workerName: "",
+    machineType: "all",
+  });
+  const [historyDateRange, setHistoryDateRange] = React.useState<DateRange | undefined>();
+  const [visibleHistoryCount, setVisibleHistoryCount] = React.useState(10);
 
   const availableMachineTypes = React.useMemo(
     () => machineTypes.map((mt) => mt.typeName).sort(),
@@ -119,6 +130,25 @@ export default function ProductionLinesPage() {
     }
     move(result.source.index, result.destination.index);
   };
+
+  const historyMachineTypes = React.useMemo(() => [...new Set(mockLineWorkerHistory.map(h => h.machineType))].sort(), []);
+
+  const filteredHistory = React.useMemo(() => {
+    return mockLineWorkerHistory.filter(record => {
+      const workerMatch = historyFilters.workerName ? record.workerName.toLowerCase().includes(historyFilters.workerName.toLowerCase()) : true;
+      const machineTypeMatch = historyFilters.machineType !== 'all' ? record.machineType === historyFilters.machineType : true;
+      
+      const date = record.date;
+      const dateMatch = (() => {
+        if (!historyDateRange?.from) return true;
+        const fromDate = historyDateRange.from;
+        const toDate = historyDateRange.to || fromDate; 
+        return date >= fromDate && date <= toDate;
+      })();
+
+      return workerMatch && machineTypeMatch && dateMatch;
+    }).sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [historyFilters, historyDateRange]);
 
   return (
     <FormProvider {...form}>
@@ -373,6 +403,79 @@ export default function ProductionLinesPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
+                     <div className="flex flex-col md:flex-row gap-4 mb-4 p-4 border rounded-md bg-muted/50">
+                        <div className="flex-1 space-y-2">
+                            <Label htmlFor="worker-name-filter">Worker Name</Label>
+                            <Input 
+                                id="worker-name-filter"
+                                placeholder="Filter by worker name..."
+                                value={historyFilters.workerName}
+                                onChange={e => {
+                                    setHistoryFilters(prev => ({ ...prev, workerName: e.target.value }));
+                                    setVisibleHistoryCount(10);
+                                }}
+                            />
+                        </div>
+                        <div className="flex-1 space-y-2">
+                            <Label htmlFor="machine-type-filter">Machine Type</Label>
+                            <Select 
+                                value={historyFilters.machineType}
+                                onValueChange={value => {
+                                    setHistoryFilters(prev => ({ ...prev, machineType: value }));
+                                    setVisibleHistoryCount(10);
+                                }}
+                            >
+                                <SelectTrigger id="machine-type-filter">
+                                    <SelectValue placeholder="Select a type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    {historyMachineTypes.map(type => (
+                                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex-1 space-y-2">
+                            <Label>Date Range</Label>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    id="date"
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full justify-start text-left font-normal bg-background",
+                                      !historyDateRange && "text-muted-foreground"
+                                    )}
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {historyDateRange?.from ? (
+                                      historyDateRange.to ? (
+                                        <>
+                                          {format(historyDateRange.from, "LLL dd, y")} -{" "}
+                                          {format(historyDateRange.to, "LLL dd, y")}
+                                        </>
+                                      ) : (
+                                        format(historyDateRange.from, "LLL dd, y")
+                                      )
+                                    ) : (
+                                      <span>Pick a date range</span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={historyDateRange?.from}
+                                    selected={historyDateRange}
+                                    onSelect={setHistoryDateRange}
+                                    numberOfMonths={2}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                        </div>
+                      </div>
                     <div className="border rounded-md">
                       <Table>
                         <TableHeader>
@@ -381,26 +484,43 @@ export default function ProductionLinesPage() {
                             <TableHead>Action</TableHead>
                             <TableHead>Worker Name</TableHead>
                             <TableHead>Worker ID</TableHead>
+                            <TableHead>Machine Type</TableHead>
                             <TableHead>Station ID</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {mockLineWorkerHistory.map((record, index) => (
-                            <TableRow key={index}>
-                              <TableCell>{format(record.date, "PPP")}</TableCell>
-                              <TableCell>
-                                <Badge variant={record.action === "Assigned" ? "secondary" : "outline"}>
-                                  {record.action}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{record.workerName}</TableCell>
-                              <TableCell className="font-code">{record.workerId}</TableCell>
-                              <TableCell className="font-code">{record.stationId}</TableCell>
+                          {filteredHistory.length > 0 ? (
+                            filteredHistory.slice(0, visibleHistoryCount).map((record, index) => (
+                                <TableRow key={index}>
+                                <TableCell>{format(record.date, "PPP")}</TableCell>
+                                <TableCell>
+                                    <Badge variant={record.action === "Assigned" ? "secondary" : "outline"}>
+                                    {record.action}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell>{record.workerName}</TableCell>
+                                <TableCell className="font-code">{record.workerId}</TableCell>
+                                <TableCell>{record.machineType}</TableCell>
+                                <TableCell className="font-code">{record.stationId}</TableCell>
+                                </TableRow>
+                            ))
+                            ) : (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center">
+                                No history records found matching your filters.
+                                </TableCell>
                             </TableRow>
-                          ))}
+                            )}
                         </TableBody>
                       </Table>
                     </div>
+                     {visibleHistoryCount < filteredHistory.length && (
+                        <div className="mt-4 flex justify-center">
+                            <Button variant="secondary" onClick={() => setVisibleHistoryCount(prev => prev + 10)}>
+                                Load More
+                            </Button>
+                        </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
