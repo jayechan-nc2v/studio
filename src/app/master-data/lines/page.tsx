@@ -145,18 +145,23 @@ export default function ProductionLinesPage() {
     return ids;
   }, [lines, selectedLineId]);
 
-  // Use form.reset to update the form when the selected line changes
+  // This useEffect ensures the form is always in sync with the selected line.
+  // It also handles cases where the selected line is deleted or no line is selected.
   React.useEffect(() => {
-    if (selectedLine) {
-      form.reset(selectedLine);
+    const lineToDisplay = lines.find((line) => line.id === selectedLineId);
+
+    if (lineToDisplay) {
+      // If the selected line exists in the current list of lines, reset the form.
+      form.reset(lineToDisplay);
     } else if (lines.length > 0) {
-      // If the selectedLine is gone, select the first available line
+      // If the selected ID doesn't match any line (e.g., after deletion),
+      // select the first line in the list as a fallback.
       setSelectedLineId(lines[0].id);
     } else {
-      // Clear form if no lines are available at all
+      // If there are no lines at all, clear the form.
       form.reset({ id: '', name: '', lineManager: '', stations: [] });
     }
-  }, [selectedLine, lines, form.reset]);
+  }, [selectedLineId, lines, form.reset]);
 
 
   const onSubmit = (data: ProductionLineFormValues) => {
