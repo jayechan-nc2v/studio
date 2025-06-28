@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -54,9 +55,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useWorkOrderStore } from "@/lib/store";
+import { useWorkOrderStore, useProductionLineStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
-import { productionLines, presetInstructions, mockMachines } from "@/lib/data";
+import { presetInstructions, mockMachines } from "@/lib/data";
 
 
 const generateBundles = (totalQuantity: number, bundleSize: number) => {
@@ -81,6 +82,7 @@ const generateBundles = (totalQuantity: number, bundleSize: number) => {
 export default function WorkOrdersPage() {
     const { toast } = useToast();
     const addWorkOrder = useWorkOrderStore((state) => state.addWorkOrder);
+    const { lines: productionLines } = useProductionLineStore();
 
   const form = useForm<WorkOrderFormValues>({
     resolver: zodResolver(workOrderSchema),
@@ -117,6 +119,19 @@ export default function WorkOrdersPage() {
     name: "lineStations",
   });
 
+  const watchedLineStations = form.watch('lineStations');
+
+  const assignedMachinesInStore = React.useMemo(() => {
+      const ids = new Set<string>();
+      productionLines.forEach(line => {
+          line.stations.forEach(station => {
+              if (station.machineId) {
+                  ids.add(station.machineId);
+              }
+          });
+      });
+      return ids;
+  }, [productionLines]);
 
   function onSubmit(data: WorkOrderFormValues) {
     console.log(data);
@@ -147,7 +162,7 @@ export default function WorkOrdersPage() {
           )
         ),
       ].sort(),
-    []
+    [productionLines]
   );
 
   React.useEffect(() => {
@@ -157,7 +172,7 @@ export default function WorkOrdersPage() {
     } else {
       replaceStations([]);
     }
-  }, [watchedProductionLine, replaceStations]);
+  }, [watchedProductionLine, replaceStations, productionLines]);
 
   React.useEffect(() => {
     if (watchedStyleNo && presetInstructions[watchedStyleNo]) {
@@ -707,9 +722,26 @@ export default function WorkOrdersPage() {
                                 <TableBody>
                                     {stationFields.map((field, index) => {
                                       const machineType = form.watch(`lineStations.${index}.machineType`);
-                                      const availableMachines = React.useMemo(() => {
-                                          return mockMachines.filter((m) => m.type === machineType);
-                                      }, [machineType]);
+                                      
+                                      const assignedOnThisWorkOrder = new Set<string>();
+                                      if (watchedLineStations) {
+                                          watchedLineStations.forEach((station, i) => {
+                                              if (i !== index && station.machineId) {
+                                                  assignedOnThisWorkOrder.add(station.machineId);
+                                              }
+                                          });
+                                      }
+                                      
+                                      const currentMachineId = watchedLineStations ? watchedLineStations[index]?.machineId : undefined;
+                              
+                                      const availableMachines = mockMachines.filter(
+                                          (m) =>
+                                              m.type === machineType &&
+                                              (
+                                                  m.id === currentMachineId ||
+                                                  (!assignedMachinesInStore.has(m.id) && !assignedOnThisWorkOrder.has(m.id))
+                                              )
+                                      );
 
                                       return (
                                         <TableRow key={field.id}>
@@ -753,7 +785,7 @@ export default function WorkOrdersPage() {
                                                               <SelectContent>
                                                                 {availableMachines.map((machine) => (
                                                                   <SelectItem key={machine.id} value={machine.id}>
-                                                                    {machine.name}
+                                                                    {`${machine.id} - ${machine.name}`}
                                                                   </SelectItem>
                                                                 ))}
                                                               </SelectContent>

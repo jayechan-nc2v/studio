@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -231,7 +232,7 @@ export default function MachinesPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label>System ID</Label>
                     <Input value={selectedMachine.id} disabled />

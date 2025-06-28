@@ -110,6 +110,22 @@ export default function ProductionLinesPage() {
     name: "stations",
   });
 
+  const watchedStations = form.watch('stations');
+
+  const assignedOnOtherLines = React.useMemo(() => {
+    const ids = new Set<string>();
+    lines.forEach(line => {
+      if (line.id !== selectedLineId) {
+        line.stations.forEach(station => {
+          if (station.machineId) {
+            ids.add(station.machineId);
+          }
+        });
+      }
+    });
+    return ids;
+  }, [lines, selectedLineId]);
+
   React.useEffect(() => {
     if (selectedLine) {
       form.reset(selectedLine);
@@ -250,9 +266,26 @@ export default function ProductionLinesPage() {
                               >
                                 {fields.map((field, index) => {
                                   const machineType = form.watch(`stations.${index}.machineType`);
-                                  const availableMachines = React.useMemo(() => {
-                                      return mockMachines.filter((m) => m.type === machineType);
-                                  }, [machineType]);
+                                  
+                                  const assignedOnThisLine = new Set<string>();
+                                  if (watchedStations) {
+                                      watchedStations.forEach((station, i) => {
+                                          if (i !== index && station.machineId) {
+                                              assignedOnThisLine.add(station.machineId);
+                                          }
+                                      });
+                                  }
+                              
+                                  const currentMachineId = watchedStations ? watchedStations[index]?.machineId : undefined;
+                              
+                                  const availableMachines = mockMachines.filter(
+                                      (m) =>
+                                          m.type === machineType &&
+                                          (
+                                              m.id === currentMachineId ||
+                                              (!assignedOnOtherLines.has(m.id) && !assignedOnThisLine.has(m.id))
+                                          )
+                                  );
                                   
                                   return (
                                   <Draggable
@@ -318,7 +351,7 @@ export default function ProductionLinesPage() {
                                                   <SelectContent>
                                                     {availableMachines.map((machine) => (
                                                       <SelectItem key={machine.id} value={machine.id}>
-                                                        {machine.name}
+                                                        {`${machine.id} - ${machine.name}`}
                                                       </SelectItem>
                                                     ))}
                                                   </SelectContent>
