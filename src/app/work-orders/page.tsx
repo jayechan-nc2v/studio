@@ -57,7 +57,7 @@ import {
 } from "@/components/ui/table";
 import { useWorkOrderStore, useProductionLineStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
-import { presetInstructions, mockMachines } from "@/lib/data";
+import { presetInstructions, mockMachines, mockPreProductionNotes } from "@/lib/data";
 
 
 const generateBundles = (totalQuantity: number, bundleSize: number) => {
@@ -104,7 +104,7 @@ export default function WorkOrdersPage() {
     },
   });
 
-  const { fields: sizeFields, append: appendSize, remove: removeSize } = useFieldArray({
+  const { fields: sizeFields, append: appendSize, remove: removeSize, replace: replaceSizes } = useFieldArray({
     control: form.control,
     name: "sizes",
   });
@@ -152,6 +152,7 @@ export default function WorkOrdersPage() {
   const watchedQtyPerBundle = form.watch("qtyPerBundle");
   const watchedProductionLine = form.watch("productionLine");
   const watchedStyleNo = form.watch("styleNo");
+  const watchedPreProductionNo = form.watch("preProductionNo");
 
   const machineTypes = React.useMemo(
     () =>
@@ -182,6 +183,20 @@ export default function WorkOrdersPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedStyleNo, form.setValue]);
+  
+  React.useEffect(() => {
+    if (watchedPreProductionNo) {
+        const selectedNote = mockPreProductionNotes.find(note => note.preProductionNo === watchedPreProductionNo);
+        if (selectedNote) {
+            form.setValue('styleNo', selectedNote.styleNo);
+            form.setValue('garmentType', selectedNote.garmentColor); // Or some other logic
+            form.setValue('shipmentDate', selectedNote.deliveryDate);
+            replaceSizes(selectedNote.sizes);
+        }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedPreProductionNo]);
+
 
   const totalQty = React.useMemo(() => {
     return watchedSizes.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
@@ -228,13 +243,35 @@ export default function WorkOrdersPage() {
                         </FormItem>
                       )}
                     />
+                     <FormField
+                      control={form.control}
+                      name="preProductionNo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pre-Production No.</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a note" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {mockPreProductionNotes.map(note => (
+                                <SelectItem key={note.preProductionNo} value={note.preProductionNo}>{note.preProductionNo}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="styleNo"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Style No.</FormLabel>
-                           <Select onValueChange={field.onChange} defaultValue={field.value}>
+                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select a style" />
@@ -258,19 +295,6 @@ export default function WorkOrdersPage() {
                           <FormLabel>Garment Type</FormLabel>
                           <FormControl>
                             <Input placeholder="e.g., T-Shirt" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={form.control}
-                      name="preProductionNo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Pre-Production No.</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., PPN-001" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

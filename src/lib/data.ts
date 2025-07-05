@@ -1,4 +1,5 @@
 
+
 export interface Station {
   id: string;
   machineType: string;
@@ -78,6 +79,24 @@ export interface QcFailureReason {
   reason: string;
   description: string;
   category: string;
+}
+
+export interface PreProductionSize {
+  size: string;
+  quantity: number;
+}
+
+export interface PreProductionNote {
+  preProductionNo: string;
+  styleNo: string;
+  customerStyleNo: string;
+  customerName: string;
+  brand: string;
+  destination: string;
+  deliveryDate: Date;
+  garmentColor: string;
+  totalQty: number;
+  sizes: PreProductionSize[];
 }
 
 
@@ -365,3 +384,51 @@ export const mockQcFailureReasons: QcFailureReason[] = [
   { id: 'QCF-005', reason: 'Poor Pressing', description: 'Garment is not neatly pressed or has creases.', category: 'Finishing Issue' },
   { id: 'QCF-006', reason: 'Wrong Button Type', description: 'A different button was used than specified.', category: 'Component Mismatch' },
 ];
+
+export const mockPreProductionNotes: PreProductionNote[] = [
+    {
+        preProductionNo: 'PPN-001',
+        styleNo: 'DNM-JKT-01',
+        customerStyleNo: 'CUST-DNM-552',
+        customerName: 'Global Fashion Co.',
+        brand: 'Urban Threads',
+        destination: 'USA',
+        deliveryDate: new Date('2024-09-15'),
+        garmentColor: 'Denim Jacket',
+        totalQty: 250,
+        sizes: [
+            { size: 'S', quantity: 50 },
+            { size: 'M', quantity: 100 },
+            { size: 'L', quantity: 70 },
+            { size: 'XL', quantity: 30 },
+        ],
+    },
+    {
+        preProductionNo: 'PPN-002',
+        styleNo: 'TEE-CLASSIC',
+        customerStyleNo: 'CUST-TEE-101',
+        customerName: 'Direct Apparel',
+        brand: 'Basics+',
+        destination: 'EU',
+        deliveryDate: new Date('2024-08-30'),
+        garmentColor: 'T-Shirt',
+        totalQty: 500,
+        sizes: [
+            { size: 'M', quantity: 300 },
+            { size: 'L', quantity: 200 },
+        ],
+    },
+];
+
+export async function fetchPreProductionNote(noteNo: string): Promise<PreProductionNote | null> {
+    console.log(`Fetching data for Pre-Production Note: ${noteNo}`);
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const note = mockPreProductionNotes.find(n => n.preProductionNo.toLowerCase() === noteNo.toLowerCase());
+    
+    if (note) {
+        return Promise.resolve(note);
+    }
+    return Promise.resolve(null);
+}
