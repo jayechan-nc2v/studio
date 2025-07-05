@@ -182,10 +182,11 @@ export default function WorkersPage() {
           filters.position !== 'all'
             ? worker.position === filters.position
             : true;
-        const lineMatch =
-          filters.line !== 'all'
-            ? (worker.line || "") === filters.line
-            : true;
+        const lineMatch = (() => {
+          if (filters.line === 'all') return true;
+          if (filters.line === '_UNASSIGNED_') return !worker.line;
+          return worker.line === filters.line;
+        })();
         return nameMatch && statusMatch && positionMatch && lineMatch;
       })
       .sort((a, b) => {
@@ -295,7 +296,7 @@ export default function WorkersPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Lines</SelectItem>
-                        <SelectItem value="">Unassigned</SelectItem>
+                        <SelectItem value="_UNASSIGNED_">Unassigned</SelectItem>
                         {lines.map(line => (
                             <SelectItem key={line.id} value={line.name}>{line.name}</SelectItem>
                         ))}
@@ -438,14 +439,17 @@ export default function WorkersPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Line (Optional)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={(value) => field.onChange(value === '_UNASSIGNED_' ? '' : value)}
+                        value={field.value || '_UNASSIGNED_'}
+                      >
                           <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a line" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Unassigned</SelectItem>
+                            <SelectItem value="_UNASSIGNED_">Unassigned</SelectItem>
                             {lines.map(line => (
                                 <SelectItem key={line.id} value={line.name}>{line.name}</SelectItem>
                             ))}
