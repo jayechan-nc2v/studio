@@ -60,9 +60,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Pencil, PlusCircle, Trash2, ChevronsUpDown, ArrowUp, ArrowDown, CalendarIcon } from "lucide-react";
-import { useWorkerStore } from "@/lib/store";
+import { useWorkerStore, useProductionLineStore } from "@/lib/store";
 import { workerSchema, type NewWorkerFormValues } from "@/lib/schemas";
-import { type Worker } from "@/lib/data";
+import { type Worker, mockPositions } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -71,13 +71,14 @@ import { cn } from "@/lib/utils";
 export default function WorkersPage() {
   const { toast } = useToast();
   const { workers, addWorker, updateWorker, deleteWorker } = useWorkerStore();
+  const { lines } = useProductionLineStore();
   
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [dialogMode, setDialogMode] = React.useState<"add" | "edit">("add");
   const [selectedWorker, setSelectedWorker] = React.useState<Worker | null>(null);
 
-  const [filters, setFilters] = React.useState({ name: '', status: 'all' });
+  const [filters, setFilters] = React.useState({ name: '', status: 'all', position: 'all' });
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof Worker, direction: 'ascending' | 'descending' } | null>({ key: 'id', direction: 'descending' });
   const [visibleCount, setVisibleCount] = React.useState(15);
 
@@ -86,6 +87,8 @@ export default function WorkersPage() {
     defaultValues: {
       name: "",
       status: "Active",
+      position: "",
+      line: "",
     },
   });
 
@@ -115,6 +118,8 @@ export default function WorkersPage() {
       name: "",
       joinDate: new Date(),
       status: "Active",
+      position: "",
+      line: "",
     });
     setIsDialogOpen(true);
   };
@@ -122,7 +127,10 @@ export default function WorkersPage() {
   const handleEdit = (worker: Worker) => {
     setSelectedWorker(worker);
     setDialogMode("edit");
-    form.reset(worker);
+    form.reset({
+        ...worker,
+        line: worker.line || "",
+    });
     setIsDialogOpen(true);
   };
 
@@ -167,7 +175,11 @@ export default function WorkersPage() {
           filters.status !== 'all'
             ? worker.status === filters.status
             : true;
-        return nameMatch && statusMatch;
+        const positionMatch =
+          filters.position !== 'all'
+            ? worker.position === filters.position
+            : true;
+        return nameMatch && statusMatch && positionMatch;
       })
       .sort((a, b) => {
         if (!sortConfig) return 0;
@@ -175,6 +187,9 @@ export default function WorkersPage() {
         
         const aValue = a[key];
         const bValue = b[key];
+
+        if (aValue === undefined || aValue === null) return 1;
+        if (bValue === undefined || bValue === null) return -1;
 
         if (aValue < bValue) {
           return direction === 'ascending' ? -1 : 1;
@@ -228,8 +243,8 @@ export default function WorkersPage() {
           <CardTitle>Filter and Search</CardTitle>
           <CardDescription>Narrow down the list of workers.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 space-y-2">
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
                 <Label htmlFor="name-filter">Name</Label>
                 <Input
                     id="name-filter"
@@ -238,7 +253,7 @@ export default function WorkersPage() {
                     onChange={(e) => handleFilterChange('name', e.target.value)}
                 />
             </div>
-            <div className="flex-1 space-y-2">
+            <div className="space-y-2">
                 <Label htmlFor="status-filter">Status</Label>
                  <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
                     <SelectTrigger id="status-filter">
@@ -248,6 +263,20 @@ export default function WorkersPage() {
                         <SelectItem value="all">All Statuses</SelectItem>
                         <SelectItem value="Active">Active</SelectItem>
                         <SelectItem value="Resigned">Resigned</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="position-filter">Position</Label>
+                 <Select value={filters.position} onValueChange={(value) => handleFilterChange('position', value)}>
+                    <SelectTrigger id="position-filter">
+                        <SelectValue placeholder="Select a position" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Positions</SelectItem>
+                        {mockPositions.map(pos => (
+                            <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             </div>
@@ -268,6 +297,8 @@ export default function WorkersPage() {
                 <TableRow>
                   <TableHead><SortableHeader label="ID" sortKey="id" /></TableHead>
                   <TableHead><SortableHeader label="Name" sortKey="name" /></TableHead>
+                  <TableHead><SortableHeader label="Position" sortKey="position" /></TableHead>
+                  <TableHead><SortableHeader label="Line" sortKey="line" /></TableHead>
                   <TableHead><SortableHeader label="Join Date" sortKey="joinDate" /></TableHead>
                   <TableHead><SortableHeader label="Status" sortKey="status" /></TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -279,6 +310,8 @@ export default function WorkersPage() {
                     <TableRow key={worker.id} onDoubleClick={() => handleEdit(worker)}>
                       <TableCell className="font-code">{worker.id}</TableCell>
                       <TableCell className="font-medium">{worker.name}</TableCell>
+                      <TableCell>{worker.position}</TableCell>
+                      <TableCell>{worker.line || "N/A"}</TableCell>
                       <TableCell>{format(worker.joinDate, "PPP")}</TableCell>
                       <TableCell>
                         <Badge variant={worker.status === 'Active' ? 'secondary' : 'outline'}>
@@ -297,7 +330,7 @@ export default function WorkersPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       No workers found matching your criteria.
                     </TableCell>
                   </TableRow>
@@ -317,7 +350,7 @@ export default function WorkersPage() {
       
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{dialogMode === 'edit' ? 'Edit' : 'Add New'} Worker</DialogTitle>
             <DialogDescription>
@@ -326,7 +359,7 @@ export default function WorkersPage() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-4 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
                 <FormField
                   control={form.control}
                   name="name"
@@ -340,11 +373,56 @@ export default function WorkersPage() {
                     </FormItem>
                   )}
                 />
+                 <FormField
+                  control={form.control}
+                  name="position"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Position</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a position" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {mockPositions.map(pos => (
+                                <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                            ))}
+                          </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="line"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Line (Optional)</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a line" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">Unassigned</SelectItem>
+                            {lines.map(line => (
+                                <SelectItem key={line.id} value={line.name}>{line.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="joinDate"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
+                    <FormItem className="flex flex-col pt-2 sm:pt-0">
                       <FormLabel>Join Date</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -378,7 +456,7 @@ export default function WorkersPage() {
                   control={form.control}
                   name="status"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>Status</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>

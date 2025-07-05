@@ -95,6 +95,8 @@ export const workerSchema = z.object({
     name: z.string().min(1, { message: "Worker name is required." }),
     joinDate: z.date({ required_error: "Join date is required."}),
     status: z.enum(['Active', 'Resigned']),
+    position: z.string().min(1, { message: "Position is required."}),
+    line: z.string().optional(),
 });
 
 export type NewWorkerFormValues = z.infer<typeof workerSchema>;
