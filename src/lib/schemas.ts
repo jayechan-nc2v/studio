@@ -101,3 +101,28 @@ export const workerSchema = z.object({
 });
 
 export type NewWorkerFormValues = z.infer<typeof workerSchema>;
+
+const workOrderCreationSizeSchema = z.object({
+  size: z.string(),
+  selected: z.boolean(),
+  quantity: z.coerce.number().min(0),
+});
+
+export const workOrderCreationSchema = z.object({
+  productionLine: z.string().min(1, "Production Line is required."),
+  qtyPerBundle: z.coerce.number().min(1, "Qty Per Bundle must be at least 1."),
+  targetOutputQtyPerDay: z.coerce.number().min(1, "Target Output Qty / Day must be at least 1."),
+  startDate: z.date({ required_error: "A start date is required."}),
+  endDate: z.date({ required_error: "An end date is required."}),
+  sizes: z.array(workOrderCreationSizeSchema)
+}).refine(data => data.sizes.some(s => s.selected), {
+  message: "At least one size must be selected.",
+  path: ["sizes"],
+}).refine(data => {
+  return data.sizes.every(s => !s.selected || (s.quantity > 0))
+}, {
+  message: "Selected sizes must have a quantity greater than 0.",
+  path: ["sizes"],
+});
+
+export type WorkOrderCreationFormValues = z.infer<typeof workOrderCreationSchema>;
