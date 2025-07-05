@@ -90,7 +90,7 @@ export default function WorkOrdersPage() {
       workOrderNo: `WO-${Date.now().toString().slice(-5)}`,
       styleNo: "DNM-JKT-01",
       garmentType: "Denim Jacket",
-      productionNoteNo: "PN-001",
+      preProductionNo: "PPN-001",
       sizes: [
         { size: "34B", quantity: 100 },
         { size: "34D", quantity: 90 },
@@ -265,12 +265,12 @@ export default function WorkOrdersPage() {
                     />
                      <FormField
                       control={form.control}
-                      name="productionNoteNo"
+                      name="preProductionNo"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Production Note No.</FormLabel>
+                          <FormLabel>Pre-Production No.</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., PN-001" {...field} />
+                            <Input placeholder="e.g., PPN-001" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

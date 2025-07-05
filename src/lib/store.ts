@@ -26,7 +26,7 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         workOrderNo: 'WO-00125',
         styleNo: "TEE-CLASSIC",
         garmentType: "T-Shirt",
-        productionNoteNo: "PN-002",
+        preProductionNo: "PPN-002",
         shipmentDate: new Date(new Date().setDate(new Date().getDate() + 10)),
         sizes: [
             { size: "M", quantity: 300 },
@@ -44,7 +44,7 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         workOrderNo: 'WO-00124',
         styleNo: "DNM-JKT-01",
         garmentType: "Jacket",
-        productionNoteNo: "PN-001",
+        preProductionNo: "PPN-001",
         shipmentDate: new Date(new Date().setDate(new Date().getDate() + 15)),
         sizes: [
             { size: "S", quantity: 100 },
@@ -62,7 +62,7 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         workOrderNo: 'WO-00123',
         styleNo: "Kids Graphic Hoodie",
         garmentType: "Hoodie",
-        productionNoteNo: "PN-003",
+        preProductionNo: "PPN-003",
         shipmentDate: new Date(new Date().setDate(new Date().getDate() + 12)),
         sizes: [{ size: "10", quantity: 700 }],
         qtyPerBundle: 50,

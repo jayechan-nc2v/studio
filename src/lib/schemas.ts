@@ -25,7 +25,7 @@ export const workOrderSchema = z.object({
   workOrderNo: z.string().min(1, "Work Order No. is required."),
   styleNo: z.string().min(1, "Style No. is required."),
   garmentType: z.string().min(1, "Garment Type is required."),
-  productionNoteNo: z.string().min(1, "Production Note No. is required."),
+  preProductionNo: z.string().min(1, "Pre-Production No. is required."),
   shipmentDate: z.date({
     required_error: "A shipment date is required.",
   }),

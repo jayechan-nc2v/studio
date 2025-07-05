@@ -55,7 +55,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/production-notes', label: 'Production Notes', icon: StickyNote },
+  { href: '/production-notes', label: 'Pre-Production', icon: StickyNote },
   { href: '/work-orders', label: 'Work Orders', icon: ClipboardList },
   { href: '/tracking', label: 'Tracking', icon: QrCode },
   { href: '/quality-control', label: 'Quality Control', icon: ClipboardCheck },
