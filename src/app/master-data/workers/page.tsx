@@ -78,7 +78,7 @@ export default function WorkersPage() {
   const [dialogMode, setDialogMode] = React.useState<"add" | "edit">("add");
   const [selectedWorker, setSelectedWorker] = React.useState<Worker | null>(null);
 
-  const [filters, setFilters] = React.useState({ name: '', status: 'all', position: 'all' });
+  const [filters, setFilters] = React.useState({ name: '', status: 'all', position: 'all', line: 'all' });
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof Worker, direction: 'ascending' | 'descending' } | null>({ key: 'id', direction: 'descending' });
   const [visibleCount, setVisibleCount] = React.useState(15);
 
@@ -179,7 +179,11 @@ export default function WorkersPage() {
           filters.position !== 'all'
             ? worker.position === filters.position
             : true;
-        return nameMatch && statusMatch && positionMatch;
+        const lineMatch =
+          filters.line !== 'all'
+            ? (worker.line || "") === filters.line
+            : true;
+        return nameMatch && statusMatch && positionMatch && lineMatch;
       })
       .sort((a, b) => {
         if (!sortConfig) return 0;
@@ -243,7 +247,7 @@ export default function WorkersPage() {
           <CardTitle>Filter and Search</CardTitle>
           <CardDescription>Narrow down the list of workers.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
                 <Label htmlFor="name-filter">Name</Label>
                 <Input
@@ -276,6 +280,21 @@ export default function WorkersPage() {
                         <SelectItem value="all">All Positions</SelectItem>
                         {mockPositions.map(pos => (
                             <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="line-filter">Line</Label>
+                 <Select value={filters.line} onValueChange={(value) => handleFilterChange('line', value)}>
+                    <SelectTrigger id="line-filter">
+                        <SelectValue placeholder="Select a line" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Lines</SelectItem>
+                        <SelectItem value="">Unassigned</SelectItem>
+                        {lines.map(line => (
+                            <SelectItem key={line.id} value={line.name}>{line.name}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
