@@ -244,14 +244,13 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
         const newWorker: Worker = {
             id: newId,
             ...data,
-            line: data.line,
         };
         set((state) => ({ workers: [newWorker, ...state.workers] }));
     },
     updateWorker: (id, data) => {
         set((state) => ({
             workers: state.workers.map(w => 
-                w.id === id ? { ...w, ...data, line: data.line } : w
+                w.id === id ? { ...w, ...data } : w
             )
         }));
     },

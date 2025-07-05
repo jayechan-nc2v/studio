@@ -16,6 +16,7 @@ export interface ProductionLine {
 
 export interface Worker {
   id: string;
+  hrmId?: string;
   name: string;
   joinDate: Date;
   status: 'Active' | 'Resigned';
@@ -196,19 +197,19 @@ export const productionLines: ProductionLine[] = [
 export const mockPositions = ['Operator', 'Supervisor', 'QC Inspector', 'Cutter', 'Packer', 'Line Manager'];
 
 export const mockWorkers: Worker[] = [
-    { id: 'E-001', name: 'Alice', joinDate: new Date('2022-01-15'), status: 'Active', line: 'Line 1 - T-Shirts', position: 'Operator' },
-    { id: 'E-002', name: 'Bob', joinDate: new Date('2022-02-20'), status: 'Active', line: 'Line 1 - T-Shirts', position: 'Operator' },
-    { id: 'E-003', name: 'Charlie', joinDate: new Date('2022-03-10'), status: 'Active', line: 'Line 1 - T-Shirts', position: 'Operator' },
-    { id: 'E-004', name: 'Diana', joinDate: new Date('2022-04-05'), status: 'Active', line: 'Line 1 - T-Shirts', position: 'QC Inspector' },
-    { id: 'E-005', name: 'Eve', joinDate: new Date('2022-05-25'), status: 'Active', line: 'Line 2 - Hoodies', position: 'Cutter' },
-    { id: 'E-006', name: 'Frank', joinDate: new Date('2022-06-18'), status: 'Active', line: 'Line 2 - Hoodies', position: 'Operator' },
+    { id: 'E-001', hrmId: 'HRM-1001', name: 'Alice', joinDate: new Date('2022-01-15'), status: 'Active', line: 'Line 1 - T-Shirts', position: 'Operator' },
+    { id: 'E-002', hrmId: 'HRM-1002', name: 'Bob', joinDate: new Date('2022-02-20'), status: 'Active', line: 'Line 1 - T-Shirts', position: 'Operator' },
+    { id: 'E-003', hrmId: 'HRM-1003', name: 'Charlie', joinDate: new Date('2022-03-10'), status: 'Active', line: 'Line 1 - T-Shirts', position: 'Operator' },
+    { id: 'E-004', hrmId: 'HRM-1004', name: 'Diana', joinDate: new Date('2022-04-05'), status: 'Active', line: 'Line 1 - T-Shirts', position: 'QC Inspector' },
+    { id: 'E-005', hrmId: 'HRM-1005', name: 'Eve', joinDate: new Date('2022-05-25'), status: 'Active', line: 'Line 2 - Hoodies', position: 'Cutter' },
+    { id: 'E-006', hrmId: 'HRM-1006', name: 'Frank', joinDate: new Date('2022-06-18'), status: 'Active', line: 'Line 2 - Hoodies', position: 'Operator' },
     { id: 'E-007', name: 'Grace', joinDate: new Date('2022-07-22'), status: 'Active', line: 'Line 2 - Hoodies', position: 'Operator' },
     { id: 'E-008', name: 'Heidi', joinDate: new Date('2022-08-30'), status: 'Resigned', line: 'Line 2 - Hoodies', position: 'QC Inspector' },
     { id: 'E-009', name: 'Ivan', joinDate: new Date('2022-09-12'), status: 'Active', line: 'Line 3 - Denim', position: 'Cutter' },
     { id: 'E-010', name: 'Judy', joinDate: new Date('2022-10-19'), status: 'Active', line: 'Line 3 - Denim', position: 'Operator' },
     { id: 'E-011', name: 'Mallory', joinDate: new Date('2022-11-01'), status: 'Active', line: 'Line 3 - Denim', position: 'Operator' },
     { id: 'E-012', name: 'Oscar', joinDate: new Date('2022-12-05'), status: 'Resigned', line: 'Line 3 - Denim', position: 'Packer' },
-    { id: 'E-013', name: 'Peggy', joinDate: new Date('2023-01-15'), status: 'Active', line: 'Line 3 - Denim', position: 'QC Inspector' },
+    { id: 'E-013', hrmId: 'HRM-1013', name: 'Peggy', joinDate: new Date('2023-01-15'), status: 'Active', line: 'Line 3 - Denim', position: 'QC Inspector' },
     { id: 'E-014', name: 'Trent', joinDate: new Date('2023-02-11'), status: 'Active', line: 'Line 4 - Specialty', position: 'Operator' },
     { id: 'E-015', name: 'Walter', joinDate: new Date('2023-03-20'), status: 'Active', line: 'Line 4 - Specialty', position: 'Operator' },
     { id: 'E-016', name: 'Wendy', joinDate: new Date('2023-04-25'), status: 'Active', line: 'Line 4 - Specialty', position: 'QC Inspector' },

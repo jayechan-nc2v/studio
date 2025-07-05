@@ -93,6 +93,7 @@ export type NewQcFailureReasonFormValues = z.infer<typeof qcFailureReasonSchema>
 
 export const workerSchema = z.object({
     name: z.string().min(1, { message: "Worker name is required." }),
+    hrmId: z.string().optional(),
     joinDate: z.date({ required_error: "Join date is required."}),
     status: z.enum(['Active', 'Resigned']),
     position: z.string().min(1, { message: "Position is required."}),

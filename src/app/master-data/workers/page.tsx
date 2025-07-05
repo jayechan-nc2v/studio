@@ -86,6 +86,7 @@ export default function WorkersPage() {
     resolver: zodResolver(workerSchema),
     defaultValues: {
       name: "",
+      hrmId: "",
       status: "Active",
       position: "",
       line: "",
@@ -116,6 +117,7 @@ export default function WorkersPage() {
     setDialogMode("add");
     form.reset({
       name: "",
+      hrmId: "",
       joinDate: new Date(),
       status: "Active",
       position: "",
@@ -130,6 +132,7 @@ export default function WorkersPage() {
     form.reset({
         ...worker,
         line: worker.line || "",
+        hrmId: worker.hrmId || "",
     });
     setIsDialogOpen(true);
   };
@@ -315,6 +318,7 @@ export default function WorkersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead><SortableHeader label="ID" sortKey="id" /></TableHead>
+                  <TableHead><SortableHeader label="HRM ID" sortKey="hrmId" /></TableHead>
                   <TableHead><SortableHeader label="Name" sortKey="name" /></TableHead>
                   <TableHead><SortableHeader label="Position" sortKey="position" /></TableHead>
                   <TableHead><SortableHeader label="Line" sortKey="line" /></TableHead>
@@ -328,6 +332,7 @@ export default function WorkersPage() {
                   filteredWorkers.slice(0, visibleCount).map((worker) => (
                     <TableRow key={worker.id} onDoubleClick={() => handleEdit(worker)}>
                       <TableCell className="font-code">{worker.id}</TableCell>
+                      <TableCell className="font-code">{worker.hrmId || 'N/A'}</TableCell>
                       <TableCell className="font-medium">{worker.name}</TableCell>
                       <TableCell>{worker.position}</TableCell>
                       <TableCell>{worker.line || "N/A"}</TableCell>
@@ -349,7 +354,7 @@ export default function WorkersPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={8} className="h-24 text-center">
                       No workers found matching your criteria.
                     </TableCell>
                   </TableRow>
@@ -387,6 +392,19 @@ export default function WorkersPage() {
                       <FormLabel>Worker Name</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g., John Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="hrmId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>HRM ID (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., HRM-12345" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -475,7 +493,7 @@ export default function WorkersPage() {
                   control={form.control}
                   name="status"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
+                    <FormItem>
                       <FormLabel>Status</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
