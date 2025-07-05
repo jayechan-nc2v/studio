@@ -90,3 +90,11 @@ export const qcFailureReasonSchema = z.object({
 });
 
 export type NewQcFailureReasonFormValues = z.infer<typeof qcFailureReasonSchema>;
+
+export const workerSchema = z.object({
+    name: z.string().min(1, { message: "Worker name is required." }),
+    joinDate: z.date({ required_error: "Join date is required."}),
+    status: z.enum(['Active', 'Resigned']),
+});
+
+export type NewWorkerFormValues = z.infer<typeof workerSchema>;

@@ -18,6 +18,7 @@ import {
   Route,
   StickyNote,
   Tags,
+  Users,
   User,
 } from 'lucide-react';
 import * as React from 'react';
@@ -66,6 +67,7 @@ const navItems = [
       { href: '/master-data/machines', label: 'Machines', icon: HardDrive },
       { href: '/master-data/lines', label: 'Production Lines', icon: Route },
       { href: '/master-data/machine-types', label: 'Machine Types', icon: Tags },
+      { href: '/master-data/workers', label: 'Workers', icon: Users },
       { href: '/master-data/production-instructions', label: 'Instructions', icon: ListChecks },
       { href: '/master-data/qc-failure-reason', label: 'QC Failure Reasons', icon: ClipboardX },
     ],

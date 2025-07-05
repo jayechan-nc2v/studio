@@ -17,6 +17,8 @@ export interface ProductionLine {
 export interface Worker {
   id: string;
   name: string;
+  joinDate: Date;
+  status: 'Active' | 'Resigned';
 }
 
 export interface Instruction {
@@ -189,15 +191,28 @@ export const productionLines: ProductionLine[] = [
   }
 ];
 
-const allWorkers = new Map<string, string>();
-productionLines.forEach(line => {
-    line.stations.forEach(station => {
-        if (!allWorkers.has(station.workerId)) {
-            allWorkers.set(station.workerId, station.assignedWorker);
-        }
-    });
-});
-export const mockWorkers: Worker[] = Array.from(allWorkers, ([id, name]) => ({ id, name }));
+export const mockWorkers: Worker[] = [
+    { id: 'E-001', name: 'Alice', joinDate: new Date('2022-01-15'), status: 'Active' },
+    { id: 'E-002', name: 'Bob', joinDate: new Date('2022-02-20'), status: 'Active' },
+    { id: 'E-003', name: 'Charlie', joinDate: new Date('2022-03-10'), status: 'Active' },
+    { id: 'E-004', name: 'Diana', joinDate: new Date('2022-04-05'), status: 'Active' },
+    { id: 'E-005', name: 'Eve', joinDate: new Date('2022-05-25'), status: 'Active' },
+    { id: 'E-006', name: 'Frank', joinDate: new Date('2022-06-18'), status: 'Active' },
+    { id: 'E-007', name: 'Grace', joinDate: new Date('2022-07-22'), status: 'Active' },
+    { id: 'E-008', name: 'Heidi', joinDate: new Date('2022-08-30'), status: 'Resigned' },
+    { id: 'E-009', name: 'Ivan', joinDate: new Date('2022-09-12'), status: 'Active' },
+    { id: 'E-010', name: 'Judy', joinDate: new Date('2022-10-19'), status: 'Active' },
+    { id: 'E-011', name: 'Mallory', joinDate: new Date('2022-11-01'), status: 'Active' },
+    { id: 'E-012', name: 'Oscar', joinDate: new Date('2022-12-05'), status: 'Resigned' },
+    { id: 'E-013', name: 'Peggy', joinDate: new Date('2023-01-15'), status: 'Active' },
+    { id: 'E-014', name: 'Trent', joinDate: new Date('2023-02-11'), status: 'Active' },
+    { id: 'E-015', name: 'Walter', joinDate: new Date('2023-03-20'), status: 'Active' },
+    { id: 'E-016', name: 'Wendy', joinDate: new Date('2023-04-25'), status: 'Active' },
+    { id: 'E-017', name: 'Ethan', joinDate: new Date('2023-05-14'), status: 'Active' },
+    { id: 'E-018', name: 'Quentin', joinDate: new Date('2023-06-30'), status: 'Active' },
+    { id: 'E-019', name: 'Roger', joinDate: new Date('2023-07-07'), status: 'Active' },
+    { id: 'E-020', name: 'Samantha', joinDate: new Date('2023-08-19'), status: 'Active' },
+];
 
 
 export const presetInstructions: Record<string, Instruction[]> = {

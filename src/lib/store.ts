@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues } from '@/lib/schemas';
+import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues } from '@/lib/schemas';
 import { 
     presetInstructions, 
     mockMachineTypes, 
@@ -11,7 +11,9 @@ import {
     mockProductionInstructions,
     type ProductionInstruction,
     mockQcFailureReasons,
-    type QcFailureReason
+    type QcFailureReason,
+    mockWorkers,
+    type Worker
 } from '@/lib/data';
 
 interface WorkOrderState {
@@ -222,6 +224,39 @@ export const useQcFailureReasonStore = create<QcFailureReasonState>((set, get) =
     deleteReason: (id) => {
         set((state) => ({
             reasons: state.reasons.filter(r => r.id !== id)
+        }));
+    }
+}));
+
+
+// Store for Workers
+interface WorkerState {
+    workers: Worker[];
+    addWorker: (data: NewWorkerFormValues) => void;
+    updateWorker: (id: string, data: NewWorkerFormValues) => void;
+    deleteWorker: (id: string) => void;
+}
+
+export const useWorkerStore = create<WorkerState>((set, get) => ({
+    workers: mockWorkers,
+    addWorker: (data) => {
+        const newId = `E-${(get().workers.length + 1).toString().padStart(3, '0')}`;
+        const newWorker: Worker = {
+            id: newId,
+            ...data
+        };
+        set((state) => ({ workers: [newWorker, ...state.workers] }));
+    },
+    updateWorker: (id, data) => {
+        set((state) => ({
+            workers: state.workers.map(w => 
+                w.id === id ? { ...w, ...data } : w
+            )
+        }));
+    },
+    deleteWorker: (id) => {
+        set((state) => ({
+            workers: state.workers.filter(w => w.id !== id)
         }));
     }
 }));

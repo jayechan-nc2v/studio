@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { HardDrive, Route, ListChecks, Tags, ClipboardX } from "lucide-react";
+import { HardDrive, Route, ListChecks, Tags, ClipboardX, Users } from "lucide-react";
 
 export default function MasterDataPage() {
   return (
@@ -55,6 +55,21 @@ export default function MasterDataPage() {
             </p>
             <Button asChild variant="secondary">
               <Link href="/master-data/machine-types">Manage Machine Types</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Users className="h-8 w-8 text-primary mb-2" />
+            <CardTitle>Workers</CardTitle>
+            <CardDescription>Manage your factory workforce.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Add, edit, and view details of all employees.
+            </p>
+            <Button asChild variant="secondary">
+              <Link href="/master-data/workers">Manage Workers</Link>
             </Button>
           </CardContent>
         </Card>
