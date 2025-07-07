@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import ReactToPrint from "react-to-print";
+import { useReactToPrint } from "react-to-print";
 import { QRCodeCanvas } from "qrcode.react";
 import { Loader2, Printer, QrCode } from "lucide-react";
 
@@ -93,6 +93,12 @@ export default function GenerateQrCodePage() {
   const [isGenerating, setIsGenerating] = React.useState(false);
 
   const printComponentRef = React.useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    content: () => printComponentRef.current,
+    documentTitle: "QR_Codes",
+    onAfterPrint: () => toast({ title: "Print complete." }),
+  });
 
   const handleGenerate = () => {
     if (numberOfCodes <= 0 || numberOfCodes > 500) {
@@ -195,17 +201,10 @@ export default function GenerateQrCodePage() {
                 {numberOfCopies > 1 ? `${numberOfCopies} copies of each will be printed.` : 'Click Print to get physical copies.'}
               </CardDescription>
             </div>
-             <ReactToPrint
-              trigger={() => (
-                <button className={cn(buttonVariants())}>
-                  <Printer />
-                  Print
-                </button>
-              )}
-              content={() => printComponentRef.current}
-              documentTitle="QR_Codes"
-              onAfterPrint={() => toast({ title: "Print complete." })}
-            />
+             <Button onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print
+             </Button>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
