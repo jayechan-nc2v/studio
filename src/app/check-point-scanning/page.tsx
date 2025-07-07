@@ -27,7 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQrCodeStore, useWorkOrderStore, useCheckPointStore, useBundleHistoryStore } from "@/lib/store";
 import type { QrCode, WorkOrderFormValues, CheckPoint } from "@/lib/store";
-import { Loader2, Search, ScanCheck } from "lucide-react";
+import { Loader2, Search, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface FoundBundleInfo {
@@ -193,7 +193,7 @@ export default function CheckPointScanningPage() {
             </CardContent>
             <CardFooter>
                 <Button onClick={handleConfirmPass}>
-                    <ScanCheck className="mr-2 h-4 w-4" />
+                    <Check className="mr-2 h-4 w-4" />
                     Confirm & Pass Checkpoint
                 </Button>
             </CardFooter>

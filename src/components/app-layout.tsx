@@ -19,7 +19,7 @@ import {
   Milestone,
   QrCode,
   Route,
-  ScanCheck,
+  ScanLine,
   StickyNote,
   Tags,
   Users,
@@ -63,7 +63,7 @@ const navItems = [
   { href: '/production-notes', label: 'Pre-Production', icon: StickyNote },
   { href: '/work-orders', label: 'Work Orders', icon: ClipboardList },
   { href: '/generate-qr-code', label: 'Generate QR Code', icon: QrCode },
-  { href: '/check-point-scanning', label: 'Check Point Scanning', icon: ScanCheck },
+  { href: '/check-point-scanning', label: 'Check Point Scanning', icon: ScanLine },
   { href: '/tracking', label: 'Bundle History', icon: History },
   { href: '/finish-sewing-qc', label: 'Finish Sewing QC', icon: ClipboardCheck },
   {
