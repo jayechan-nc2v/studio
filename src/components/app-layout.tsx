@@ -12,13 +12,14 @@ import {
   Database,
   Globe,
   HardDrive,
+  History,
   LayoutDashboard,
   ListChecks,
   LogOut,
   Milestone,
   QrCode,
   Route,
-  ScanLine,
+  ScanCheck,
   StickyNote,
   Tags,
   Users,
@@ -55,14 +56,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { SheetTitle } from './ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/production-notes', label: 'Pre-Production', icon: StickyNote },
   { href: '/work-orders', label: 'Work Orders', icon: ClipboardList },
   { href: '/generate-qr-code', label: 'Generate QR Code', icon: QrCode },
-  { href: '/tracking', label: 'Tracking', icon: ScanLine },
+  { href: '/check-point-scanning', label: 'Check Point Scanning', icon: ScanCheck },
+  { href: '/tracking', label: 'Bundle History', icon: History },
   { href: '/finish-sewing-qc', label: 'Finish Sewing QC', icon: ClipboardCheck },
   {
     href: '/master-data',

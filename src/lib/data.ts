@@ -107,6 +107,17 @@ export interface CheckPoint {
   isProductionExit: boolean;
 }
 
+export interface BundleHistory {
+  id: string;
+  qrCodeId: string;
+  workOrderId: string;
+  checkPointName: string;
+  status: 'Passed' | 'Failed QC';
+  details?: string;
+  timestamp: Date;
+  user: string;
+}
+
 
 // Mock Data for Machines
 export const mockMachines: Machine[] = [

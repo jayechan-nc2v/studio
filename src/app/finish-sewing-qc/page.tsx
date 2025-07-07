@@ -42,7 +42,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useQrCodeStore, useWorkOrderStore, useQcFailureReasonStore } from "@/lib/store";
+import { useQrCodeStore, useWorkOrderStore, useQcFailureReasonStore, useBundleHistoryStore } from "@/lib/store";
 import type { QrCode, WorkOrderFormValues } from "@/lib/store";
 import { Loader2, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,11 +76,14 @@ export default function FinishSewingQcPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [foundBundle, setFoundBundle] = React.useState<FoundBundleInfo | null>(null);
 
-  const { qrCodes } = useQrCodeStore();
+  const { qrCodes, updateQrCodeStatus } = useQrCodeStore();
   const { workOrders } = useWorkOrderStore();
   const { reasons: qcFailureReasons } = useQcFailureReasonStore();
+  const { addHistoryRecord } = useBundleHistoryStore();
 
-  const form = useForm<QcFormValues>();
+  const form = useForm<QcFormValues>({
+      resolver: zodResolver(qcFormSchema),
+  });
 
   const { fields, replace } = useFieldArray({
     control: form.control,
@@ -96,8 +99,8 @@ export default function FinishSewingQcPage() {
     form.reset({ items: [] });
 
     setTimeout(() => {
-        const qrCode = qrCodes.find(c => c.id.toLowerCase() === qrCodeInput.toLowerCase() && c.status !== 'Unassigned');
-        if (!qrCode || !qrCode.workOrderId) {
+        const qrCode = qrCodes.find(c => c.id.toLowerCase() === qrCodeInput.toLowerCase() && c.workOrderId);
+        if (!qrCode) {
             toast({ variant: "destructive", title: "Not Found", description: "This QR code is not assigned to any work order." });
             setIsLoading(false);
             return;
@@ -123,11 +126,31 @@ export default function FinishSewingQcPage() {
   };
   
   const onSubmit = (data: QcFormValues) => {
-    console.log("QC Results:", data);
+    if (!foundBundle) return;
+
+    const passedCount = data.items.filter(i => i.isPassed).length;
+    const failedCount = data.items.filter(i => i.isFailed).length;
+    const isFailed = failedCount > 0;
+    const newStatus = isFailed ? 'Failed QC' : 'Passed QC';
+    
+    updateQrCodeStatus(foundBundle.qrCode.id, newStatus);
+    
+    addHistoryRecord({
+        qrCodeId: foundBundle.qrCode.id,
+        workOrderId: foundBundle.workOrder.workOrderNo,
+        checkPointName: 'Finish Sewing QC',
+        status: newStatus === 'Passed QC' ? 'Passed' : 'Failed QC',
+        details: `${passedCount} passed, ${failedCount} failed`,
+    });
+
     toast({
       title: "QC Results Submitted",
-      description: `Results for bundle ${foundBundle?.qrCode.id} have been recorded.`,
+      description: `Results for bundle ${foundBundle?.qrCode.id} have been recorded. Status: ${newStatus}`,
     });
+    
+    setFoundBundle(null);
+    setQrCodeInput("");
+    form.reset({ items: [] });
   };
 
   const InfoItem = ({ label, value }: { label: string; value: string | number | undefined }) => (
@@ -177,7 +200,10 @@ export default function FinishSewingQcPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Bundle Information</CardTitle>
-                        <CardDescription>Details for QR Code: <span className="font-mono">{foundBundle.qrCode.id}</span></CardDescription>
+                        <CardDescription>
+                            Details for QR Code: <span className="font-mono">{foundBundle.qrCode.id}</span>.
+                            Current Status: <span className="font-semibold text-primary">{foundBundle.qrCode.status}</span>
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <InfoItem label="Work Order No." value={foundBundle.workOrder.workOrderNo} />

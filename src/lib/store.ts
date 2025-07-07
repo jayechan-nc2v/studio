@@ -16,7 +16,8 @@ import {
     mockWorkers,
     type Worker,
     mockCheckPoints,
-    type CheckPoint
+    type CheckPoint,
+    type BundleHistory
 } from '@/lib/data';
 
 interface WorkOrderState {
@@ -270,7 +271,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
 export interface QrCode {
     id: string;
     workOrderId: string | null;
-    status: 'Unassigned' | 'Assigned' | 'In Progress' | 'Completed';
+    status: string;
     size?: string;
     bundleNo?: number;
     bundleQty?: number;
@@ -283,11 +284,12 @@ interface QrCodeState {
         workOrderId: string, 
         bundles: { size: string; bundleNo: number, quantity: number }[]
     ) => { success: boolean, assigned: QrCode[], required: number, available: number };
+    updateQrCodeStatus: (qrCodeId: string, newStatus: string) => void;
 }
 
 const initialQrCodes: QrCode[] = [
-    { id: 'BNDL-TEST-001', workOrderId: 'WO-00125', status: 'Assigned', size: 'M', bundleNo: 1, bundleQty: 25 },
-    { id: 'BNDL-TEST-002', workOrderId: 'WO-00125', status: 'Assigned', size: 'M', bundleNo: 2, bundleQty: 25 },
+    { id: 'BNDL-TEST-001', workOrderId: 'WO-00125', status: 'Cutting', size: 'M', bundleNo: 1, bundleQty: 25 },
+    { id: 'BNDL-TEST-002', workOrderId: 'WO-00125', status: 'Cutting', size: 'M', bundleNo: 2, bundleQty: 25 },
     { id: 'BNDL-TEST-003', workOrderId: null, status: 'Unassigned' },
     { id: 'BNDL-TEST-004', workOrderId: null, status: 'Unassigned' },
     { id: 'BNDL-TEST-005', workOrderId: null, status: 'Unassigned' },
@@ -323,7 +325,7 @@ export const useQrCodeStore = create<QrCodeState>((set, get) => ({
                 const updatedCode = {
                     ...qrCode,
                     workOrderId,
-                    status: 'Assigned' as const,
+                    status: 'Assigned to WO',
                     size: bundleInfo.size,
                     bundleNo: bundleInfo.bundleNo,
                     bundleQty: bundleInfo.quantity
@@ -337,6 +339,13 @@ export const useQrCodeStore = create<QrCodeState>((set, get) => ({
         set({ qrCodes: updatedQrCodes });
   
         return { success: true, assigned: assignedCodes, required: requiredCount, available: unassignedCodes.length };
+    },
+    updateQrCodeStatus: (qrCodeId, newStatus) => {
+        set((state) => ({
+            qrCodes: state.qrCodes.map(code => 
+                code.id === qrCodeId ? { ...code, status: newStatus } : code
+            ),
+        }));
     },
 }));
 
@@ -371,4 +380,26 @@ export const useCheckPointStore = create<CheckPointState>((set, get) => ({
             checkPoints: state.checkPoints.filter(cp => cp.id !== id)
         }));
     }
+}));
+
+
+interface BundleHistoryState {
+  history: BundleHistory[];
+  addHistoryRecord: (record: Omit<BundleHistory, 'id' | 'timestamp' | 'user'>) => void;
+}
+
+export const useBundleHistoryStore = create<BundleHistoryState>((set, get) => ({
+  history: [
+      { id: 'HIST-1', qrCodeId: 'BNDL-TEST-001', workOrderId: 'WO-00125', checkPointName: 'Cutting Table', status: 'Passed', timestamp: new Date('2024-07-28T10:00:00Z'), user: 'John Doe' },
+      { id: 'HIST-2', qrCodeId: 'BNDL-TEST-002', workOrderId: 'WO-00125', checkPointName: 'Cutting Table', status: 'Passed', timestamp: new Date('2024-07-28T10:05:00Z'), user: 'John Doe' },
+  ],
+  addHistoryRecord: (record) => {
+    const newRecord: BundleHistory = {
+      ...record,
+      id: `HIST-${Date.now()}`,
+      timestamp: new Date(),
+      user: 'John Doe', // Hardcoded user for demo
+    };
+    set((state) => ({ history: [newRecord, ...state.history] }));
+  },
 }));
