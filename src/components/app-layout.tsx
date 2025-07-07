@@ -26,6 +26,7 @@ import {
   User,
   UserCog,
   Users,
+  Warehouse,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -59,7 +60,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import { useCheckPointStore, useUserStore } from '@/lib/store';
+import { useCheckPointStore, useUserStore, useGlobalSettingsStore } from '@/lib/store';
+import { Separator } from '@/components/ui/separator';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -114,6 +116,7 @@ const navItems = [
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { settings } = useGlobalSettingsStore();
   const { currentUser } = useUserStore();
   const { checkPoints } = useCheckPointStore();
 
@@ -241,12 +244,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="flex h-14 items-center gap-4 border-b bg-background/80 px-6 backdrop-blur-sm sticky top-0 z-30">
           <SidebarTrigger className="md:hidden" />
           <div className="w-full flex-1">
-            {currentUser && currentUser.role !== 'System Admin' && (
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Milestone className="h-4 w-4 text-muted-foreground" />
-                <span>Current Station: {currentCheckPointName}</span>
+            <div className="flex items-center gap-4 text-sm font-medium">
+              <div className="flex items-center gap-2">
+                <Warehouse className="h-4 w-4 text-muted-foreground" />
+                <span>{settings.factoryName}</span>
               </div>
-            )}
+              {currentUser && currentUser.role !== 'System Admin' && (
+                <>
+                  <Separator orientation="vertical" className="h-4" />
+                  <div className="flex items-center gap-2">
+                    <Milestone className="h-4 w-4 text-muted-foreground" />
+                    <span>Station: {currentCheckPointName}</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
