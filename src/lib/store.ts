@@ -409,13 +409,24 @@ export const useBundleHistoryStore = create<BundleHistoryState>((set, get) => ({
 // Store for Users
 interface UserState {
     users: User[];
+    currentUser: User | null;
+    setCurrentUser: (userId: string | null) => void;
     addUser: (data: NewUserFormValues) => void;
-    updateUser: (id: string, data: NewUserFormValues) => void;
+    updateUser: (id: string, data: Partial<NewUserFormValues>) => void;
     deleteUser: (id: string) => void;
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
     users: mockUsers,
+    currentUser: mockUsers.find(u => u.id === 'U-003') || null,
+    setCurrentUser: (userId) => {
+        if (!userId) {
+            set({ currentUser: null });
+            return;
+        }
+        const user = get().users.find(u => u.id === userId);
+        set({ currentUser: user || null });
+    },
     addUser: (data) => {
         const newId = `U-${(get().users.length + 1).toString().padStart(3, '0')}`;
         const { password, confirmPassword, ...userData } = data;

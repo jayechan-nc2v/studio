@@ -22,9 +22,9 @@ import {
   ScanLine,
   StickyNote,
   Tags,
-  Users,
   User,
   UserCog,
+  Users,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -58,15 +58,24 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { useCheckPointStore, useUserStore } from '@/lib/store';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/production-notes', label: 'Pre-Production', icon: StickyNote },
   { href: '/work-orders', label: 'Work Orders', icon: ClipboardList },
   { href: '/generate-qr-code', label: 'Generate QR Code', icon: QrCode },
-  { href: '/check-point-scanning', label: 'Check Point Scanning', icon: ScanLine },
+  {
+    href: '/check-point-scanning',
+    label: 'Check Point Scanning',
+    icon: ScanLine,
+  },
   { href: '/tracking', label: 'Bundle History', icon: History },
-  { href: '/finish-sewing-qc', label: 'Finish Sewing QC', icon: ClipboardCheck },
+  {
+    href: '/finish-sewing-qc',
+    label: 'Finish Sewing QC',
+    icon: ClipboardCheck,
+  },
   { href: '/user-management', label: 'User Management', icon: UserCog },
   {
     href: '/master-data',
@@ -75,11 +84,27 @@ const navItems = [
     children: [
       { href: '/master-data/machines', label: 'Machines', icon: HardDrive },
       { href: '/master-data/lines', label: 'Production Lines', icon: Route },
-      { href: '/master-data/machine-types', label: 'Machine Types', icon: Tags },
+      {
+        href: '/master-data/machine-types',
+        label: 'Machine Types',
+        icon: Tags,
+      },
       { href: '/master-data/workers', label: 'Workers', icon: Users },
-      { href: '/master-data/production-instructions', label: 'Instructions', icon: ListChecks },
-      { href: '/master-data/qc-failure-reason', label: 'QC Failure Reasons', icon: ClipboardX },
-      { href: '/master-data/check-points', label: 'Check Points', icon: Milestone },
+      {
+        href: '/master-data/production-instructions',
+        label: 'Instructions',
+        icon: ListChecks,
+      },
+      {
+        href: '/master-data/qc-failure-reason',
+        label: 'QC Failure Reasons',
+        icon: ClipboardX,
+      },
+      {
+        href: '/master-data/check-points',
+        label: 'Check Points',
+        icon: Milestone,
+      },
     ],
   },
   { href: '/ai-tools', label: 'AI Tools', icon: Cpu },
@@ -87,8 +112,12 @@ const navItems = [
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { currentUser } = useUserStore();
+  const { checkPoints } = useCheckPointStore();
 
-  const [openSubmenus, setOpenSubmenus] = React.useState<Record<string, boolean>>({});
+  const [openSubmenus, setOpenSubmenus] = React.useState<
+    Record<string, boolean>
+  >({});
 
   React.useEffect(() => {
     const activeSubmenus: Record<string, boolean> = {};
@@ -106,6 +135,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       [href]: !prev[href],
     }));
   };
+
+  const currentCheckPointName = React.useMemo(() => {
+    if (!currentUser) return 'No Station';
+    if (currentUser.role === 'System Admin') return 'All Stations';
+    if (currentUser.assignedCheckpoints.length === 0) return 'No Station';
+
+    // For simplicity, display the first assigned checkpoint.
+    // A real implementation would have a station selector for Admins.
+    const checkPointId = currentUser.assignedCheckpoints[0];
+    const checkPoint = checkPoints.find((cp) => cp.id === checkPointId);
+    return checkPoint?.name || 'Unknown Station';
+  }, [currentUser, checkPoints]);
 
   return (
     <SidebarProvider>
@@ -198,9 +239,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="flex h-14 items-center gap-4 border-b bg-background/80 px-6 backdrop-blur-sm sticky top-0 z-30">
           <SidebarTrigger className="md:hidden" />
           <div className="w-full flex-1">
-            {/* Future elements like breadcrumbs or global search can go here */}
+            {currentUser && currentUser.role !== 'System Admin' && (
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Milestone className="h-4 w-4 text-muted-foreground" />
+                <span>Current Station: {currentCheckPointName}</span>
+              </div>
+            )}
           </div>
-           <DropdownMenu>
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -216,13 +262,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">John Doe</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    Dept: Sewing
+                  <p className="text-sm font-medium leading-none">
+                    {currentUser?.displayName || 'Guest'}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    Station: Juki DDL-8700
+                    Role: {currentUser?.role || 'N/A'}
                   </p>
+                  {currentUser?.role !== 'System Admin' && (
+                    <p className="text-xs leading-none text-muted-foreground">
+                      Station: {currentCheckPointName}
+                    </p>
+                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
