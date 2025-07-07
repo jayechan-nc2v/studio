@@ -156,10 +156,14 @@ export const userPermissionSchema = z.object({
 });
 
 export const userSchema = z.object({
-    name: z.string().min(1, "Name is required."),
+    username: z.string().min(3, "Username must be at least 3 characters long."),
+    displayName: z.string().min(1, "Display Name is required."),
     role: z.enum(['User', 'Admin', 'System Admin']),
+    status: z.enum(['Active', 'Inactive']),
     assignedCheckpoints: z.array(z.string()),
     permissions: z.record(z.string(), userPermissionSchema),
+    password: z.string().optional(),
+    confirmPassword: z.string().optional(),
 }).superRefine((data, ctx) => {
     if (data.role === 'User' && data.assignedCheckpoints.length !== 1) {
         ctx.addIssue({
@@ -173,6 +177,20 @@ export const userSchema = z.object({
             code: z.ZodIssueCode.custom,
             message: "Admins must be assigned to at least one checkpoint.",
             path: ['assignedCheckpoints'],
+        });
+    }
+    if (data.password && data.password.length < 6) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Password must be at least 6 characters.",
+            path: ['password'],
+        });
+    }
+    if (data.password !== data.confirmPassword) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Passwords do not match.",
+            path: ['confirmPassword'],
         });
     }
 });

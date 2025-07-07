@@ -418,13 +418,15 @@ export const useUserStore = create<UserState>((set, get) => ({
     users: mockUsers,
     addUser: (data) => {
         const newId = `U-${(get().users.length + 1).toString().padStart(3, '0')}`;
-        const newUser: User = { id: newId, ...data };
+        const { password, confirmPassword, ...userData } = data;
+        const newUser: User = { id: newId, ...userData };
         set((state) => ({ users: [newUser, ...state.users] }));
     },
     updateUser: (id, data) => {
+        const { password, confirmPassword, ...userData } = data;
         set((state) => ({
             users: state.users.map(u => 
-                u.id === id ? { ...u, ...data } : u
+                u.id === id ? { ...u, ...userData } : u
             )
         }));
     },
@@ -434,5 +436,3 @@ export const useUserStore = create<UserState>((set, get) => ({
         }));
     }
 }));
-
-    

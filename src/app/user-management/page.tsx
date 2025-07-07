@@ -54,9 +54,9 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, PlusCircle, Trash2, ChevronsUpDown, ArrowUp, ArrowDown, UserCog } from "lucide-react";
+import { Pencil, PlusCircle, Trash2, ChevronsUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useUserStore, useCheckPointStore } from "@/lib/store";
 import { userSchema, type NewUserFormValues } from "@/lib/schemas";
 import { type User, mockModules } from "@/lib/data";
@@ -64,12 +64,16 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
 
 const roleVariantMap: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
     'System Admin': 'default',
     'Admin': 'secondary',
     'User': 'outline',
+};
+
+const statusVariantMap: { [key: string]: "secondary" | "outline" } = {
+    'Active': 'secondary',
+    'Inactive': 'outline',
 };
 
 export default function UserManagementPage() {
@@ -81,16 +85,21 @@ export default function UserManagementPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [dialogMode, setDialogMode] = React.useState<"add" | "edit">("add");
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
+  const [showResetPassword, setShowResetPassword] = React.useState(false);
 
-  const [sortConfig, setSortConfig] = React.useState<{ key: keyof User, direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending' });
+  const [sortConfig, setSortConfig] = React.useState<{ key: keyof User, direction: 'ascending' | 'descending' } | null>({ key: 'displayName', direction: 'ascending' });
 
   const form = useForm<NewUserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      name: "",
+      username: "",
+      displayName: "",
       role: "User",
+      status: "Active",
       assignedCheckpoints: [],
       permissions: Object.fromEntries(mockModules.map(m => [m.href, { read: true, write: false, delete: false }])),
+      password: "",
+      confirmPassword: "",
     },
   });
 
@@ -98,6 +107,17 @@ export default function UserManagementPage() {
 
   const onSubmit = (data: NewUserFormValues) => {
     let finalData = { ...data };
+
+    if (dialogMode === 'add' && !data.password) {
+        form.setError('password', { type: 'manual', message: 'Password is required for new users.' });
+        return;
+    }
+
+    if (dialogMode === 'edit' && !showResetPassword) {
+        delete finalData.password;
+        delete finalData.confirmPassword;
+    }
+
     if (data.role === 'System Admin') {
         finalData.assignedCheckpoints = checkPoints.map(cp => cp.id);
         finalData.permissions = Object.fromEntries(mockModules.map(m => [m.href, { read: true, write: true, delete: true }]));
@@ -105,10 +125,10 @@ export default function UserManagementPage() {
 
     if (dialogMode === "edit" && selectedUser) {
       updateUser(selectedUser.id, finalData);
-      toast({ title: "Success", description: `User "${data.name}" has been updated.` });
+      toast({ title: "Success", description: `User "${data.displayName}" has been updated.` });
     } else {
       addUser(finalData);
-      toast({ title: "Success", description: `User "${data.name}" has been created.` });
+      toast({ title: "Success", description: `User "${data.displayName}" has been created.` });
     }
     form.reset();
     setIsDialogOpen(false);
@@ -118,11 +138,16 @@ export default function UserManagementPage() {
   const handleAdd = () => {
     setSelectedUser(null);
     setDialogMode("add");
+    setShowResetPassword(false);
     form.reset({
-      name: "",
+      username: "",
+      displayName: "",
       role: "User",
+      status: "Active",
       assignedCheckpoints: [],
       permissions: Object.fromEntries(mockModules.map(m => [m.href, { read: true, write: false, delete: false }])),
+      password: "",
+      confirmPassword: "",
     });
     setIsDialogOpen(true);
   };
@@ -130,7 +155,8 @@ export default function UserManagementPage() {
   const handleEdit = (user: User) => {
     setSelectedUser(user);
     setDialogMode("edit");
-    form.reset(user);
+    setShowResetPassword(false);
+    form.reset({ ...user, password: '', confirmPassword: '' });
     setIsDialogOpen(true);
   };
 
@@ -142,7 +168,7 @@ export default function UserManagementPage() {
   const confirmDelete = () => {
     if (selectedUser) {
       deleteUser(selectedUser.id);
-      toast({ title: "Deleted", description: `User "${selectedUser.name}" has been deleted.`, variant: "destructive" });
+      toast({ title: "Deleted", description: `User "${selectedUser.displayName}" has been deleted.`, variant: "destructive" });
       setIsDeleteDialogOpen(false);
       setSelectedUser(null);
     }
@@ -211,8 +237,10 @@ export default function UserManagementPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead><SortableHeader label="Name" sortKey="name" /></TableHead>
+                  <TableHead><SortableHeader label="Display Name" sortKey="displayName" /></TableHead>
+                  <TableHead><SortableHeader label="Username" sortKey="username" /></TableHead>
                   <TableHead><SortableHeader label="Role" sortKey="role" /></TableHead>
+                  <TableHead><SortableHeader label="Status" sortKey="status" /></TableHead>
                   <TableHead>Assigned Checkpoints</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -221,9 +249,13 @@ export default function UserManagementPage() {
                 {sortedUsers.length > 0 ? (
                   sortedUsers.map((user) => (
                     <TableRow key={user.id} onDoubleClick={() => handleEdit(user)}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell className="font-medium">{user.displayName}</TableCell>
+                      <TableCell>{user.username}</TableCell>
                       <TableCell>
                         <Badge variant={roleVariantMap[user.role]}>{user.role}</Badge>
+                      </TableCell>
+                       <TableCell>
+                        <Badge variant={statusVariantMap[user.status]}>{user.status}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
@@ -249,7 +281,7 @@ export default function UserManagementPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">No users found.</TableCell>
+                    <TableCell colSpan={6} className="h-24 text-center">No users found.</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -271,10 +303,17 @@ export default function UserManagementPage() {
             <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-6">
-                        <FormField control={form.control} name="name" render={({ field }) => (
+                        <FormField control={form.control} name="displayName" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>User Name</FormLabel>
+                                <FormLabel>Display Name</FormLabel>
                                 <FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="username" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Username</FormLabel>
+                                <FormControl><Input placeholder="e.g., jdoe" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -287,6 +326,19 @@ export default function UserManagementPage() {
                                         <SelectItem value="User">User</SelectItem>
                                         <SelectItem value="Admin">Admin</SelectItem>
                                         <SelectItem value="System Admin">System Admin</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                         <FormField control={form.control} name="status" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Status</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a status" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Active">Active</SelectItem>
+                                        <SelectItem value="Inactive">Inactive</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -310,7 +362,7 @@ export default function UserManagementPage() {
                                         </Select>
                                      )}
                                      {watchedRole === 'Admin' && (
-                                         <ScrollArea className="h-40 rounded-md border p-4">
+                                         <ScrollArea className="h-24 rounded-md border p-4">
                                              <div className="space-y-2">
                                                 {checkPoints.map(cp => (
                                                     <FormItem key={cp.id} className="flex flex-row items-start space-x-3 space-y-0">
@@ -335,6 +387,34 @@ export default function UserManagementPage() {
                                 <FormMessage />
                             </FormItem>
                         )} />
+                        
+                        {dialogMode === 'edit' && (
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="reset-password" checked={showResetPassword} onCheckedChange={(checked) => setShowResetPassword(Boolean(checked))} />
+                                <label htmlFor="reset-password" className="text-sm font-medium leading-none">
+                                    Reset Password
+                                </label>
+                            </div>
+                        )}
+
+                        {(dialogMode === 'add' || (dialogMode === 'edit' && showResetPassword)) && (
+                            <div className="space-y-4 pt-2">
+                                 <FormField control={form.control} name="password" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{dialogMode === 'edit' ? 'New Password' : 'Password'}</FormLabel>
+                                        <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{dialogMode === 'edit' ? 'Confirm New Password' : 'Confirm Password'}</FormLabel>
+                                        <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label>Module Permissions</Label>
@@ -343,7 +423,7 @@ export default function UserManagementPage() {
                                 System Admins have full access to all modules.
                             </div>
                         ) : (
-                            <ScrollArea className="h-80 rounded-md border">
+                            <ScrollArea className="h-[500px] rounded-md border">
                                 <Table>
                                     <TableHeader className="sticky top-0 bg-muted">
                                         <TableRow>
@@ -394,7 +474,7 @@ export default function UserManagementPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user "{selectedUser?.name}".
+              This action cannot be undone. This will permanently delete the user "{selectedUser?.displayName}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -406,5 +486,3 @@ export default function UserManagementPage() {
     </div>
   );
 }
-
-    

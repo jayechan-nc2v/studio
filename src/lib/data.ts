@@ -125,8 +125,10 @@ export interface UserPermission {
 
 export interface User {
   id: string;
-  name: string;
+  username: string;
+  displayName: string;
   role: 'User' | 'Admin' | 'System Admin';
+  status: 'Active' | 'Inactive';
   assignedCheckpoints: string[]; // Array of CheckPoint IDs
   permissions: Record<string, UserPermission>; // Key is module href
 }
@@ -485,15 +487,19 @@ const userPermissions = Object.fromEntries(mockModules.map(m => {
 export const mockUsers: User[] = [
     {
         id: 'U-001',
-        name: 'SysAdmin',
+        username: 'sysadmin',
+        displayName: 'System Admin',
         role: 'System Admin',
+        status: 'Active',
         assignedCheckpoints: mockCheckPoints.map(cp => cp.id),
         permissions: allPermissions,
     },
     {
         id: 'U-002',
-        name: 'Admin User',
+        username: 'admin',
+        displayName: 'Admin User',
         role: 'Admin',
+        status: 'Active',
         assignedCheckpoints: ['CP-001', 'CP-005'],
         permissions: {
             ...allPermissions,
@@ -502,8 +508,10 @@ export const mockUsers: User[] = [
     },
     {
         id: 'U-003',
-        name: 'Scanning User',
+        username: 'scanner',
+        displayName: 'Scanning User',
         role: 'User',
+        status: 'Active',
         assignedCheckpoints: ['CP-002'],
         permissions: userPermissions,
     }
