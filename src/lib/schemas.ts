@@ -42,6 +42,7 @@ export const workOrderSchema = z.object({
   productionLine: z.string().min(1, "Production Line is required."),
   status: z.string(),
   lineStations: z.array(stationSchema).optional(),
+  qrCodes: z.array(z.string()).optional(),
 });
 
 export type WorkOrderFormValues = z.infer<typeof workOrderSchema>;

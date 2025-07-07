@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
+
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -55,7 +57,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useWorkOrderStore, useProductionLineStore } from "@/lib/store";
+import { useWorkOrderStore, useProductionLineStore, useQrCodeStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
 import { presetInstructions, mockMachines, mockPreProductionNotes } from "@/lib/data";
 
@@ -83,6 +85,7 @@ export default function WorkOrdersPage() {
     const { toast } = useToast();
     const addWorkOrder = useWorkOrderStore((state) => state.addWorkOrder);
     const { lines: productionLines } = useProductionLineStore();
+    const { qrCodes: allQrCodes, assignQrCodesToWorkOrder } = useQrCodeStore();
 
   const form = useForm<WorkOrderFormValues>({
     resolver: zodResolver(workOrderSchema),
@@ -134,8 +137,26 @@ export default function WorkOrdersPage() {
   }, [productionLines]);
 
   function onSubmit(data: WorkOrderFormValues) {
-    console.log(data);
-    addWorkOrder(data);
+    const totalQty = data.sizes.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
+    const totalBundles = generateBundles(totalQty, data.qtyPerBundle).length;
+
+    const assignedCodes = assignQrCodesToWorkOrder(data.workOrderNo, totalBundles);
+
+    if (assignedCodes.length < totalBundles) {
+      toast({
+        variant: "destructive",
+        title: "QR Code Assignment Failed",
+        description: `Not enough unassigned QR codes. Required: ${totalBundles}, Available: ${assignedCodes.length}. Please generate more codes.`,
+      });
+      return; // Stop submission
+    }
+    
+    const workOrderData: WorkOrderFormValues = {
+      ...data,
+      qrCodes: assignedCodes,
+    };
+    
+    addWorkOrder(workOrderData);
     toast({
         title: "Work Order Created!",
         description: "The new work order has been successfully created and added to the dashboard.",
@@ -201,6 +222,16 @@ export default function WorkOrdersPage() {
   const totalQty = React.useMemo(() => {
     return watchedSizes.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
   }, [watchedSizes]);
+  
+  const totalBundles = React.useMemo(() => {
+    return generateBundles(totalQty, watchedQtyPerBundle).length;
+  }, [totalQty, watchedQtyPerBundle]);
+
+  const unassignedQrCodes = React.useMemo(() => allQrCodes.filter(c => c.status === 'Unassigned'), [allQrCodes]);
+  
+  const codesForPreview = React.useMemo(() => {
+    return unassignedQrCodes.slice(0, totalBundles);
+  }, [unassignedQrCodes, totalBundles]);
 
   return (
     <Form {...form}>
@@ -456,10 +487,11 @@ export default function WorkOrdersPage() {
             </Card>
 
             <Tabs defaultValue="bundle" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="bundle">Bundle Details</TabsTrigger>
                 <TabsTrigger value="instructions">Instructions</TabsTrigger>
                 <TabsTrigger value="line-detail">Line Detail</TabsTrigger>
+                <TabsTrigger value="qr-codes">QR Codes</TabsTrigger>
               </TabsList>
               <TabsContent value="bundle">
                 <Card>
@@ -873,6 +905,47 @@ export default function WorkOrdersPage() {
                           Add Station
                         </Button>
                     </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="qr-codes">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>QR Codes to be Assigned</CardTitle>
+                    <CardDescription>
+                      {totalBundles > 0
+                        ? `Based on your configuration, ${totalBundles} bundles will be created and assigned the following QR codes.`
+                        : "Enter size breakdown and bundle quantity to see QR codes."}
+                      {unassignedQrCodes.length < totalBundles && (
+                        <p className="font-medium text-destructive mt-2">
+                          Warning: Not enough unassigned QR codes available.
+                          Required: {totalBundles}, Available:{" "}
+                          {unassignedQrCodes.length}. Please generate more
+                          codes.
+                        </p>
+                      )}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {codesForPreview.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                        {codesForPreview.map((code) => (
+                          <div
+                            key={code.id}
+                            className="flex flex-col items-center gap-2 p-2 border rounded-lg"
+                          >
+                            <QRCodeCanvas value={code.id} size={80} />
+                            <p className="text-xs font-mono break-all text-center">
+                              {code.id.split("-")[2]}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-24 text-muted-foreground">
+                        <p>No QR codes to preview.</p>
+                      </div>
+                    )}
+                  </CardContent>
                 </Card>
               </TabsContent>
             </Tabs>

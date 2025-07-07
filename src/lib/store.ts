@@ -39,6 +39,7 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         productionLine: 'line-1',
         status: 'Sewing',
         instructions: presetInstructions["TEE-CLASSIC"],
+        qrCodes: [],
     },
     {
         workOrderNo: 'WO-00124',
@@ -57,6 +58,7 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         productionLine: 'line-3',
         status: 'QC',
         instructions: presetInstructions["DNM-JKT-01"],
+        qrCodes: [],
     },
     {
         workOrderNo: 'WO-00123',
@@ -75,6 +77,7 @@ const initialWorkOrders: WorkOrderFormValues[] = [
             { machineType: "Fabric Spreader", instructionDescription: "Spread fabric", smv: 0.2, target: 300},
             { machineType: "Sewing Machine (Brother)", instructionDescription: "Main body sewing", smv: 1.2, target: 60},
         ],
+        qrCodes: [],
     },
 ];
 
@@ -270,9 +273,10 @@ export interface QrCode {
 interface QrCodeState {
     qrCodes: QrCode[];
     addQrCodes: (ids: string[]) => void;
+    assignQrCodesToWorkOrder: (workOrderId: string, count: number) => string[];
 }
 
-export const useQrCodeStore = create<QrCodeState>((set) => ({
+export const useQrCodeStore = create<QrCodeState>((set, get) => ({
     qrCodes: [],
     addQrCodes: (ids) => {
         const newCodes: QrCode[] = ids.map(id => ({
@@ -283,5 +287,25 @@ export const useQrCodeStore = create<QrCodeState>((set) => ({
         set((state) => ({
             qrCodes: [...state.qrCodes, ...newCodes]
         }));
-    }
+    },
+    assignQrCodesToWorkOrder: (workOrderId, count) => {
+        const unassignedCodes = get().qrCodes.filter(c => c.status === 'Unassigned');
+        if (unassignedCodes.length < count) {
+            console.warn(`Not enough unassigned QR codes. Requested: ${count}, Available: ${unassignedCodes.length}`);
+        }
+        
+        const codesToAssign = unassignedCodes.slice(0, count);
+        const assignedCodeIds = codesToAssign.map(c => c.id);
+  
+        set(state => ({
+            qrCodes: state.qrCodes.map(c => {
+                if (assignedCodeIds.includes(c.id)) {
+                    return { ...c, status: 'Assigned', workOrderId };
+                }
+                return c;
+            })
+        }));
+  
+        return assignedCodeIds;
+    },
 }));
