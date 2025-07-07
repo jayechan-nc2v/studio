@@ -197,4 +197,12 @@ export const userSchema = z.object({
 
 export type NewUserFormValues = z.infer<typeof userSchema>;
 
+export const globalSettingsSchema = z.object({
+    factoryName: z.string().min(1, { message: "Factory name is required." }),
+    factoryInCharge: z.string().min(1, { message: "Factory in-charge person is required." }),
+    efficiencyTarget: z.coerce.number().min(0, "Target cannot be negative.").max(100, "Target cannot exceed 100."),
+    overtimePaid: z.coerce.number().min(0, { message: "Overtime paid must be a positive value." }),
+});
+
+export type GlobalSettingsFormValues = z.infer<typeof globalSettingsSchema>;
     

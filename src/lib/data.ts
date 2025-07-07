@@ -1,4 +1,5 @@
 
+
 export interface Station {
   id: string;
   machineType: string;
@@ -131,6 +132,13 @@ export interface User {
   status: 'Active' | 'Inactive';
   assignedCheckpoints: string[]; // Array of CheckPoint IDs
   permissions: Record<string, UserPermission>; // Key is module href
+}
+
+export interface GlobalSettings {
+  factoryName: string;
+  factoryInCharge: string;
+  efficiencyTarget: number;
+  overtimePaid: number;
 }
 
 
@@ -473,6 +481,7 @@ export const mockModules = [
     { name: 'Bundle History', href: '/tracking' },
     { name: 'Finish Sewing QC', href: '/finish-sewing-qc' },
     { name: 'User Management', href: '/user-management' },
+    { name: 'Global Settings', href: '/global-settings' },
     { name: 'Master Data', href: '/master-data' },
     { name: 'AI Tools', href: '/ai-tools' },
 ];
@@ -516,6 +525,13 @@ export const mockUsers: User[] = [
         permissions: userPermissions,
     }
 ];
+
+export const mockGlobalSettings: GlobalSettings = {
+  factoryName: 'BFN Garment Factory',
+  factoryInCharge: 'Mr. Budi',
+  efficiencyTarget: 85,
+  overtimePaid: 2.50,
+};
 
 export async function fetchPreProductionNote(noteNo: string): Promise<PreProductionNote | null> {
     console.log(`Fetching data for Pre-Production Note: ${noteNo}`);

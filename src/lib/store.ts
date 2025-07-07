@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues, NewCheckPointFormValues, NewUserFormValues } from '@/lib/schemas';
+import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues, NewCheckPointFormValues, NewUserFormValues, GlobalSettingsFormValues } from '@/lib/schemas';
 import { 
     presetInstructions, 
     mockMachineTypes, 
@@ -19,7 +19,9 @@ import {
     type CheckPoint,
     type BundleHistory,
     mockUsers,
-    type User
+    type User,
+    mockGlobalSettings,
+    type GlobalSettings
 } from '@/lib/data';
 
 interface WorkOrderState {
@@ -446,4 +448,14 @@ export const useUserStore = create<UserState>((set, get) => ({
             users: state.users.filter(u => u.id !== id)
         }));
     }
+}));
+
+interface GlobalSettingsState {
+    settings: GlobalSettings;
+    updateSettings: (newSettings: GlobalSettingsFormValues) => void;
+}
+
+export const useGlobalSettingsStore = create<GlobalSettingsState>((set) => ({
+    settings: mockGlobalSettings,
+    updateSettings: (newSettings) => set({ settings: newSettings }),
 }));
