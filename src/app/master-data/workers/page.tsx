@@ -383,7 +383,7 @@ export default function WorkersPage() {
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form id="worker-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
                 <FormField
                   control={form.control}
@@ -515,16 +515,16 @@ export default function WorkersPage() {
                   )}
                 />
               </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary">
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button type="submit">{dialogMode === 'edit' ? 'Save Changes' : 'Create Worker'}</Button>
-              </DialogFooter>
             </form>
           </Form>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit" form="worker-form">{dialogMode === 'edit' ? 'Save Changes' : 'Create Worker'}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       

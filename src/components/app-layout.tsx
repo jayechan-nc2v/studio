@@ -16,6 +16,7 @@ import {
   LogOut,
   QrCode,
   Route,
+  ScanLine,
   StickyNote,
   Tags,
   Users,
@@ -52,12 +53,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { SheetTitle } from './ui/sheet';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/production-notes', label: 'Pre-Production', icon: StickyNote },
   { href: '/work-orders', label: 'Work Orders', icon: ClipboardList },
-  { href: '/tracking', label: 'Tracking', icon: QrCode },
+  { href: '/generate-qr-code', label: 'Generate QR Code', icon: QrCode },
+  { href: '/tracking', label: 'Tracking', icon: ScanLine },
   { href: '/quality-control', label: 'Quality Control', icon: ClipboardCheck },
   {
     href: '/master-data',
@@ -122,6 +125,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </SidebarHeader>
         <SidebarContent>
+          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>

@@ -355,7 +355,7 @@ export default function ProductionInstructionsPage() {
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form id="instruction-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                 <FormField
                   control={form.control}
@@ -441,16 +441,16 @@ export default function ProductionInstructionsPage() {
                   )}
                 />
               </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary">
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button type="submit">{dialogMode === 'edit' ? 'Save Changes' : 'Create Instruction'}</Button>
-              </DialogFooter>
             </form>
           </Form>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit" form="instruction-form">{dialogMode === 'edit' ? 'Save Changes' : 'Create Instruction'}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       

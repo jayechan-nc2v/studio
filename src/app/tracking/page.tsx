@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { QrCode } from "lucide-react";
+import { ScanLine } from "lucide-react";
 
 export default function TrackingPage() {
   return (
@@ -19,7 +19,7 @@ export default function TrackingPage() {
         <CardContent className="flex gap-2">
             <Input placeholder="Scan or enter QR code..." />
             <Button>
-                <QrCode className="mr-2 h-4 w-4" />
+                <ScanLine className="mr-2 h-4 w-4" />
                 Track Bundle
             </Button>
         </CardContent>

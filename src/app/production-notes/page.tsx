@@ -22,6 +22,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -299,7 +300,7 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: PreProducti
                     </DialogDescription>
                 </DialogHeader>
                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form id="create-wo-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                              <FormField
                                 control={form.control}
@@ -467,15 +468,15 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: PreProducti
                                 </Table>
                             </div>
                         </div>
-
-                        <DialogFooter>
-                            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-                            <Button type="submit">Create Work Order</Button>
-                        </DialogFooter>
                     </form>
                 </Form>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">Cancel</Button>
+                    </DialogClose>
+                    <Button type="submit" form="create-wo-form">Create Work Order</Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 }
-

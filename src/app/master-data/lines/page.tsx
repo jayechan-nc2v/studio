@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, GripVertical, PlusCircle, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, GripVertical, PlusCircle, Trash2, ChevronsUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { mockLineWorkerHistory, mockLinePerformanceData, mockWorkers, mockMachines } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,7 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { useForm, useFieldArray, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { productionLineSchema, newLineSchema, type ProductionLineFormValues, type NewLineFormValues } from "@/lib/schemas";
+import { productionLineSchema, newLineSchema, type ProductionLineFormValues, type NewLineFormValues, type LineWorkerHistory } from "@/lib/schemas";
 import { useProductionLineStore, useMachineTypeStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -99,6 +99,8 @@ export default function ProductionLinesPage() {
   });
   const [historyDateRange, setHistoryDateRange] = React.useState<DateRange | undefined>();
   const [visibleHistoryCount, setVisibleHistoryCount] = React.useState(10);
+  const [sortConfig, setSortConfig] = React.useState<{ key: keyof LineWorkerHistory, direction: 'ascending' | 'descending' } | null>({ key: 'date', direction: 'descending' });
+
 
   // State for performance tab
   const [performanceDateRange, setPerformanceDateRange] = React.useState<DateRange | undefined>({
@@ -209,8 +211,22 @@ export default function ProductionLinesPage() {
       })();
 
       return workerMatch && machineTypeMatch && dateMatch;
-    }).sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [historyFilters, historyDateRange]);
+    }).sort((a, b) => {
+        if (!sortConfig) return 0;
+        const { key, direction } = sortConfig;
+        
+        const aValue = a[key];
+        const bValue = b[key];
+
+        if (aValue < bValue) {
+          return direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+    });
+  }, [historyFilters, historyDateRange, sortConfig]);
 
   const filteredPerformanceData = React.useMemo(() => {
     if (!performanceDateRange?.from) {
@@ -228,6 +244,29 @@ export default function ProductionLinesPage() {
       return recordDate >= fromDate && recordDate <= toDate;
     });
   }, [performanceDateRange]);
+
+  const requestSort = (key: keyof LineWorkerHistory) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const SortableHeader = ({ label, sortKey }: { label: string; sortKey: keyof LineWorkerHistory; }) => {
+    const isSorted = sortConfig?.key === sortKey;
+    return (
+        <Button variant="ghost" onClick={() => requestSort(sortKey)} className="px-2">
+            {label}
+            {isSorted ? (
+                sortConfig?.direction === 'ascending' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+            )}
+        </Button>
+    );
+  };
+
 
   return (
     <FormProvider {...form}>
@@ -262,14 +301,14 @@ export default function ProductionLinesPage() {
                 </Button>
               </DialogTrigger>
               <DialogContent>
+                 <DialogHeader>
+                  <DialogTitle>Add New Production Line</DialogTitle>
+                  <DialogDescription>
+                      Enter the details for the new production line.
+                  </DialogDescription>
+                </DialogHeader>
                 <Form {...addLineForm}>
-                  <form onSubmit={addLineForm.handleSubmit(handleAddLineSubmit)} className="space-y-4">
-                    <DialogHeader>
-                      <DialogTitle>Add New Production Line</DialogTitle>
-                      <DialogDescription>
-                          Enter the details for the new production line.
-                      </DialogDescription>
-                    </DialogHeader>
+                  <form id="add-line-form" onSubmit={addLineForm.handleSubmit(handleAddLineSubmit)} className="space-y-4">
                     <div className="py-4 space-y-4">
                       <FormField
                         control={addLineForm.control}
@@ -298,14 +337,14 @@ export default function ProductionLinesPage() {
                         )}
                       />
                     </div>
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button type="button" variant="secondary">Cancel</Button>
-                      </DialogClose>
-                      <Button type="submit">Create Line</Button>
-                    </DialogFooter>
                   </form>
                 </Form>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="secondary">Cancel</Button>
+                  </DialogClose>
+                  <Button type="submit" form="add-line-form">Create Line</Button>
+                </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
@@ -674,12 +713,12 @@ export default function ProductionLinesPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Action</TableHead>
-                            <TableHead>Worker Name</TableHead>
-                            <TableHead>Worker ID</TableHead>
-                            <TableHead>Machine Type</TableHead>
-                            <TableHead>Station ID</TableHead>
+                            <TableHead><SortableHeader label="Date" sortKey="date" /></TableHead>
+                            <TableHead><SortableHeader label="Action" sortKey="action" /></TableHead>
+                            <TableHead><SortableHeader label="Worker Name" sortKey="workerName" /></TableHead>
+                            <TableHead><SortableHeader label="Worker ID" sortKey="workerId" /></TableHead>
+                            <TableHead><SortableHeader label="Machine Type" sortKey="machineType" /></TableHead>
+                            <TableHead><SortableHeader label="Station ID" sortKey="stationId" /></TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -826,5 +865,3 @@ export default function ProductionLinesPage() {
     </FormProvider>
   );
 }
-
-    

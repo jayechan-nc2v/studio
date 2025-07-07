@@ -42,6 +42,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Tabs,
@@ -267,7 +268,7 @@ export default function MachinesPage() {
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleAddMachine)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
+                    <form id="add-machine-form" onSubmit={form.handleSubmit(handleAddMachine)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <FormField
                                 control={form.control}
@@ -377,14 +378,14 @@ export default function MachinesPage() {
                                 )}
                             />
                         </div>
-                         <div className="flex justify-end gap-2 pt-4">
-                            <DialogClose asChild>
-                                <Button type="button" variant="secondary">Cancel</Button>
-                            </DialogClose>
-                            <Button type="submit">Create Machine</Button>
-                        </div>
                     </form>
                 </Form>
+                 <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">Cancel</Button>
+                    </DialogClose>
+                    <Button type="submit" form="add-machine-form">Create Machine</Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
       </header>

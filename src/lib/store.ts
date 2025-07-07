@@ -260,3 +260,28 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
         }));
     }
 }));
+
+export interface QrCode {
+    id: string;
+    workOrderId: string | null;
+    status: 'Unassigned' | 'Assigned' | 'In Progress' | 'Completed';
+}
+
+interface QrCodeState {
+    qrCodes: QrCode[];
+    addQrCodes: (ids: string[]) => void;
+}
+
+export const useQrCodeStore = create<QrCodeState>((set) => ({
+    qrCodes: [],
+    addQrCodes: (ids) => {
+        const newCodes: QrCode[] = ids.map(id => ({
+            id,
+            workOrderId: null,
+            status: 'Unassigned'
+        }));
+        set((state) => ({
+            qrCodes: [...state.qrCodes, ...newCodes]
+        }));
+    }
+}));

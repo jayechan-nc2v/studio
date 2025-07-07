@@ -126,3 +126,12 @@ export const workOrderCreationSchema = z.object({
 });
 
 export type WorkOrderCreationFormValues = z.infer<typeof workOrderCreationSchema>;
+
+export interface LineWorkerHistory {
+  date: Date;
+  workerName: string;
+  workerId: string;
+  action: 'Assigned' | 'Removed';
+  stationId: string;
+  machineType: string;
+}

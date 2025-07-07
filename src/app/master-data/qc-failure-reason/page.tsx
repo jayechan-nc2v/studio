@@ -328,7 +328,7 @@ export default function QcFailureReasonsPage() {
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form id="qc-reason-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                 <FormField
                   control={form.control}
@@ -381,16 +381,16 @@ export default function QcFailureReasonsPage() {
                     </FormItem>
                   )}
                 />
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary">
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button type="submit">{dialogMode === 'edit' ? 'Save Changes' : 'Create Reason'}</Button>
-              </DialogFooter>
             </form>
           </Form>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit" form="qc-reason-form">{dialogMode === 'edit' ? 'Save Changes' : 'Create Reason'}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
