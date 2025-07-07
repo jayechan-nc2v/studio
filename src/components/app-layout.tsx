@@ -80,7 +80,6 @@ const navItems = [
     icon: ClipboardCheck,
   },
   { href: '/user-management', label: 'User Management', icon: UserCog },
-  { href: '/global-settings', label: 'Global Settings', icon: Settings },
   {
     href: '/master-data',
     label: 'Master Data',
@@ -111,6 +110,7 @@ const navItems = [
       },
     ],
   },
+  { href: '/global-settings', label: 'Global Settings', icon: Settings },
   { href: '/ai-tools', label: 'AI Tools', icon: Cpu },
 ];
 
