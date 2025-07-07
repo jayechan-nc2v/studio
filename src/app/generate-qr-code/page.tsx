@@ -25,11 +25,20 @@ interface GeneratedCode {
 
 const PrintableQrCodes = React.forwardRef<
   HTMLDivElement,
-  { codes: GeneratedCode[] }
->(({ codes }, ref) => {
-  if (codes.length === 0) {
+  { codes: GeneratedCode[]; numberOfCopies: number }
+>(({ codes, numberOfCopies }, ref) => {
+  if (codes.length === 0 || numberOfCopies <= 0) {
     return null;
   }
+
+  const allCodesToPrint = React.useMemo(() => {
+    return codes.flatMap(code =>
+      Array.from({ length: numberOfCopies }, (_, i) => ({
+        ...code,
+        uniqueKey: `${code.id}-${i}`,
+      }))
+    );
+  }, [codes, numberOfCopies]);
 
   return (
     <div ref={ref} className="p-10">
@@ -60,8 +69,8 @@ const PrintableQrCodes = React.forwardRef<
         `}
       </style>
       <div className="printable-area">
-        {codes.map((code) => (
-          <div key={code.id} className="qr-code-item">
+        {allCodesToPrint.map((code) => (
+          <div key={code.uniqueKey} className="qr-code-item">
             <QRCodeCanvas value={code.id} size={100} />
             <span className="qr-code-id">{code.id}</span>
           </div>
@@ -77,6 +86,7 @@ export default function GenerateQrCodePage() {
   const addQrCodesToStore = useQrCodeStore((state) => state.addQrCodes);
 
   const [numberOfCodes, setNumberOfCodes] = React.useState<number>(10);
+  const [numberOfCopies, setNumberOfCopies] = React.useState<number>(1);
   const [generatedCodes, setGeneratedCodes] = React.useState<GeneratedCode[]>([]);
   const [isGenerating, setIsGenerating] = React.useState(false);
 
@@ -93,10 +103,19 @@ export default function GenerateQrCodePage() {
       toast({
         variant: "destructive",
         title: "Invalid Quantity",
-        description: "Please enter a number between 1 and 500.",
+        description: "Please enter a number of unique codes between 1 and 500.",
       });
       return;
     }
+    if (numberOfCopies <= 0 || numberOfCopies > 100) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Copies",
+        description: "Please enter a number of copies between 1 and 100.",
+      });
+      return;
+    }
+
     setIsGenerating(true);
 
     // Simulate async generation
@@ -109,7 +128,7 @@ export default function GenerateQrCodePage() {
       setIsGenerating(false);
       toast({
         title: "QR Codes Generated",
-        description: `${numberOfCodes} new QR codes have been created and are ready to print.`,
+        description: `${numberOfCodes} new unique QR codes have been created and are ready to print.`,
       });
     }, 500);
   };
@@ -127,21 +146,35 @@ export default function GenerateQrCodePage() {
         <CardHeader>
           <CardTitle>Generation Settings</CardTitle>
           <CardDescription>
-            Specify how many QR codes you need to generate.
+            Specify how many unique QR codes you need and how many copies of each to print.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="max-w-xs space-y-2">
-            <Label htmlFor="number-of-codes">Number of QR Codes</Label>
-            <Input
-              id="number-of-codes"
-              type="number"
-              value={numberOfCodes}
-              onChange={(e) => setNumberOfCodes(parseInt(e.target.value, 10) || 0)}
-              min="1"
-              max="500"
-              disabled={isGenerating}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md">
+            <div className="space-y-2">
+              <Label htmlFor="number-of-codes">Number of Unique QR Codes</Label>
+              <Input
+                id="number-of-codes"
+                type="number"
+                value={numberOfCodes}
+                onChange={(e) => setNumberOfCodes(parseInt(e.target.value, 10) || 0)}
+                min="1"
+                max="500"
+                disabled={isGenerating}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="number-of-copies">Copies per Code</Label>
+              <Input
+                id="number-of-copies"
+                type="number"
+                value={numberOfCopies}
+                onChange={(e) => setNumberOfCopies(parseInt(e.target.value, 10) || 1)}
+                min="1"
+                max="100"
+                disabled={isGenerating}
+              />
+            </div>
           </div>
         </CardContent>
         <CardFooter>
@@ -162,7 +195,8 @@ export default function GenerateQrCodePage() {
             <div>
               <CardTitle>Generated QR Codes</CardTitle>
               <CardDescription>
-                A preview of the {generatedCodes.length} generated QR codes. Click Print to get physical copies.
+                A preview of the {generatedCodes.length} unique codes generated.{' '}
+                {numberOfCopies > 1 ? `${numberOfCopies} copies of each will be printed.` : 'Click Print to get physical copies.'}
               </CardDescription>
             </div>
             <Button onClick={handlePrint}>
@@ -190,7 +224,7 @@ export default function GenerateQrCodePage() {
 
       {/* This component is hidden from view and only used for printing */}
       <div className="hidden">
-        <PrintableQrCodes ref={printComponentRef} codes={generatedCodes} />
+        <PrintableQrCodes ref={printComponentRef} codes={generatedCodes} numberOfCopies={numberOfCopies} />
       </div>
     </div>
   );
