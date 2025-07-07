@@ -137,23 +137,34 @@ export default function WorkOrdersPage() {
   }, [productionLines]);
 
   function onSubmit(data: WorkOrderFormValues) {
-    const totalQty = data.sizes.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0);
-    const totalBundles = generateBundles(totalQty, data.qtyPerBundle).length;
+    const allBundles: { size: string, bundleNo: number, quantity: number }[] = [];
+    data.sizes.forEach(sizeItem => {
+        if (sizeItem.quantity > 0) {
+            const bundlesForSize = generateBundles(sizeItem.quantity, data.qtyPerBundle);
+            bundlesForSize.forEach(bundle => {
+                allBundles.push({
+                    size: sizeItem.size,
+                    bundleNo: bundle.number,
+                    quantity: bundle.quantityInBundle,
+                });
+            });
+        }
+    });
 
-    const assignedCodes = assignQrCodesToWorkOrder(data.workOrderNo, totalBundles);
+    const assignmentResult = assignQrCodesToWorkOrder(data.workOrderNo, allBundles);
 
-    if (assignedCodes.length < totalBundles) {
+    if (!assignmentResult.success) {
       toast({
         variant: "destructive",
         title: "QR Code Assignment Failed",
-        description: `Not enough unassigned QR codes. Required: ${totalBundles}, Available: ${assignedCodes.length}. Please generate more codes.`,
+        description: `Not enough unassigned QR codes. Required: ${assignmentResult.required}, Available: ${assignmentResult.available}. Please generate more codes.`,
       });
       return; // Stop submission
     }
     
     const workOrderData: WorkOrderFormValues = {
       ...data,
-      qrCodes: assignedCodes,
+      qrCodes: assignmentResult.assigned.map(c => c.id),
     };
     
     addWorkOrder(workOrderData);

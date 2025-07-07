@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -53,6 +54,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { SheetTitle } from './ui/sheet';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -60,7 +62,7 @@ const navItems = [
   { href: '/work-orders', label: 'Work Orders', icon: ClipboardList },
   { href: '/generate-qr-code', label: 'Generate QR Code', icon: QrCode },
   { href: '/tracking', label: 'Tracking', icon: ScanLine },
-  { href: '/quality-control', label: 'Quality Control', icon: ClipboardCheck },
+  { href: '/finish-sewing-qc', label: 'Finish Sewing QC', icon: ClipboardCheck },
   {
     href: '/master-data',
     label: 'Master Data',
@@ -119,7 +121,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </svg>
             </Button>
             <h1 className="text-xl font-semibold text-primary font-headline">
-              BFN Production
+              GarmentFlow
             </h1>
           </div>
         </SidebarHeader>

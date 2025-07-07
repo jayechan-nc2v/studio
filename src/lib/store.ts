@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues } from '@/lib/schemas';
 import { 
@@ -268,12 +269,18 @@ export interface QrCode {
     id: string;
     workOrderId: string | null;
     status: 'Unassigned' | 'Assigned' | 'In Progress' | 'Completed';
+    size?: string;
+    bundleNo?: number;
+    bundleQty?: number;
 }
 
 interface QrCodeState {
     qrCodes: QrCode[];
     addQrCodes: (ids: string[]) => void;
-    assignQrCodesToWorkOrder: (workOrderId: string, count: number) => string[];
+    assignQrCodesToWorkOrder: (
+        workOrderId: string, 
+        bundles: { size: string; bundleNo: number, quantity: number }[]
+    ) => { success: boolean, assigned: QrCode[], required: number, available: number };
 }
 
 export const useQrCodeStore = create<QrCodeState>((set, get) => ({
@@ -288,24 +295,37 @@ export const useQrCodeStore = create<QrCodeState>((set, get) => ({
             qrCodes: [...state.qrCodes, ...newCodes]
         }));
     },
-    assignQrCodesToWorkOrder: (workOrderId, count) => {
+    assignQrCodesToWorkOrder: (workOrderId, bundles) => {
         const unassignedCodes = get().qrCodes.filter(c => c.status === 'Unassigned');
-        if (unassignedCodes.length < count) {
-            console.warn(`Not enough unassigned QR codes. Requested: ${count}, Available: ${unassignedCodes.length}`);
+        const requiredCount = bundles.length;
+
+        if (unassignedCodes.length < requiredCount) {
+            return { success: false, assigned: [], required: requiredCount, available: unassignedCodes.length };
         }
         
-        const codesToAssign = unassignedCodes.slice(0, count);
-        const assignedCodeIds = codesToAssign.map(c => c.id);
+        const codesToAssign = unassignedCodes.slice(0, requiredCount);
+        const assignedCodes: QrCode[] = [];
   
-        set(state => ({
-            qrCodes: state.qrCodes.map(c => {
-                if (assignedCodeIds.includes(c.id)) {
-                    return { ...c, status: 'Assigned', workOrderId };
-                }
-                return c;
-            })
-        }));
+        const updatedQrCodes = get().qrCodes.map(qrCode => {
+            const assignmentIndex = codesToAssign.findIndex(c => c.id === qrCode.id);
+            if (assignmentIndex !== -1) {
+                const bundleInfo = bundles[assignmentIndex];
+                const updatedCode = {
+                    ...qrCode,
+                    workOrderId,
+                    status: 'Assigned' as const,
+                    size: bundleInfo.size,
+                    bundleNo: bundleInfo.bundleNo,
+                    bundleQty: bundleInfo.quantity
+                };
+                assignedCodes.push(updatedCode);
+                return updatedCode;
+            }
+            return qrCode;
+        });
+
+        set({ qrCodes: updatedQrCodes });
   
-        return assignedCodeIds;
+        return { success: true, assigned: assignedCodes, required: requiredCount, available: unassignedCodes.length };
     },
 }));
