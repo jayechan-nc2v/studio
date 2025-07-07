@@ -28,20 +28,24 @@ function RootLayoutContent({
     const router = useRouter();
     const { currentUser } = useUserStore();
 
-    // The login page has its own simple layout
+    // This hook must be called on every render to follow the Rules of Hooks.
+    React.useEffect(() => {
+        // We only want to redirect if not on the login page and no user is found.
+        if (!currentUser && pathname !== '/login') {
+            router.replace('/login');
+        }
+    }, [currentUser, pathname, router]);
+
+    // Conditional rendering logic is safe after all hooks have been called.
+
+    // If we're on the login page, render it without the main AppLayout.
     if (pathname === '/login') {
         return <>{children}</>;
     }
 
-    // This is the main protected layout for the application
-    React.useEffect(() => {
-        if (!currentUser) {
-            router.replace('/login');
-        }
-    }, [currentUser, router]);
-
+    // If we are not on the login page and there is no user, show a loading skeleton.
+    // The useEffect above will handle the redirect.
     if (!currentUser) {
-        // You can render a loading skeleton or a spinner here
         return (
             <div className="flex h-screen items-center justify-center bg-background">
                 <Card className="w-full max-w-md">
@@ -59,6 +63,7 @@ function RootLayoutContent({
         );
     }
     
+    // If we have a user and are not on the login page, show the full app layout.
     return (
         <AppLayout>
             {children}
