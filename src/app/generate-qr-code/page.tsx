@@ -6,7 +6,7 @@ import { useReactToPrint } from "react-to-print";
 import { QRCodeCanvas } from "qrcode.react";
 import { Loader2, Printer, QrCode } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useQrCodeStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 
 interface GeneratedCode {
   id: string;
@@ -200,10 +201,10 @@ export default function GenerateQrCodePage() {
                 {numberOfCopies > 1 ? `${numberOfCopies} copies of each will be printed.` : 'Click Print to get physical copies.'}
               </CardDescription>
             </div>
-            <Button onClick={handlePrint}>
-              <Printer className="mr-2 h-4 w-4" />
+            <button onClick={handlePrint} className={cn(buttonVariants())}>
+              <Printer />
               Print
-            </Button>
+            </button>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
