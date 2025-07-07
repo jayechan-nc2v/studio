@@ -283,8 +283,16 @@ interface QrCodeState {
     ) => { success: boolean, assigned: QrCode[], required: number, available: number };
 }
 
+const initialQrCodes: QrCode[] = [
+    { id: 'BNDL-TEST-001', workOrderId: 'WO-00125', status: 'Assigned', size: 'M', bundleNo: 1, bundleQty: 25 },
+    { id: 'BNDL-TEST-002', workOrderId: 'WO-00125', status: 'Assigned', size: 'M', bundleNo: 2, bundleQty: 25 },
+    { id: 'BNDL-TEST-003', workOrderId: null, status: 'Unassigned' },
+    { id: 'BNDL-TEST-004', workOrderId: null, status: 'Unassigned' },
+    { id: 'BNDL-TEST-005', workOrderId: null, status: 'Unassigned' },
+];
+
 export const useQrCodeStore = create<QrCodeState>((set, get) => ({
-    qrCodes: [],
+    qrCodes: initialQrCodes,
     addQrCodes: (ids) => {
         const newCodes: QrCode[] = ids.map(id => ({
             id,
