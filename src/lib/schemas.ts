@@ -136,3 +136,14 @@ export interface LineWorkerHistory {
   stationId: string;
   machineType: string;
 }
+
+export const checkPointSchema = z.object({
+    name: z.string().min(1, { message: "Check point name is required." }),
+    type: z.enum(['Pre-production', 'Sewing', 'Packing', 'Finishing'], {
+        required_error: "You need to select a check point type.",
+    }),
+    isProductionEntry: z.boolean().default(false),
+    isProductionExit: z.boolean().default(false),
+});
+
+export type NewCheckPointFormValues = z.infer<typeof checkPointSchema>;

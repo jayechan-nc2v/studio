@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues } from '@/lib/schemas';
+import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues, NewCheckPointFormValues } from '@/lib/schemas';
 import { 
     presetInstructions, 
     mockMachineTypes, 
@@ -14,7 +14,9 @@ import {
     mockQcFailureReasons,
     type QcFailureReason,
     mockWorkers,
-    type Worker
+    type Worker,
+    mockCheckPoints,
+    type CheckPoint
 } from '@/lib/data';
 
 interface WorkOrderState {
@@ -336,4 +338,37 @@ export const useQrCodeStore = create<QrCodeState>((set, get) => ({
   
         return { success: true, assigned: assignedCodes, required: requiredCount, available: unassignedCodes.length };
     },
+}));
+
+
+// Store for Check Points
+interface CheckPointState {
+    checkPoints: CheckPoint[];
+    addCheckPoint: (data: NewCheckPointFormValues) => void;
+    updateCheckPoint: (id: string, data: NewCheckPointFormValues) => void;
+    deleteCheckPoint: (id: string) => void;
+}
+
+export const useCheckPointStore = create<CheckPointState>((set, get) => ({
+    checkPoints: mockCheckPoints,
+    addCheckPoint: (data) => {
+        const newId = `CP-${(get().checkPoints.length + 1).toString().padStart(3, '0')}`;
+        const newCheckPoint: CheckPoint = {
+            id: newId,
+            ...data,
+        };
+        set((state) => ({ checkPoints: [newCheckPoint, ...state.checkPoints] }));
+    },
+    updateCheckPoint: (id, data) => {
+        set((state) => ({
+            checkPoints: state.checkPoints.map(cp => 
+                cp.id === id ? { ...cp, ...data } : cp
+            )
+        }));
+    },
+    deleteCheckPoint: (id) => {
+        set((state) => ({
+            checkPoints: state.checkPoints.filter(cp => cp.id !== id)
+        }));
+    }
 }));

@@ -99,6 +99,14 @@ export interface PreProductionNote {
   sizes: PreProductionSize[];
 }
 
+export interface CheckPoint {
+  id: string;
+  name: string;
+  type: 'Pre-production' | 'Sewing' | 'Packing' | 'Finishing';
+  isProductionEntry: boolean;
+  isProductionExit: boolean;
+}
+
 
 // Mock Data for Machines
 export const mockMachines: Machine[] = [
@@ -418,6 +426,16 @@ export const mockPreProductionNotes: PreProductionNote[] = [
             { size: 'L', quantity: 200 },
         ],
     },
+];
+
+export const mockCheckPointTypes = ['Pre-production', 'Sewing', 'Packing', 'Finishing'] as const;
+
+export const mockCheckPoints: CheckPoint[] = [
+  { id: 'CP-001', name: 'Cutting Table', type: 'Pre-production', isProductionEntry: true, isProductionExit: false },
+  { id: 'CP-002', name: 'Sewing Line 1 Input', type: 'Sewing', isProductionEntry: false, isProductionExit: false },
+  { id: 'CP-003', name: 'QC Station 1', type: 'Sewing', isProductionEntry: false, isProductionExit: false },
+  { id: 'CP-004', name: 'Finishing Station', type: 'Finishing', isProductionEntry: false, isProductionExit: false },
+  { id: 'CP-005', name: 'Packing Area', type: 'Packing', isProductionEntry: false, isProductionExit: true },
 ];
 
 export async function fetchPreProductionNote(noteNo: string): Promise<PreProductionNote | null> {
