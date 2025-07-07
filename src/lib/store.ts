@@ -21,7 +21,8 @@ import {
     mockUsers,
     type User,
     mockGlobalSettings,
-    type GlobalSettings
+    type GlobalSettings,
+    mockFactories
 } from '@/lib/data';
 
 interface WorkOrderState {
@@ -394,25 +395,30 @@ interface BundleHistoryState {
 
 export const useBundleHistoryStore = create<BundleHistoryState>((set, get) => ({
   history: [
-      { id: 'HIST-1', qrCodeId: 'BNDL-TEST-001', workOrderId: 'WO-00125', checkPointName: 'Cutting Table', status: 'Passed', timestamp: new Date('2024-07-28T10:00:00Z'), user: 'John Doe' },
-      { id: 'HIST-2', qrCodeId: 'BNDL-TEST-002', workOrderId: 'WO-00125', checkPointName: 'Cutting Table', status: 'Passed', timestamp: new Date('2024-07-28T10:05:00Z'), user: 'John Doe' },
+      { id: 'HIST-1', qrCodeId: 'BNDL-TEST-001', workOrderId: 'WO-00125', checkPointName: 'Cutting Table', status: 'Passed', timestamp: new Date('2024-07-28T10:00:00Z'), user: 'Admin User' },
+      { id: 'HIST-2', qrCodeId: 'BNDL-TEST-002', workOrderId: 'WO-00125', checkPointName: 'Cutting Table', status: 'Passed', timestamp: new Date('2024-07-28T10:05:00Z'), user: 'Admin User' },
   ],
   addHistoryRecord: (record) => {
+    const { currentUser } = useUserStore.getState();
     const newRecord: BundleHistory = {
       ...record,
       id: `HIST-${Date.now()}`,
       timestamp: new Date(),
-      user: 'John Doe', // Hardcoded user for demo
+      user: currentUser?.displayName || 'System',
     };
     set((state) => ({ history: [newRecord, ...state.history] }));
   },
 }));
 
-// Store for Users
+// Store for Users & Authentication
 interface UserState {
     users: User[];
     currentUser: User | null;
-    setCurrentUser: (userId: string | null) => void;
+    selectedFactory: string | null;
+    selectedCheckpoint: string | null; // For admins to select a default station
+    login: (username: string, password?: string, factory?: string) => Promise<User | null>;
+    logout: () => void;
+    setSelectedCheckpoint: (checkpointId: string | null) => void;
     addUser: (data: NewUserFormValues) => void;
     updateUser: (id: string, data: Partial<NewUserFormValues>) => void;
     deleteUser: (id: string) => void;
@@ -420,23 +426,35 @@ interface UserState {
 
 export const useUserStore = create<UserState>((set, get) => ({
     users: mockUsers,
-    currentUser: mockUsers.find(u => u.id === 'U-003') || null,
-    setCurrentUser: (userId) => {
-        if (!userId) {
-            set({ currentUser: null });
-            return;
+    currentUser: null,
+    selectedFactory: null,
+    selectedCheckpoint: null,
+    login: async (username, password, factory) => {
+        const user = get().users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+        if (user && user.status === 'Active') {
+            set({ currentUser: user, selectedFactory: factory || null });
+            const { selectFactory } = useGlobalSettingsStore.getState();
+            if (factory) {
+                selectFactory(factory);
+            }
+            return user;
         }
-        const user = get().users.find(u => u.id === userId);
-        set({ currentUser: user || null });
+        return null;
+    },
+    logout: () => {
+        set({ currentUser: null, selectedFactory: null, selectedCheckpoint: null });
+    },
+    setSelectedCheckpoint: (checkpointId) => {
+        set({ selectedCheckpoint: checkpointId });
     },
     addUser: (data) => {
         const newId = `U-${(get().users.length + 1).toString().padStart(3, '0')}`;
-        const { password, confirmPassword, ...userData } = data;
+        const { confirmPassword, ...userData } = data;
         const newUser: User = { id: newId, ...userData };
         set((state) => ({ users: [newUser, ...state.users] }));
     },
     updateUser: (id, data) => {
-        const { password, confirmPassword, ...userData } = data;
+        const { confirmPassword, ...userData } = data;
         set((state) => ({
             users: state.users.map(u => 
                 u.id === id ? { ...u, ...userData } : u
@@ -451,11 +469,31 @@ export const useUserStore = create<UserState>((set, get) => ({
 }));
 
 interface GlobalSettingsState {
-    settings: GlobalSettings;
-    updateSettings: (newSettings: GlobalSettingsFormValues) => void;
+    settings: Record<string, Omit<GlobalSettings, 'factoryName'>>;
+    selectedFactory: string | null;
+    selectFactory: (factory: string) => void;
+    updateSettings: (factory: string, newSettings: Omit<GlobalSettingsFormValues, 'factoryName'>) => void;
+    getCurrentSettings: () => GlobalSettings | null;
 }
 
-export const useGlobalSettingsStore = create<GlobalSettingsState>((set) => ({
+export const useGlobalSettingsStore = create<GlobalSettingsState>((set, get) => ({
     settings: mockGlobalSettings,
-    updateSettings: (newSettings) => set({ settings: newSettings }),
+    selectedFactory: null,
+    selectFactory: (factory) => set({ selectedFactory: factory }),
+    updateSettings: (factory, newSettings) => {
+        set((state) => ({
+            settings: {
+                ...state.settings,
+                [factory]: newSettings,
+            }
+        }));
+    },
+    getCurrentSettings: () => {
+        const { settings, selectedFactory } = get();
+        if (!selectedFactory || !settings[selectedFactory]) return null;
+        return {
+            factoryName: selectedFactory,
+            ...settings[selectedFactory],
+        };
+    }
 }));

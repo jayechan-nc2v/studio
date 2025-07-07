@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   ChevronDown,
   ClipboardCheck,
@@ -59,7 +59,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { useCheckPointStore, useUserStore, useGlobalSettingsStore } from '@/lib/store';
 import { Separator } from '@/components/ui/separator';
 
@@ -116,8 +115,9 @@ const navItems = [
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { settings } = useGlobalSettingsStore();
-  const { currentUser } = useUserStore();
+  const router = useRouter();
+  const { settings, selectedFactory: settingsFactory } = useGlobalSettingsStore();
+  const { currentUser, selectedFactory, selectedCheckpoint, logout } = useUserStore();
   const { checkPoints } = useCheckPointStore();
 
   const [openSubmenus, setOpenSubmenus] = React.useState<
@@ -140,18 +140,29 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       [href]: !prev[href],
     }));
   };
+  
+  const handleLogout = () => {
+      logout();
+      router.push('/login');
+  };
 
   const currentCheckPointName = React.useMemo(() => {
-    if (!currentUser) return 'No Station';
-    if (currentUser.role === 'System Admin') return 'All Stations';
-    if (currentUser.assignedCheckpoints.length === 0) return 'No Station';
+    if (!currentUser) return 'N/A';
+    
+    let checkpointId: string | null | undefined = null;
 
-    // For simplicity, display the first assigned checkpoint.
-    // A real implementation would have a station selector for Admins.
-    const checkPointId = currentUser.assignedCheckpoints[0];
-    const checkPoint = checkPoints.find((cp) => cp.id === checkPointId);
-    return checkPoint?.name || 'Unknown Station';
-  }, [currentUser, checkPoints]);
+    if (currentUser.role === 'System Admin') return 'All Stations';
+    if (currentUser.role === 'Admin') {
+        checkpointId = selectedCheckpoint;
+    } else { // User role
+        checkpointId = currentUser.assignedCheckpoints[0];
+    }
+
+    if (!checkpointId) return 'No Station';
+    const checkPoint = checkPoints.find((cp) => cp.id === checkpointId);
+    return checkPoint?.name || 'Unknown';
+  }, [currentUser, checkPoints, selectedCheckpoint]);
+
 
   return (
     <SidebarProvider>
@@ -247,17 +258,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-4 text-sm font-medium">
               <div className="flex items-center gap-2">
                 <Warehouse className="h-4 w-4 text-muted-foreground" />
-                <span>{settings.factoryName}</span>
+                <span>{selectedFactory || 'No Factory'}</span>
               </div>
-              {currentUser && currentUser.role !== 'System Admin' && (
-                <>
-                  <Separator orientation="vertical" className="h-4" />
-                  <div className="flex items-center gap-2">
-                    <Milestone className="h-4 w-4 text-muted-foreground" />
-                    <span>Station: {currentCheckPointName}</span>
-                  </div>
-                </>
-              )}
+              
+              <Separator orientation="vertical" className="h-4" />
+              <div className="flex items-center gap-2">
+                <Milestone className="h-4 w-4 text-muted-foreground" />
+                <span>Station: {currentCheckPointName}</span>
+              </div>
             </div>
           </div>
           <DropdownMenu>
@@ -282,11 +290,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <p className="text-xs leading-none text-muted-foreground">
                     Role: {currentUser?.role || 'N/A'}
                   </p>
-                  {currentUser?.role !== 'System Admin' && (
-                    <p className="text-xs leading-none text-muted-foreground">
+                  <p className="text-xs leading-none text-muted-foreground">
                       Station: {currentCheckPointName}
-                    </p>
-                  )}
+                  </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -303,7 +309,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuPortal>
               </DropdownMenuSub>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>

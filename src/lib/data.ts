@@ -1,5 +1,4 @@
 
-
 export interface Station {
   id: string;
   machineType: string;
@@ -127,6 +126,7 @@ export interface UserPermission {
 export interface User {
   id: string;
   username: string;
+  password?: string;
   displayName: string;
   role: 'User' | 'Admin' | 'System Admin';
   status: 'Active' | 'Inactive';
@@ -141,6 +141,7 @@ export interface GlobalSettings {
   overtimePaid: number;
 }
 
+export const mockFactories = ['DMF', 'SBM'] as const;
 
 // Mock Data for Machines
 export const mockMachines: Machine[] = [
@@ -470,6 +471,7 @@ export const mockCheckPoints: CheckPoint[] = [
   { id: 'CP-003', name: 'QC Station 1', type: 'Sewing', isProductionEntry: false, isProductionExit: false },
   { id: 'CP-004', name: 'Finishing Station', type: 'Finishing', isProductionEntry: false, isProductionExit: false },
   { id: 'CP-005', name: 'Packing Area', type: 'Packing', isProductionEntry: false, isProductionExit: true },
+  { id: 'CP-006', name: 'Sewing Line 2 Input', type: 'Sewing', isProductionEntry: false, isProductionExit: false },
 ];
 
 export const mockModules = [
@@ -497,6 +499,7 @@ export const mockUsers: User[] = [
     {
         id: 'U-001',
         username: 'sysadmin',
+        password: 'password',
         displayName: 'System Admin',
         role: 'System Admin',
         status: 'Active',
@@ -506,6 +509,7 @@ export const mockUsers: User[] = [
     {
         id: 'U-002',
         username: 'admin',
+        password: 'password',
         displayName: 'Admin User',
         role: 'Admin',
         status: 'Active',
@@ -518,6 +522,7 @@ export const mockUsers: User[] = [
     {
         id: 'U-003',
         username: 'scanner',
+        password: 'password',
         displayName: 'Scanning User',
         role: 'User',
         status: 'Active',
@@ -526,11 +531,17 @@ export const mockUsers: User[] = [
     }
 ];
 
-export const mockGlobalSettings: GlobalSettings = {
-  factoryName: 'BFN Garment Factory',
-  factoryInCharge: 'Mr. Budi',
-  efficiencyTarget: 85,
-  overtimePaid: 2.50,
+export const mockGlobalSettings: Record<string, Omit<GlobalSettings, 'factoryName'>> = {
+    DMF: {
+      factoryInCharge: 'Mr. Budi',
+      efficiencyTarget: 85,
+      overtimePaid: 2.50,
+    },
+    SBM: {
+      factoryInCharge: 'Ms. Siti',
+      efficiencyTarget: 90,
+      overtimePaid: 3.00,
+    }
 };
 
 export async function fetchPreProductionNote(noteNo: string): Promise<PreProductionNote | null> {
@@ -545,5 +556,3 @@ export async function fetchPreProductionNote(noteNo: string): Promise<PreProduct
     }
     return Promise.resolve(null);
 }
-
-    
