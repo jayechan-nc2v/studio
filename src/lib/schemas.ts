@@ -1,3 +1,4 @@
+
 import * as z from "zod";
 
 export const sizeSchema = z.object({
@@ -147,3 +148,35 @@ export const checkPointSchema = z.object({
 });
 
 export type NewCheckPointFormValues = z.infer<typeof checkPointSchema>;
+
+export const userPermissionSchema = z.object({
+  read: z.boolean(),
+  write: z.boolean(),
+  delete: z.boolean(),
+});
+
+export const userSchema = z.object({
+    name: z.string().min(1, "Name is required."),
+    role: z.enum(['User', 'Admin', 'System Admin']),
+    assignedCheckpoints: z.array(z.string()),
+    permissions: z.record(z.string(), userPermissionSchema),
+}).superRefine((data, ctx) => {
+    if (data.role === 'User' && data.assignedCheckpoints.length !== 1) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Users must be assigned to exactly one checkpoint.",
+            path: ['assignedCheckpoints'],
+        });
+    }
+    if (data.role === 'Admin' && data.assignedCheckpoints.length === 0) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Admins must be assigned to at least one checkpoint.",
+            path: ['assignedCheckpoints'],
+        });
+    }
+});
+
+export type NewUserFormValues = z.infer<typeof userSchema>;
+
+    

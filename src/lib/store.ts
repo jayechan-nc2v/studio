@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues, NewCheckPointFormValues } from '@/lib/schemas';
+import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues, NewCheckPointFormValues, NewUserFormValues } from '@/lib/schemas';
 import { 
     presetInstructions, 
     mockMachineTypes, 
@@ -17,7 +17,9 @@ import {
     type Worker,
     mockCheckPoints,
     type CheckPoint,
-    type BundleHistory
+    type BundleHistory,
+    mockUsers,
+    type User
 } from '@/lib/data';
 
 interface WorkOrderState {
@@ -403,3 +405,34 @@ export const useBundleHistoryStore = create<BundleHistoryState>((set, get) => ({
     set((state) => ({ history: [newRecord, ...state.history] }));
   },
 }));
+
+// Store for Users
+interface UserState {
+    users: User[];
+    addUser: (data: NewUserFormValues) => void;
+    updateUser: (id: string, data: NewUserFormValues) => void;
+    deleteUser: (id: string) => void;
+}
+
+export const useUserStore = create<UserState>((set, get) => ({
+    users: mockUsers,
+    addUser: (data) => {
+        const newId = `U-${(get().users.length + 1).toString().padStart(3, '0')}`;
+        const newUser: User = { id: newId, ...data };
+        set((state) => ({ users: [newUser, ...state.users] }));
+    },
+    updateUser: (id, data) => {
+        set((state) => ({
+            users: state.users.map(u => 
+                u.id === id ? { ...u, ...data } : u
+            )
+        }));
+    },
+    deleteUser: (id) => {
+        set((state) => ({
+            users: state.users.filter(u => u.id !== id)
+        }));
+    }
+}));
+
+    

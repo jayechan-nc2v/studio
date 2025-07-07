@@ -24,6 +24,7 @@ import {
   Tags,
   Users,
   User,
+  UserCog,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -66,6 +67,7 @@ const navItems = [
   { href: '/check-point-scanning', label: 'Check Point Scanning', icon: ScanLine },
   { href: '/tracking', label: 'Bundle History', icon: History },
   { href: '/finish-sewing-qc', label: 'Finish Sewing QC', icon: ClipboardCheck },
+  { href: '/user-management', label: 'User Management', icon: UserCog },
   {
     href: '/master-data',
     label: 'Master Data',
@@ -249,3 +251,5 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    

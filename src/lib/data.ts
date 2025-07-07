@@ -1,5 +1,4 @@
 
-
 export interface Station {
   id: string;
   machineType: string;
@@ -116,6 +115,20 @@ export interface BundleHistory {
   details?: string;
   timestamp: Date;
   user: string;
+}
+
+export interface UserPermission {
+  read: boolean;
+  write: boolean;
+  delete: boolean;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  role: 'User' | 'Admin' | 'System Admin';
+  assignedCheckpoints: string[]; // Array of CheckPoint IDs
+  permissions: Record<string, UserPermission>; // Key is module href
 }
 
 
@@ -449,6 +462,53 @@ export const mockCheckPoints: CheckPoint[] = [
   { id: 'CP-005', name: 'Packing Area', type: 'Packing', isProductionEntry: false, isProductionExit: true },
 ];
 
+export const mockModules = [
+    { name: 'Dashboard', href: '/' },
+    { name: 'Pre-Production', href: '/production-notes' },
+    { name: 'Work Orders', href: '/work-orders' },
+    { name: 'Generate QR Code', href: '/generate-qr-code' },
+    { name: 'Check Point Scanning', href: '/check-point-scanning' },
+    { name: 'Bundle History', href: '/tracking' },
+    { name: 'Finish Sewing QC', href: '/finish-sewing-qc' },
+    { name: 'User Management', href: '/user-management' },
+    { name: 'Master Data', href: '/master-data' },
+    { name: 'AI Tools', href: '/ai-tools' },
+];
+
+const allPermissions = Object.fromEntries(mockModules.map(m => [m.href, { read: true, write: true, delete: true }]));
+const userPermissions = Object.fromEntries(mockModules.map(m => {
+    const canWrite = ['/check-point-scanning', '/finish-sewing-qc'].includes(m.href);
+    return [m.href, { read: true, write: canWrite, delete: false }];
+}));
+
+
+export const mockUsers: User[] = [
+    {
+        id: 'U-001',
+        name: 'SysAdmin',
+        role: 'System Admin',
+        assignedCheckpoints: mockCheckPoints.map(cp => cp.id),
+        permissions: allPermissions,
+    },
+    {
+        id: 'U-002',
+        name: 'Admin User',
+        role: 'Admin',
+        assignedCheckpoints: ['CP-001', 'CP-005'],
+        permissions: {
+            ...allPermissions,
+            '/user-management': { read: true, write: false, delete: false },
+        },
+    },
+    {
+        id: 'U-003',
+        name: 'Scanning User',
+        role: 'User',
+        assignedCheckpoints: ['CP-002'],
+        permissions: userPermissions,
+    }
+];
+
 export async function fetchPreProductionNote(noteNo: string): Promise<PreProductionNote | null> {
     console.log(`Fetching data for Pre-Production Note: ${noteNo}`);
     // Simulate network delay
@@ -461,3 +521,5 @@ export async function fetchPreProductionNote(noteNo: string): Promise<PreProduct
     }
     return Promise.resolve(null);
 }
+
+    
