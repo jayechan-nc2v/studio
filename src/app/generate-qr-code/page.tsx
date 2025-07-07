@@ -2,11 +2,12 @@
 "use client";
 
 import * as React from "react";
-import { useReactToPrint } from "react-to-print";
 import { QRCodeCanvas } from "qrcode.react";
-import { Loader2, Printer, QrCode } from "lucide-react";
+import { Loader2, QrCode, FileDown } from "lucide-react";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -19,69 +20,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useQrCodeStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
 
 interface GeneratedCode {
   id: string;
 }
 
-const PrintableQrCodes = React.forwardRef<
-  HTMLDivElement,
-  { codes: GeneratedCode[]; numberOfCopies: number }
->(({ codes, numberOfCopies }, ref) => {
-  if (codes.length === 0 || numberOfCopies <= 0) {
-    return null;
-  }
-
-  const allCodesToPrint = React.useMemo(() => {
-    return codes.flatMap(code =>
-      Array.from({ length: numberOfCopies }, (_, i) => ({
-        ...code,
-        uniqueKey: `${code.id}-${i}`,
-      }))
-    );
-  }, [codes, numberOfCopies]);
-
-  return (
-    <div ref={ref} className="p-10">
-      <style type="text/css" media="print">
-        {`
-          @page { size: auto;  margin: 0mm; }
-          body { -webkit-print-color-adjust: exact; }
-          .printable-area {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-          }
-          .qr-code-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            page-break-inside: avoid;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 8px;
-          }
-          .qr-code-id {
-            margin-top: 8px;
-            font-family: monospace;
-            font-size: 10px;
-          }
-        `}
-      </style>
-      <div className="printable-area">
-        {allCodesToPrint.map((code) => (
-          <div key={code.uniqueKey} className="qr-code-item">
-            <QRCodeCanvas value={code.id} size={100} />
-            <span className="qr-code-id">{code.id}</span>
-          </div>
-        ))}
-      </div>
+// Component to render a single page for PDF generation
+const PdfPage = React.forwardRef<HTMLDivElement, { codes: { id: string, uniqueKey: string }[] }>(({ codes }, ref) => (
+  <div ref={ref} className="p-4 bg-white" style={{ width: '210mm', height: '297mm' }}>
+    <div className="grid grid-cols-2 grid-rows-4 gap-x-4 gap-y-6 h-full w-full">
+      {codes.map((code) => (
+        <div key={code.uniqueKey} className="flex flex-col items-center justify-center p-2 border border-black rounded-lg">
+          <QRCodeCanvas value={code.id} size={150} />
+          <span className="mt-2 font-mono text-xs text-center break-all">{code.id}</span>
+        </div>
+      ))}
     </div>
-  );
-});
-PrintableQrCodes.displayName = "PrintableQrCodes";
+  </div>
+));
+PdfPage.displayName = 'PdfPage';
+
 
 export default function GenerateQrCodePage() {
   const { toast } = useToast();
@@ -91,14 +49,12 @@ export default function GenerateQrCodePage() {
   const [numberOfCopies, setNumberOfCopies] = React.useState<number>(1);
   const [generatedCodes, setGeneratedCodes] = React.useState<GeneratedCode[]>([]);
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isExporting, setIsExporting] = React.useState(false);
 
-  const printComponentRef = React.useRef<HTMLDivElement>(null);
+  // This state will hold the chunk of codes to be rendered for PDF generation
+  const [codesForPdfPage, setCodesForPdfPage] = React.useState<{id: string, uniqueKey: string}[]>([]);
+  const pdfPageRef = React.useRef<HTMLDivElement>(null);
 
-  const handlePrint = useReactToPrint({
-    content: () => printComponentRef.current,
-    documentTitle: "QR_Codes",
-    onAfterPrint: () => toast({ title: "Print complete." }),
-  });
 
   const handleGenerate = () => {
     if (numberOfCodes <= 0 || numberOfCodes > 500) {
@@ -120,7 +76,6 @@ export default function GenerateQrCodePage() {
 
     setIsGenerating(true);
 
-    // Simulate async generation
     setTimeout(() => {
       const newCodes: GeneratedCode[] = Array.from({ length: numberOfCodes }, () => ({
         id: `BNDL-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
@@ -130,17 +85,73 @@ export default function GenerateQrCodePage() {
       setIsGenerating(false);
       toast({
         title: "QR Codes Generated",
-        description: `${numberOfCodes} new unique QR codes have been created and are ready to print.`,
+        description: `${numberOfCodes} new unique QR codes have been created and are ready to export.`,
       });
     }, 500);
   };
+
+  const handleExportPdf = async () => {
+    if (generatedCodes.length === 0) {
+        toast({
+            variant: "destructive",
+            title: "No Codes Generated",
+            description: "Please generate QR codes first before exporting.",
+        });
+        return;
+    }
+    setIsExporting(true);
+    
+    const allCodesToPrint = generatedCodes.flatMap(code =>
+        Array.from({ length: numberOfCopies }, (_, i) => ({
+          ...code,
+          uniqueKey: `${code.id}-${i}`,
+        }))
+    );
+    
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const codesPerPage = 8;
+    const totalPages = Math.ceil(allCodesToPrint.length / codesPerPage);
+
+    for (let i = 0; i < totalPages; i++) {
+        const chunk = allCodesToPrint.slice(i * codesPerPage, (i + 1) * codesPerPage);
+        
+        await new Promise<void>((resolve) => {
+            setCodesForPdfPage(chunk);
+            setTimeout(() => {
+                if(pdfPageRef.current) {
+                    html2canvas(pdfPageRef.current, { scale: 2 }).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        const pdfWidth = pdf.internal.pageSize.getWidth();
+                        const pdfHeight = pdf.internal.pageSize.getHeight();
+                        
+                        if (i > 0) {
+                            pdf.addPage();
+                        }
+                        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                        resolve();
+                    });
+                } else {
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+
+    pdf.save("qr-codes.pdf");
+    setCodesForPdfPage([]);
+    setIsExporting(false);
+    toast({
+      title: "PDF Exported",
+      description: "Your QR codes have been saved to qr-codes.pdf.",
+    });
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Generate QR Code</h1>
         <p className="text-muted-foreground">
-          Create and print unique QR codes for tracking production bundles.
+          Create and export unique QR codes for tracking production bundles.
         </p>
       </header>
 
@@ -148,7 +159,7 @@ export default function GenerateQrCodePage() {
         <CardHeader>
           <CardTitle>Generation Settings</CardTitle>
           <CardDescription>
-            Specify how many unique QR codes you need and how many copies of each to print.
+            Specify how many unique QR codes you need and how many copies of each to generate.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -162,7 +173,7 @@ export default function GenerateQrCodePage() {
                 onChange={(e) => setNumberOfCodes(parseInt(e.target.value, 10) || 0)}
                 min="1"
                 max="500"
-                disabled={isGenerating}
+                disabled={isGenerating || isExporting}
               />
             </div>
             <div className="space-y-2">
@@ -174,13 +185,13 @@ export default function GenerateQrCodePage() {
                 onChange={(e) => setNumberOfCopies(parseInt(e.target.value, 10) || 1)}
                 min="1"
                 max="100"
-                disabled={isGenerating}
+                disabled={isGenerating || isExporting}
               />
             </div>
           </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={handleGenerate} disabled={isGenerating}>
+          <Button onClick={handleGenerate} disabled={isGenerating || isExporting}>
             {isGenerating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -198,17 +209,21 @@ export default function GenerateQrCodePage() {
               <CardTitle>Generated QR Codes</CardTitle>
               <CardDescription>
                 A preview of the {generatedCodes.length} unique codes generated.{' '}
-                {numberOfCopies > 1 ? `${numberOfCopies} copies of each will be printed.` : 'Click Print to get physical copies.'}
+                {numberOfCopies > 1 ? `${numberOfCopies} copies of each will be created in the PDF.` : 'Click Export to get a PDF.'}
               </CardDescription>
             </div>
-             <Button onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" />
-                Print
+             <Button onClick={handleExportPdf} disabled={isExporting}>
+                {isExporting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileDown className="mr-2 h-4 w-4" />
+                )}
+                Export PDF
              </Button>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-              {generatedCodes.map((code) => (
+              {generatedCodes.slice(0, 16).map((code) => (
                 <div
                   key={code.id}
                   className="flex flex-col items-center gap-2 p-2 border rounded-lg"
@@ -220,13 +235,15 @@ export default function GenerateQrCodePage() {
                 </div>
               ))}
             </div>
+             {generatedCodes.length > 16 && (
+                <p className="text-center text-sm text-muted-foreground mt-4">...and {generatedCodes.length - 16} more.</p>
+            )}
           </CardContent>
         </Card>
       )}
-
-      {/* This component is hidden from view and only used for printing */}
-      <div className="hidden">
-        <PrintableQrCodes ref={printComponentRef} codes={generatedCodes} numberOfCopies={numberOfCopies} />
+      
+      <div className="fixed left-[-9999px] top-[-9999px]">
+        <PdfPage ref={pdfPageRef} codes={codesForPdfPage} />
       </div>
     </div>
   );
