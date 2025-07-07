@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BFN Production",
+  title: "GarmentFlow",
   description: "AI-Powered Production Management",
 };
 
