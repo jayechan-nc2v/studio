@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -213,7 +214,7 @@ export default function GenerateQrCodePage() {
                 >
                   <QRCodeCanvas value={code.id} size={80} />
                   <p className="text-xs font-mono break-all text-center">
-                    {code.id.split('-')[1]}
+                    {code.id.split('-')[2]}
                   </p>
                 </div>
               ))}
