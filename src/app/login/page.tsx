@@ -63,36 +63,36 @@ export default function LoginPage() {
     const user = await login(data.username, data.password, data.factory);
     setIsLoading(false);
 
-    if (user) {
-      // If the user is an Admin with more than one checkpoint, show the selection screen.
-      if (user.role === 'Admin' && user.assignedCheckpoints.length > 1) {
-        setValidatedUser(user);
-        // Pre-select the first assigned checkpoint for convenience
-        if (user.assignedCheckpoints.length > 0) {
-            setAdminCheckpoint(user.assignedCheckpoints[0]);
-        }
-      } else {
-        // For all other cases, determine the checkpoint automatically and proceed to dashboard.
-        let checkpointToSet: string | null = null;
-        
-        // A User or an Admin with exactly one assigned checkpoint.
-        if ((user.role === 'User' || user.role === 'Admin') && user.assignedCheckpoints.length === 1) {
-            checkpointToSet = user.assignedCheckpoints[0];
-        }
-        // For System Admins or Admins with 0 checkpoints, checkpointToSet remains null.
-        
-        setSelectedCheckpoint(checkpointToSet);
-        toast({ title: "Login Successful", description: `Welcome back, ${user.displayName}!` });
-        router.push("/");
-      }
-    } else {
+    if (!user) {
       toast({
         variant: "destructive",
         title: "Login Failed",
         description: "Invalid username, password, or factory selection.",
       });
       form.setError("root", { message: "Invalid credentials" });
+      return;
     }
+
+    // Admins with multiple assigned checkpoints must select one for the session.
+    if (user.role === 'Admin' && user.assignedCheckpoints.length > 1) {
+      setValidatedUser(user);
+      // Pre-select the first assigned checkpoint for convenience.
+      setAdminCheckpoint(user.assignedCheckpoints[0] || "");
+      return;
+    }
+
+    // For all other users (User, System Admin, Admin with 0 or 1 checkpoint),
+    // proceed directly to the dashboard.
+    let checkpointToSet: string | null = null;
+    if (user.assignedCheckpoints && user.assignedCheckpoints.length === 1) {
+      // This covers 'User' role and 'Admin' with one station.
+      checkpointToSet = user.assignedCheckpoints[0];
+    }
+    // For 'System Admin' or 'Admin' with 0 stations, checkpointToSet remains null.
+    
+    setSelectedCheckpoint(checkpointToSet);
+    toast({ title: "Login Successful", description: `Welcome back, ${user.displayName}!` });
+    router.push("/");
   };
   
   const handleAdminCheckpointSelect = () => {
