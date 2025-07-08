@@ -52,12 +52,19 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuPortal,
-  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useCheckPointStore, useUserStore, useGlobalSettingsStore } from '@/lib/store';
 import { Separator } from '@/components/ui/separator';
@@ -117,7 +124,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { settings, selectedFactory: settingsFactory } = useGlobalSettingsStore();
-  const { currentUser, selectedFactory, selectedCheckpoint, logout } = useUserStore();
+  const { currentUser, selectedFactory, selectedCheckpoint, logout, setSelectedCheckpoint } = useUserStore();
   const { checkPoints } = useCheckPointStore();
 
   const [openSubmenus, setOpenSubmenus] = React.useState<
@@ -162,6 +169,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const checkPoint = checkPoints.find((cp) => cp.id === checkpointId);
     return checkPoint?.name || 'Unknown';
   }, [currentUser, checkPoints, selectedCheckpoint]);
+
+  const userAssignableCheckpoints = React.useMemo(() => {
+    if (!currentUser || currentUser.role !== 'Admin') return [];
+    return checkPoints.filter(cp => currentUser.assignedCheckpoints.includes(cp.id));
+  }, [currentUser, checkPoints]);
 
 
   return (
@@ -262,10 +274,28 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
               
               <Separator orientation="vertical" className="h-4" />
-              <div className="flex items-center gap-2">
-                <Milestone className="h-4 w-4 text-muted-foreground" />
-                <span>Station: {currentCheckPointName}</span>
-              </div>
+                <div className="flex items-center gap-2">
+                  <Milestone className="h-4 w-4 text-muted-foreground" />
+                   {currentUser && currentUser.role === 'Admin' && userAssignableCheckpoints.length > 1 ? (
+                    <>
+                      <span className="text-muted-foreground">Station:</span>
+                       <Select value={selectedCheckpoint || ''} onValueChange={setSelectedCheckpoint}>
+                          <SelectTrigger className="h-auto border-0 p-0 text-sm font-medium focus:ring-0 shadow-none bg-transparent">
+                              <SelectValue placeholder="Select Station" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              {userAssignableCheckpoints.map(cp => (
+                                  <SelectItem key={cp.id} value={cp.id}>
+                                      {cp.name}
+                                  </SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                    </>
+                  ) : (
+                    <span>Station: {currentCheckPointName}</span>
+                  )}
+                </div>
             </div>
           </div>
           <DropdownMenu>

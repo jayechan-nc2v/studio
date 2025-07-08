@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useUserStore, useCheckPointStore } from "@/lib/store";
+import { useUserStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { mockFactories, type User } from "@/lib/data";
 import { Loader2 } from "lucide-react";
@@ -41,11 +41,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { login, setSelectedCheckpoint, currentUser } = useUserStore();
-  const { checkPoints } = useCheckPointStore();
 
   const [isLoading, setIsLoading] = React.useState(false);
-  const [validatedUser, setValidatedUser] = React.useState<User | null>(null);
-  const [adminCheckpoint, setAdminCheckpoint] = React.useState<string>("");
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -72,43 +69,18 @@ export default function LoginPage() {
       form.setError("root", { message: "Invalid credentials" });
       return;
     }
-
-    // Admins with multiple assigned checkpoints must select one for the session.
-    if (user.role === 'Admin' && user.assignedCheckpoints.length > 1) {
-      setValidatedUser(user);
-      // Pre-select the first assigned checkpoint for convenience.
-      setAdminCheckpoint(user.assignedCheckpoints[0] || "");
-      return;
-    }
-
-    // For all other users (User, System Admin, Admin with 0 or 1 checkpoint),
-    // proceed directly to the dashboard.
+    
+    // For all users, set the default checkpoint and proceed to the dashboard.
+    // The first assigned checkpoint will be the default.
     let checkpointToSet: string | null = null;
-    if (user.assignedCheckpoints && user.assignedCheckpoints.length === 1) {
-      // This covers 'User' role and 'Admin' with one station.
+    if (user.assignedCheckpoints && user.assignedCheckpoints.length > 0) {
       checkpointToSet = user.assignedCheckpoints[0];
     }
-    // For 'System Admin' or 'Admin' with 0 stations, checkpointToSet remains null.
     
     setSelectedCheckpoint(checkpointToSet);
     toast({ title: "Login Successful", description: `Welcome back, ${user.displayName}!` });
     router.push("/");
   };
-  
-  const handleAdminCheckpointSelect = () => {
-      if (!adminCheckpoint) {
-          toast({ variant: "destructive", title: "Selection Required", description: "Please select a default checkpoint." });
-          return;
-      }
-      setSelectedCheckpoint(adminCheckpoint);
-      toast({ title: "Login Successful", description: `Welcome back, ${validatedUser?.displayName}!` });
-      router.push("/");
-  }
-
-  const userAssignedCheckpoints = React.useMemo(() => {
-      if (!validatedUser) return [];
-      return checkPoints.filter(cp => validatedUser.assignedCheckpoints.includes(cp.id));
-  }, [validatedUser, checkPoints]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4">
@@ -130,17 +102,14 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl">
-            {validatedUser ? "Select Checkpoint" : "Login"}
+            Login
           </CardTitle>
           <CardDescription>
-            {validatedUser
-              ? `Welcome, ${validatedUser.displayName}. Please select your default station for this session.`
-              : "Enter your credentials to access your account."}
+            Enter your credentials to access your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!validatedUser ? (
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
                 <Input id="username" {...form.register("username")} disabled={isLoading} />
@@ -176,28 +145,6 @@ export default function LoginPage() {
                  Login
               </Button>
             </form>
-          ) : (
-            <div className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="checkpoint">Default Checkpoint Station</Label>
-                     <Select value={adminCheckpoint} onValueChange={setAdminCheckpoint}>
-                        <SelectTrigger id="checkpoint">
-                            <SelectValue placeholder="Select a checkpoint" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {userAssignedCheckpoints.map((cp) => (
-                                <SelectItem key={cp.id} value={cp.id}>
-                                    {cp.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <Button onClick={handleAdminCheckpointSelect} className="w-full">
-                    Proceed to Dashboard
-                </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
