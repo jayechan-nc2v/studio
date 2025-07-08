@@ -55,8 +55,7 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   Select,
@@ -158,22 +157,36 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     
     let checkpointId: string | null | undefined = null;
 
-    if (currentUser.role === 'System Admin') return 'All Stations';
-    if (currentUser.role === 'Admin') {
-        checkpointId = selectedCheckpoint;
-    } else { // User role
-        checkpointId = currentUser.assignedCheckpoints[0];
+    if (currentUser.role === 'User') {
+      // A User has a fixed checkpoint.
+      checkpointId = currentUser.assignedCheckpoints?.[0];
+    } else { // Admin and System Admin use the one selected from the dropdown.
+      checkpointId = selectedCheckpoint;
     }
 
-    if (!checkpointId) return 'No Station';
+    if (!checkpointId) {
+      // This is a fallback, but login flow should prevent this state.
+      if (currentUser.role === 'System Admin') return 'Select a Station';
+      return 'No Station Assigned'; 
+    }
+
     const checkPoint = checkPoints.find((cp) => cp.id === checkpointId);
-    return checkPoint?.name || 'Unknown';
+    return checkPoint?.name || 'Unknown Station';
   }, [currentUser, checkPoints, selectedCheckpoint]);
 
-  const userAssignableCheckpoints = React.useMemo(() => {
-    if (!currentUser || currentUser.role !== 'Admin') return [];
-    return checkPoints.filter(cp => currentUser.assignedCheckpoints.includes(cp.id));
+  const selectableCheckpoints = React.useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.role === 'System Admin') {
+      return checkPoints; // All of them
+    }
+    if (currentUser.role === 'Admin') {
+      // Only assigned ones
+      return checkPoints.filter(cp => currentUser.assignedCheckpoints.includes(cp.id));
+    }
+    return []; // Users don't get a selector
   }, [currentUser, checkPoints]);
+
+  const canSelectCheckpoint = currentUser && (currentUser.role === 'System Admin' || (currentUser.role === 'Admin' && selectableCheckpoints.length > 1));
 
 
   return (
@@ -276,7 +289,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <Separator orientation="vertical" className="h-4" />
                 <div className="flex items-center gap-2">
                   <Milestone className="h-4 w-4 text-muted-foreground" />
-                   {currentUser && currentUser.role === 'Admin' && userAssignableCheckpoints.length > 1 ? (
+                   {canSelectCheckpoint ? (
                     <>
                       <span className="text-muted-foreground">Station:</span>
                        <Select value={selectedCheckpoint || ''} onValueChange={setSelectedCheckpoint}>
@@ -284,7 +297,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                               <SelectValue placeholder="Select Station" />
                           </SelectTrigger>
                           <SelectContent>
-                              {userAssignableCheckpoints.map(cp => (
+                              {selectableCheckpoints.map(cp => (
                                   <SelectItem key={cp.id} value={cp.id}>
                                       {cp.name}
                                   </SelectItem>
