@@ -64,20 +64,24 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (user) {
+      // If the user is an Admin with more than one checkpoint, show the selection screen.
       if (user.role === 'Admin' && user.assignedCheckpoints.length > 1) {
         setValidatedUser(user);
-        // Pre-select the first assigned checkpoint
+        // Pre-select the first assigned checkpoint for convenience
         if (user.assignedCheckpoints.length > 0) {
             setAdminCheckpoint(user.assignedCheckpoints[0]);
         }
       } else {
-        // System Admins have all checkpoints, Users have one.
-        // For these roles, we can automatically determine the checkpoint.
-        if (user.role === 'User' && user.assignedCheckpoints.length > 0) {
-             setSelectedCheckpoint(user.assignedCheckpoints[0]);
-        } else {
-             setSelectedCheckpoint(null); // System admin or admin with 0/1 checkpoints
+        // For all other cases, determine the checkpoint automatically and proceed to dashboard.
+        let checkpointToSet: string | null = null;
+        
+        // A User or an Admin with exactly one assigned checkpoint.
+        if ((user.role === 'User' || user.role === 'Admin') && user.assignedCheckpoints.length === 1) {
+            checkpointToSet = user.assignedCheckpoints[0];
         }
+        // For System Admins or Admins with 0 checkpoints, checkpointToSet remains null.
+        
+        setSelectedCheckpoint(checkpointToSet);
         toast({ title: "Login Successful", description: `Welcome back, ${user.displayName}!` });
         router.push("/");
       }
