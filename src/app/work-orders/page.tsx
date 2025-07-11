@@ -95,8 +95,8 @@ export default function WorkOrdersPage() {
       garmentType: "Denim Jacket",
       preProductionNo: "PPN-001",
       sizes: [
-        { size: "34B", quantity: 100 },
-        { size: "34D", quantity: 90 },
+        { size: "S", quantity: 50 },
+        { size: "M", quantity: 100 },
       ],
       qtyPerBundle: 24,
       targetOutputQtyPerDay: 50,

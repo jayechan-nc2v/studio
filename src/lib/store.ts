@@ -293,11 +293,13 @@ interface QrCodeState {
 }
 
 const initialQrCodes: QrCode[] = [
+    ...Array.from({ length: 200 }, (_, i) => ({
+        id: `BNDL-NEW-${i.toString().padStart(3, '0')}`,
+        workOrderId: null,
+        status: 'Unassigned',
+    })),
     { id: 'BNDL-TEST-001', workOrderId: 'WO-00125', status: 'Cutting', size: 'M', bundleNo: 1, bundleQty: 25 },
     { id: 'BNDL-TEST-002', workOrderId: 'WO-00125', status: 'Cutting', size: 'M', bundleNo: 2, bundleQty: 25 },
-    { id: 'BNDL-TEST-003', workOrderId: null, status: 'Unassigned' },
-    { id: 'BNDL-TEST-004', workOrderId: null, status: 'Unassigned' },
-    { id: 'BNDL-TEST-005', workOrderId: null, status: 'Unassigned' },
 ];
 
 export const useQrCodeStore = create<QrCodeState>((set, get) => ({
