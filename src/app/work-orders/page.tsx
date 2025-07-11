@@ -40,6 +40,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Tabs,
   TabsContent,
   TabsList,
