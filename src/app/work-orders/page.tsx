@@ -110,7 +110,7 @@ export default function WorkOrdersPage() {
       instructions: presetInstructions["DNM-JKT-01"] || [],
       productionLine: "line-3",
       status: "Cutting",
-      lineStations: productionLines.find(line => line.id === "line-3")?.stations || [],
+      lineStations: [], // Safe default
       mappedQrCodes: {}
     },
   });
@@ -244,11 +244,13 @@ export default function WorkOrdersPage() {
   
   const totalBundles = React.useMemo(() => {
     let count = 0;
-    watchedSizes.forEach(size => {
-        if(size.quantity && watchedQtyPerBundle) {
-            count += generateBundles(size.quantity, watchedQtyPerBundle).length;
-        }
-    });
+    if (watchedSizes) {
+      watchedSizes.forEach(size => {
+          if(size.quantity && watchedQtyPerBundle) {
+              count += generateBundles(size.quantity, watchedQtyPerBundle).length;
+          }
+      });
+    }
     return count;
   }, [watchedSizes, watchedQtyPerBundle]);
 
@@ -616,7 +618,7 @@ export default function WorkOrdersPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                      {watchedSizes.map((sizeItem) => {
+                      {watchedSizes && watchedSizes.map((sizeItem) => {
                         if (
                           !sizeItem.size ||
                           !sizeItem.quantity ||
@@ -647,7 +649,7 @@ export default function WorkOrdersPage() {
                               <TableBody>
                                 {bundles.map((bundle) => {
                                   const bundleKey = `${sizeItem.size}-${bundle.number}`;
-                                  const mappedCode = watchedMappedQrCodes[bundleKey];
+                                  const mappedCode = watchedMappedQrCodes ? watchedMappedQrCodes[bundleKey] : undefined;
                                   return (
                                   <TableRow key={bundleKey}>
                                     <TableCell className="font-medium">
