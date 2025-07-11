@@ -5,7 +5,7 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, PlusCircle, Trash2, LinkIcon, XCircle } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle, Trash2, Link as LinkIcon, XCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -275,8 +275,7 @@ export default function WorkOrdersPage() {
     const qrCodeId = form.getValues(`mappedQrCodes.${bundleKey}`);
     if (qrCodeId) {
         // This should ideally also update the QR code's status in the store
-        // For now, just remove from form state
-        const currentMappings = form.getValues('mappedQrCodes');
+        const currentMappings = { ...form.getValues('mappedQrCodes') };
         delete currentMappings[bundleKey];
         form.setValue('mappedQrCodes', currentMappings);
         toast({ title: 'QR Code Unmapped', description: `QR code for bundle ${bundleKey} has been removed.`});
