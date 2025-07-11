@@ -136,6 +136,8 @@ export default function WorkOrdersPage() {
   const watchedStyleNo = form.watch("styleNo");
   const watchedPreProductionNo = form.watch("preProductionNo");
   const watchedMappedQrCodes = form.watch("mappedQrCodes");
+  const watchedLineStations = form.watch("lineStations");
+
 
   const [isMapDialogOpen, setIsMapDialogOpen] = React.useState(false);
   const [currentBundleToMap, setCurrentBundleToMap] = React.useState<{size: string, bundleNo: number} | null>(null);
@@ -274,7 +276,6 @@ export default function WorkOrdersPage() {
   const handleUnmapQrCode = (bundleKey: string) => {
     const qrCodeId = form.getValues(`mappedQrCodes.${bundleKey}`);
     if (qrCodeId) {
-        // This should ideally also update the QR code's status in the store
         const currentMappings = { ...form.getValues('mappedQrCodes') };
         delete currentMappings[bundleKey];
         form.setValue('mappedQrCodes', currentMappings);
@@ -846,15 +847,15 @@ export default function WorkOrdersPage() {
                                       const machineType = form.watch(`lineStations.${index}.machineType`);
                                       
                                       const assignedOnThisWorkOrder = new Set<string>();
-                                      if (form.getValues('lineStations')) {
-                                          form.getValues('lineStations').forEach((station, i) => {
+                                      if (watchedLineStations) {
+                                          watchedLineStations.forEach((station, i) => {
                                               if (i !== index && station.machineId) {
                                                   assignedOnThisWorkOrder.add(station.machineId);
                                               }
                                           });
                                       }
                                       
-                                      const currentMachineId = form.getValues('lineStations') ? form.getValues('lineStations')[index]?.machineId : undefined;
+                                      const currentMachineId = watchedLineStations ? watchedLineStations[index]?.machineId : undefined;
                               
                                       const availableMachines = mockMachines.filter(
                                           (m) =>
@@ -898,7 +899,7 @@ export default function WorkOrdersPage() {
                                                     name={`lineStations.${index}.machineId`}
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!machineType}>
+                                                            <Select onValueChange={field.onChange} value={field.value} disabled={!machineType}>
                                                               <FormControl>
                                                                 <SelectTrigger>
                                                                   <SelectValue placeholder="Select machine" />
@@ -1007,3 +1008,5 @@ export default function WorkOrdersPage() {
     </Form>
   );
 }
+
+    
