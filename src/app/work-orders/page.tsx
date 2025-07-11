@@ -5,9 +5,7 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
-import { QRCodeCanvas } from "qrcode.react";
-
+import { Calendar as CalendarIcon, PlusCircle, Trash2, LinkIcon, XCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -57,6 +55,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useWorkOrderStore, useProductionLineStore, useQrCodeStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
 import { presetInstructions, mockMachines, mockPreProductionNotes } from "@/lib/data";
@@ -85,7 +92,7 @@ export default function WorkOrdersPage() {
     const { toast } = useToast();
     const addWorkOrder = useWorkOrderStore((state) => state.addWorkOrder);
     const { lines: productionLines } = useProductionLineStore();
-    const { qrCodes: allQrCodes, assignQrCodesToWorkOrder } = useQrCodeStore();
+    const { mapQrCode } = useQrCodeStore();
 
   const form = useForm<WorkOrderFormValues>({
     resolver: zodResolver(workOrderSchema),
@@ -104,6 +111,7 @@ export default function WorkOrdersPage() {
       productionLine: "line-3",
       status: "Cutting",
       lineStations: productionLines.find(line => line.id === "line-3")?.stations || [],
+      mappedQrCodes: {}
     },
   });
 
@@ -121,70 +129,55 @@ export default function WorkOrdersPage() {
     control: form.control,
     name: "lineStations",
   });
-
-  const watchedLineStations = form.watch('lineStations');
-
-  const assignedMachinesInStore = React.useMemo(() => {
-      const ids = new Set<string>();
-      productionLines.forEach(line => {
-          line.stations.forEach(station => {
-              if (station.machineId) {
-                  ids.add(station.machineId);
-              }
-          });
-      });
-      return ids;
-  }, [productionLines]);
-
-  function onSubmit(data: WorkOrderFormValues) {
-    const allBundles: { size: string, bundleNo: number, quantity: number }[] = [];
-    data.sizes.forEach(sizeItem => {
-        if (sizeItem.quantity > 0) {
-            const bundlesForSize = generateBundles(sizeItem.quantity, data.qtyPerBundle);
-            bundlesForSize.forEach(bundle => {
-                allBundles.push({
-                    size: sizeItem.size,
-                    bundleNo: bundle.number,
-                    quantity: bundle.quantityInBundle,
-                });
-            });
-        }
-    });
-
-    const assignmentResult = assignQrCodesToWorkOrder(data.workOrderNo, allBundles);
-
-    if (!assignmentResult.success) {
-      toast({
-        variant: "destructive",
-        title: "QR Code Assignment Failed",
-        description: `Not enough unassigned QR codes. Required: ${assignmentResult.required}, Available: ${assignmentResult.available}. Please generate more codes.`,
-      });
-      return; // Stop submission
-    }
-    
-    const workOrderData: WorkOrderFormValues = {
-      ...data,
-      qrCodes: assignmentResult.assigned.map(c => c.id),
-    };
-    
-    addWorkOrder(workOrderData);
-    toast({
-        title: "Work Order Created!",
-        description: "The new work order has been successfully created and added to the dashboard.",
-    })
-    form.reset();
-     form.setValue('workOrderNo', `WO-${Date.now().toString().slice(-5)}`);
-     form.setValue('sizes', [{ size: '', quantity: 0}]);
-     form.setValue('instructions', []);
-     form.setValue('status', 'Cutting');
-     form.setValue('lineStations', []);
-  }
-
+  
   const watchedSizes = form.watch("sizes");
   const watchedQtyPerBundle = form.watch("qtyPerBundle");
   const watchedProductionLine = form.watch("productionLine");
   const watchedStyleNo = form.watch("styleNo");
   const watchedPreProductionNo = form.watch("preProductionNo");
+  const watchedMappedQrCodes = form.watch("mappedQrCodes");
+
+  const [isMapDialogOpen, setIsMapDialogOpen] = React.useState(false);
+  const [currentBundleToMap, setCurrentBundleToMap] = React.useState<{size: string, bundleNo: number} | null>(null);
+  const [qrCodeInput, setQrCodeInput] = React.useState('');
+
+
+  function onSubmit(data: WorkOrderFormValues) {
+    // Validate that all bundles have a QR code assigned
+    const totalBundles = watchedSizes.reduce((acc, size) => {
+        return acc + generateBundles(size.quantity, watchedQtyPerBundle).length;
+    }, 0);
+    const mappedBundlesCount = Object.keys(watchedMappedQrCodes).length;
+
+    if (mappedBundlesCount < totalBundles) {
+        toast({
+            variant: "destructive",
+            title: "Mapping Incomplete",
+            description: `Please map a QR code to all ${totalBundles} bundles before creating the work order.`,
+        });
+        return;
+    }
+
+    addWorkOrder(data);
+    toast({
+        title: "Work Order Created!",
+        description: "The new work order has been successfully created and added to the dashboard.",
+    })
+    form.reset({
+        workOrderNo: `WO-${Date.now().toString().slice(-5)}`,
+        styleNo: "",
+        garmentType: "",
+        preProductionNo: "",
+        sizes: [{ size: '', quantity: 0}],
+        instructions: [],
+        status: 'Cutting',
+        lineStations: [],
+        mappedQrCodes: {},
+        qtyPerBundle: 24,
+        targetOutputQtyPerDay: 50,
+    });
+  }
+
 
   const machineTypes = React.useMemo(
     () =>
@@ -197,6 +190,18 @@ export default function WorkOrdersPage() {
       ].sort(),
     [productionLines]
   );
+  
+  const assignedMachinesInStore = React.useMemo(() => {
+      const ids = new Set<string>();
+      productionLines.forEach(line => {
+          line.stations.forEach(station => {
+              if (station.machineId) {
+                  ids.add(station.machineId);
+              }
+          });
+      });
+      return ids;
+  }, [productionLines]);
 
   React.useEffect(() => {
     const selectedLine = productionLines.find(line => line.id === watchedProductionLine);
@@ -221,9 +226,10 @@ export default function WorkOrdersPage() {
         const selectedNote = mockPreProductionNotes.find(note => note.preProductionNo === watchedPreProductionNo);
         if (selectedNote) {
             form.setValue('styleNo', selectedNote.styleNo);
-            form.setValue('garmentType', selectedNote.garmentColor); // Or some other logic
+            form.setValue('garmentType', selectedNote.garmentColor);
             form.setValue('shipmentDate', selectedNote.deliveryDate);
             replaceSizes(selectedNote.sizes);
+            form.setValue('mappedQrCodes', {});
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -235,14 +241,47 @@ export default function WorkOrdersPage() {
   }, [watchedSizes]);
   
   const totalBundles = React.useMemo(() => {
-    return generateBundles(totalQty, watchedQtyPerBundle).length;
-  }, [totalQty, watchedQtyPerBundle]);
+    let count = 0;
+    watchedSizes.forEach(size => {
+        if(size.quantity && watchedQtyPerBundle) {
+            count += generateBundles(size.quantity, watchedQtyPerBundle).length;
+        }
+    });
+    return count;
+  }, [watchedSizes, watchedQtyPerBundle]);
 
-  const unassignedQrCodes = React.useMemo(() => allQrCodes.filter(c => c.status === 'Unassigned'), [allQrCodes]);
+  const handleOpenMapDialog = (size: string, bundleNo: number) => {
+    setCurrentBundleToMap({ size, bundleNo });
+    setQrCodeInput('');
+    setIsMapDialogOpen(true);
+  };
   
-  const codesForPreview = React.useMemo(() => {
-    return unassignedQrCodes.slice(0, totalBundles);
-  }, [unassignedQrCodes, totalBundles]);
+  const handleMapQrCode = () => {
+    if (!currentBundleToMap || !qrCodeInput.trim()) return;
+
+    const bundleKey = `${currentBundleToMap.size}-${currentBundleToMap.bundleNo}`;
+    const result = mapQrCode(qrCodeInput, form.getValues('workOrderNo'), bundleKey);
+
+    if (result.success) {
+        form.setValue(`mappedQrCodes.${bundleKey}`, qrCodeInput);
+        toast({ title: 'QR Code Mapped!', description: `Bundle ${bundleKey} is now linked to QR code ${qrCodeInput}.`});
+        setIsMapDialogOpen(false);
+    } else {
+        toast({ variant: 'destructive', title: 'Mapping Failed', description: result.error });
+    }
+  };
+  
+  const handleUnmapQrCode = (bundleKey: string) => {
+    const qrCodeId = form.getValues(`mappedQrCodes.${bundleKey}`);
+    if (qrCodeId) {
+        // This should ideally also update the QR code's status in the store
+        // For now, just remove from form state
+        const currentMappings = form.getValues('mappedQrCodes');
+        delete currentMappings[bundleKey];
+        form.setValue('mappedQrCodes', currentMappings);
+        toast({ title: 'QR Code Unmapped', description: `QR code for bundle ${bundleKey} has been removed.`});
+    }
+  };
 
   return (
     <Form {...form}>
@@ -498,11 +537,10 @@ export default function WorkOrdersPage() {
             </Card>
 
             <Tabs defaultValue="bundle" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="bundle">Bundle Details</TabsTrigger>
                 <TabsTrigger value="instructions">Instructions</TabsTrigger>
                 <TabsTrigger value="line-detail">Line Detail</TabsTrigger>
-                <TabsTrigger value="qr-codes">QR Codes</TabsTrigger>
               </TabsList>
               <TabsContent value="bundle">
                 <Card>
@@ -571,14 +609,14 @@ export default function WorkOrdersPage() {
 
                 <Card className="mt-4">
                   <CardHeader>
-                    <CardTitle>Bundle Breakdown</CardTitle>
+                    <CardTitle>Bundle Breakdown &amp; QR Code Mapping</CardTitle>
                     <CardDescription>
-                      Generated bundles based on size breakdown and quantity per bundle.
+                      Generated bundles based on size breakdown and quantity per bundle. Map a QR code to each bundle.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                      {watchedSizes.map((sizeItem, index) => {
+                      {watchedSizes.map((sizeItem) => {
                         if (
                           !sizeItem.size ||
                           !sizeItem.quantity ||
@@ -594,28 +632,46 @@ export default function WorkOrdersPage() {
                         );
 
                         return (
-                          <div key={index} className="border rounded-lg">
+                          <div key={sizeItem.size} className="border rounded-lg">
                             <h4 className="font-semibold text-center bg-muted p-2 rounded-t-md">
                               {sizeItem.size} ({sizeItem.quantity})
                             </h4>
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead>Bundle No.</TableHead>
-                                  <TableHead className="text-right">Qty</TableHead>
+                                  <TableHead>Bundle</TableHead>
+                                  <TableHead>Qty</TableHead>
+                                  <TableHead className="text-right">QR Code</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {bundles.map((bundle, bundleIndex) => (
-                                  <TableRow key={bundleIndex}>
+                                {bundles.map((bundle) => {
+                                  const bundleKey = `${sizeItem.size}-${bundle.number}`;
+                                  const mappedCode = watchedMappedQrCodes[bundleKey];
+                                  return (
+                                  <TableRow key={bundleKey}>
                                     <TableCell className="font-medium">
                                       {bundle.number}
                                     </TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell>
                                       {bundle.quantityInBundle}
                                     </TableCell>
+                                    <TableCell className="text-right">
+                                       {mappedCode ? (
+                                            <div className="flex items-center justify-end gap-1">
+                                                <span className="text-xs font-mono">{mappedCode.split('-').pop()}</span>
+                                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleUnmapQrCode(bundleKey)}>
+                                                    <XCircle className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </div>
+                                       ) : (
+                                            <Button type="button" size="sm" variant="outline" onClick={() => handleOpenMapDialog(sizeItem.size, bundle.number)}>
+                                                <LinkIcon className="mr-1 h-3 w-3" /> Map
+                                            </Button>
+                                       )}
+                                    </TableCell>
                                   </TableRow>
-                                ))}
+                                )})}
                               </TableBody>
                             </Table>
                           </div>
@@ -791,15 +847,15 @@ export default function WorkOrdersPage() {
                                       const machineType = form.watch(`lineStations.${index}.machineType`);
                                       
                                       const assignedOnThisWorkOrder = new Set<string>();
-                                      if (watchedLineStations) {
-                                          watchedLineStations.forEach((station, i) => {
+                                      if (form.getValues('lineStations')) {
+                                          form.getValues('lineStations').forEach((station, i) => {
                                               if (i !== index && station.machineId) {
                                                   assignedOnThisWorkOrder.add(station.machineId);
                                               }
                                           });
                                       }
                                       
-                                      const currentMachineId = watchedLineStations ? watchedLineStations[index]?.machineId : undefined;
+                                      const currentMachineId = form.getValues('lineStations') ? form.getValues('lineStations')[index]?.machineId : undefined;
                               
                                       const availableMachines = mockMachines.filter(
                                           (m) =>
@@ -918,49 +974,36 @@ export default function WorkOrdersPage() {
                     </CardContent>
                 </Card>
               </TabsContent>
-              <TabsContent value="qr-codes">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>QR Codes to be Assigned</CardTitle>
-                    <CardDescription>
-                      {totalBundles > 0
-                        ? `Based on your configuration, ${totalBundles} bundles will be created and assigned the following QR codes.`
-                        : "Enter size breakdown and bundle quantity to see QR codes."}
-                      {unassignedQrCodes.length < totalBundles && (
-                        <p className="font-medium text-destructive mt-2">
-                          Warning: Not enough unassigned QR codes available.
-                          Required: {totalBundles}, Available:{" "}
-                          {unassignedQrCodes.length}. Please generate more
-                          codes.
-                        </p>
-                      )}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {codesForPreview.length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-                        {codesForPreview.map((code) => (
-                          <div
-                            key={code.id}
-                            className="flex flex-col items-center gap-2 p-2 border rounded-lg"
-                          >
-                            <QRCodeCanvas value={code.id} size={80} />
-                            <p className="text-xs font-mono break-all text-center">
-                              {code.id.split("-")[2]}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-24 text-muted-foreground">
-                        <p>No QR codes to preview.</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
             </Tabs>
         </div>
+        
+        {/* QR Code Mapping Dialog */}
+        <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Map QR Code to Bundle {currentBundleToMap?.size}-{currentBundleToMap?.bundleNo}</DialogTitle>
+                    <DialogDescription>
+                        Scan or enter the QR Code ID to link it to this bundle.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <Label htmlFor="qr-code-map-input">QR Code ID</Label>
+                    <Input
+                        id="qr-code-map-input"
+                        value={qrCodeInput}
+                        onChange={(e) => setQrCodeInput(e.target.value)}
+                        placeholder="Scan or type ID..."
+                    />
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">Cancel</Button>
+                    </DialogClose>
+                    <Button type="button" onClick={handleMapQrCode}>Map QR Code</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
       </form>
     </Form>
   );

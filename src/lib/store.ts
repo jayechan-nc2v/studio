@@ -48,7 +48,7 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         productionLine: 'line-1',
         status: 'Sewing',
         instructions: presetInstructions["TEE-CLASSIC"],
-        qrCodes: [],
+        mappedQrCodes: {},
     },
     {
         workOrderNo: 'WO-00124',
@@ -67,7 +67,7 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         productionLine: 'line-3',
         status: 'QC',
         instructions: presetInstructions["DNM-JKT-01"],
-        qrCodes: [],
+        mappedQrCodes: {},
     },
     {
         workOrderNo: 'WO-00123',
@@ -86,7 +86,7 @@ const initialWorkOrders: WorkOrderFormValues[] = [
             { machineType: "Fabric Spreader", instructionDescription: "Spread fabric", smv: 0.2, target: 300},
             { machineType: "Sewing Machine (Brother)", instructionDescription: "Main body sewing", smv: 1.2, target: 60},
         ],
-        qrCodes: [],
+        mappedQrCodes: {},
     },
 ];
 
@@ -276,19 +276,14 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
 export interface QrCode {
     id: string;
     workOrderId: string | null;
-    status: string;
-    size?: string;
-    bundleNo?: number;
-    bundleQty?: number;
+    status: string; // Unassigned, Assigned to WO, Cutting, Sewing, etc.
+    bundleKey: string | null; // e.g., "S-1", "M-5"
 }
 
 interface QrCodeState {
     qrCodes: QrCode[];
     addQrCodes: (ids: string[]) => void;
-    assignQrCodesToWorkOrder: (
-        workOrderId: string, 
-        bundles: { size: string; bundleNo: number, quantity: number }[]
-    ) => { success: boolean, assigned: QrCode[], required: number, available: number };
+    mapQrCode: (qrCodeId: string, workOrderId: string, bundleKey: string) => { success: boolean, error?: string };
     updateQrCodeStatus: (qrCodeId: string, newStatus: string) => void;
 }
 
@@ -297,9 +292,10 @@ const initialQrCodes: QrCode[] = [
         id: `BNDL-NEW-${i.toString().padStart(3, '0')}`,
         workOrderId: null,
         status: 'Unassigned',
+        bundleKey: null
     })),
-    { id: 'BNDL-TEST-001', workOrderId: 'WO-00125', status: 'Cutting', size: 'M', bundleNo: 1, bundleQty: 25 },
-    { id: 'BNDL-TEST-002', workOrderId: 'WO-00125', status: 'Cutting', size: 'M', bundleNo: 2, bundleQty: 25 },
+    { id: 'BNDL-TEST-001', workOrderId: 'WO-00125', status: 'Cutting', bundleKey: 'M-1' },
+    { id: 'BNDL-TEST-002', workOrderId: 'WO-00125', status: 'Cutting', bundleKey: 'M-2' },
 ];
 
 export const useQrCodeStore = create<QrCodeState>((set, get) => ({
@@ -308,44 +304,31 @@ export const useQrCodeStore = create<QrCodeState>((set, get) => ({
         const newCodes: QrCode[] = ids.map(id => ({
             id,
             workOrderId: null,
-            status: 'Unassigned'
+            status: 'Unassigned',
+            bundleKey: null
         }));
         set((state) => ({
             qrCodes: [...state.qrCodes, ...newCodes]
         }));
     },
-    assignQrCodesToWorkOrder: (workOrderId, bundles) => {
-        const unassignedCodes = get().qrCodes.filter(c => c.status === 'Unassigned');
-        const requiredCount = bundles.length;
-
-        if (unassignedCodes.length < requiredCount) {
-            return { success: false, assigned: [], required: requiredCount, available: unassignedCodes.length };
+    mapQrCode: (qrCodeId, workOrderId, bundleKey) => {
+        const code = get().qrCodes.find(c => c.id.toLowerCase() === qrCodeId.toLowerCase());
+        if (!code) {
+            return { success: false, error: "QR Code not found." };
         }
-        
-        const codesToAssign = unassignedCodes.slice(0, requiredCount);
-        const assignedCodes: QrCode[] = [];
-  
-        const updatedQrCodes = get().qrCodes.map(qrCode => {
-            const assignmentIndex = codesToAssign.findIndex(c => c.id === qrCode.id);
-            if (assignmentIndex !== -1) {
-                const bundleInfo = bundles[assignmentIndex];
-                const updatedCode = {
-                    ...qrCode,
-                    workOrderId,
-                    status: 'Assigned to WO',
-                    size: bundleInfo.size,
-                    bundleNo: bundleInfo.bundleNo,
-                    bundleQty: bundleInfo.quantity
-                };
-                assignedCodes.push(updatedCode);
-                return updatedCode;
+        if (code.status !== 'Unassigned') {
+            return { success: false, error: `QR Code is already in use (Status: ${code.status}).`};
+        }
+
+        const updatedQrCodes = get().qrCodes.map(c => {
+            if (c.id === code.id) {
+                return { ...c, workOrderId, bundleKey, status: 'Assigned to WO' };
             }
-            return qrCode;
+            return c;
         });
 
         set({ qrCodes: updatedQrCodes });
-  
-        return { success: true, assigned: assignedCodes, required: requiredCount, available: unassignedCodes.length };
+        return { success: true };
     },
     updateQrCodeStatus: (qrCodeId, newStatus) => {
         set((state) => ({
@@ -499,3 +482,5 @@ export const useGlobalSettingsStore = create<GlobalSettingsState>((set, get) => 
         };
     }
 }));
+
+    

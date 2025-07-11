@@ -43,7 +43,7 @@ export const workOrderSchema = z.object({
   productionLine: z.string().min(1, "Production Line is required."),
   status: z.string(),
   lineStations: z.array(stationSchema).optional(),
-  qrCodes: z.array(z.string()).optional(),
+  mappedQrCodes: z.record(z.string(), z.string())
 });
 
 export type WorkOrderFormValues = z.infer<typeof workOrderSchema>;
@@ -205,4 +205,6 @@ export const globalSettingsSchema = z.object({
 });
 
 export type GlobalSettingsFormValues = z.infer<typeof globalSettingsSchema>;
+    
+
     
