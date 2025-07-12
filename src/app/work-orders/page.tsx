@@ -66,6 +66,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useWorkOrderStore, useProductionLineStore, useQrCodeStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
 import { presetInstructions, mockMachines, mockPreProductionNotes } from "@/lib/data";
+import { Label } from "@/components/ui/label";
 
 interface Bundle {
   key: string;
@@ -234,7 +235,14 @@ export default function WorkOrdersPage() {
     if (!selectedBundleKey || !qrCodeInput) return;
 
     const workOrderNo = form.getValues("workOrderNo");
-    const result = mapQrCode(qrCodeInput, workOrderNo, selectedBundleKey);
+    const bundleData = bundleBreakdown.find(b => b.key === selectedBundleKey);
+    if (!bundleData) {
+        toast({variant: "destructive", title: "Error", description: "Could not find bundle data."});
+        return;
+    }
+
+    const { size, bundleNo, quantity } = bundleData;
+    const result = mapQrCode(qrCodeInput, workOrderNo, selectedBundleKey, size, bundleNo, quantity);
     
     if (result.success) {
       form.setValue(`mappedQrCodes.${selectedBundleKey}`, qrCodeInput);
