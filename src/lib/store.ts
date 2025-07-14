@@ -278,12 +278,15 @@ export interface QrCode {
     workOrderId: string | null;
     status: string; // Unassigned, Assigned to WO, Cutting, Sewing, etc.
     bundleKey: string | null; // e.g., "S-1", "M-5"
+    size: string | null;
+    bundleNo: number | null;
+    bundleQty: number | null;
 }
 
 interface QrCodeState {
     qrCodes: QrCode[];
     addQrCodes: (ids: string[]) => void;
-    mapQrCode: (qrCodeId: string, workOrderId: string, bundleKey: string) => { success: boolean, error?: string };
+    mapQrCode: (qrCodeId: string, workOrderId: string, bundleKey: string, size: string, bundleNo: number, quantity: number) => { success: boolean, error?: string };
     updateQrCodeStatus: (qrCodeId: string, newStatus: string) => void;
 }
 
@@ -292,10 +295,18 @@ const initialQrCodes: QrCode[] = [
         id: `BNDL-NEW-${i.toString().padStart(3, '0')}`,
         workOrderId: null,
         status: 'Unassigned',
-        bundleKey: null
+        bundleKey: null,
+        size: null,
+        bundleNo: null,
+        bundleQty: null,
     })),
-    { id: 'BNDL-TEST-001', workOrderId: 'WO-00125', status: 'Cutting', bundleKey: 'M-1' },
-    { id: 'BNDL-TEST-002', workOrderId: 'WO-00125', status: 'Cutting', bundleKey: 'M-2' },
+    { id: 'BNDL-TEST-001', workOrderId: 'WO-00125', status: 'Cutting', bundleKey: 'M-1', size: 'M', bundleNo: 1, bundleQty: 25 },
+    { id: 'BNDL-TEST-002', workOrderId: 'WO-00125', status: 'Cutting', bundleKey: 'M-2', size: 'M', bundleNo: 2, bundleQty: 25 },
+    { id: 'BNDL-TEST-101', workOrderId: null, status: 'Unassigned', bundleKey: null, size: null, bundleNo: null, bundleQty: null },
+    { id: 'BNDL-TEST-102', workOrderId: null, status: 'Unassigned', bundleKey: null, size: null, bundleNo: null, bundleQty: null },
+    { id: 'BNDL-TEST-103', workOrderId: null, status: 'Unassigned', bundleKey: null, size: null, bundleNo: null, bundleQty: null },
+    { id: 'BNDL-TEST-104', workOrderId: null, status: 'Unassigned', bundleKey: null, size: null, bundleNo: null, bundleQty: null },
+    { id: 'BNDL-TEST-105', workOrderId: null, status: 'Unassigned', bundleKey: null, size: null, bundleNo: null, bundleQty: null },
 ];
 
 export const useQrCodeStore = create<QrCodeState>((set, get) => ({
@@ -305,13 +316,16 @@ export const useQrCodeStore = create<QrCodeState>((set, get) => ({
             id,
             workOrderId: null,
             status: 'Unassigned',
-            bundleKey: null
+            bundleKey: null,
+            size: null,
+            bundleNo: null,
+            bundleQty: null,
         }));
         set((state) => ({
             qrCodes: [...state.qrCodes, ...newCodes]
         }));
     },
-    mapQrCode: (qrCodeId, workOrderId, bundleKey) => {
+    mapQrCode: (qrCodeId, workOrderId, bundleKey, size, bundleNo, quantity) => {
         const code = get().qrCodes.find(c => c.id.toLowerCase() === qrCodeId.toLowerCase());
         if (!code) {
             return { success: false, error: "QR Code not found." };
@@ -322,7 +336,7 @@ export const useQrCodeStore = create<QrCodeState>((set, get) => ({
 
         const updatedQrCodes = get().qrCodes.map(c => {
             if (c.id === code.id) {
-                return { ...c, workOrderId, bundleKey, status: 'Assigned to WO' };
+                return { ...c, workOrderId, bundleKey, status: 'Assigned to WO', size, bundleNo, bundleQty: quantity };
             }
             return c;
         });
