@@ -225,6 +225,18 @@ export default function WorkOrdersPage() {
     return bundles;
   }, [watchedSizes, watchedQtyPerBundle]);
 
+  const groupedBundles = React.useMemo(() => {
+    return bundleBreakdown.reduce((acc, bundle) => {
+      const { size } = bundle;
+      if (!acc[size]) {
+        acc[size] = [];
+      }
+      acc[size].push(bundle);
+      return acc;
+    }, {} as Record<string, Bundle[]>);
+  }, [bundleBreakdown]);
+
+
   const handleOpenMapDialog = (bundleKey: string) => {
     setSelectedBundleKey(bundleKey);
     setQrCodeInput("");
@@ -603,52 +615,53 @@ export default function WorkOrdersPage() {
 
                     <div className="pt-4">
                       <h4 className="font-semibold text-lg mb-2">Bundle Breakdown</h4>
-                      <div className="border rounded-md">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Bundle No.</TableHead>
-                              <TableHead>Size</TableHead>
-                              <TableHead>Quantity</TableHead>
-                              <TableHead>QR Code</TableHead>
-                              <TableHead className="text-right">Action</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {bundleBreakdown.length > 0 ? (
-                              bundleBreakdown.map((bundle) => {
-                                const mappedQr = watchedMappedQrCodes[bundle.key];
-                                return (
-                                <TableRow key={bundle.key}>
-                                  <TableCell>{bundle.bundleNo}</TableCell>
-                                  <TableCell>{bundle.size}</TableCell>
-                                  <TableCell>{bundle.quantity}</TableCell>
-                                  <TableCell className="font-mono">{mappedQr || "Not Mapped"}</TableCell>
-                                  <TableCell className="text-right">
-                                      {mappedQr ? (
-                                        <Button type="button" variant="destructive" size="sm" onClick={() => handleUnmapQrCode(bundle.key)}>
-                                            Unmap
-                                        </Button>
-                                      ) : (
-                                        <Button type="button" variant="secondary" size="sm" onClick={() => handleOpenMapDialog(bundle.key)}>
-                                            Map QR Code
-                                        </Button>
-                                      )}
-                                  </TableCell>
-                                </TableRow>
-                              )})
-                            ) : (
-                              <TableRow>
-                                <TableCell colSpan={5} className="text-center h-24">
-                                  No bundles to display. Enter quantities and a bundle size above.
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </TableBody>
-                        </Table>
-                      </div>
+                        {Object.keys(groupedBundles).length > 0 ? (
+                            Object.entries(groupedBundles).map(([size, bundles]) => (
+                                <div key={size} className="space-y-2 mb-6">
+                                    <h5 className="font-semibold text-md">Size: {size}</h5>
+                                    <div className="border rounded-md">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Bundle No.</TableHead>
+                                                    <TableHead>Quantity</TableHead>
+                                                    <TableHead>QR Code</TableHead>
+                                                    <TableHead className="text-right">Action</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {bundles.map((bundle) => {
+                                                    const mappedQr = watchedMappedQrCodes[bundle.key];
+                                                    return (
+                                                        <TableRow key={bundle.key}>
+                                                            <TableCell>{bundle.bundleNo}</TableCell>
+                                                            <TableCell>{bundle.quantity}</TableCell>
+                                                            <TableCell className="font-mono">{mappedQr || "Not Mapped"}</TableCell>
+                                                            <TableCell className="text-right">
+                                                                {mappedQr ? (
+                                                                    <Button type="button" variant="destructive" size="sm" onClick={() => handleUnmapQrCode(bundle.key)}>
+                                                                        Unmap
+                                                                    </Button>
+                                                                ) : (
+                                                                    <Button type="button" variant="secondary" size="sm" onClick={() => handleOpenMapDialog(bundle.key)}>
+                                                                        Map QR Code
+                                                                    </Button>
+                                                                )}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center text-muted-foreground p-8 border rounded-md">
+                                No bundles to display. Enter quantities and a bundle size above.
+                            </div>
+                        )}
                     </div>
-
                   </CardContent>
                 </Card>
               </TabsContent>
