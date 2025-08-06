@@ -287,7 +287,7 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: ApiProducti
                     </DialogDescription>
                 </DialogHeader>
                  <Form {...form}>
-                    <form id="create-wo-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form id="create-wo-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                              <FormField
                                 control={form.control}
@@ -467,5 +467,3 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: ApiProducti
         </Dialog>
     );
 }
-
-    
