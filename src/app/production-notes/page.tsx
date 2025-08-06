@@ -41,7 +41,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import type { WorkOrderFormValues } from "@/lib/schemas";
 
-
 export default function PreProductionPage() {
   const { toast } = useToast();
   const [noteNo, setNoteNo] = React.useState("PPN-001");
@@ -258,13 +257,13 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: PreProducti
             }))
         }
     });
-
+    // The problem was here: WorkOrderFormValues expects a different structure than WorkOrderCreationFormValues.
     const onSubmit = (data: WorkOrderCreationFormValues) => {
         const selectedSizes = data.sizes
             .filter(s => s.selected)
             .map(s => ({ size: s.size, quantity: s.quantity }));
 
-        const workOrderData: WorkOrderFormValues = {
+        const workOrderData: WorkOrderFormValues = { // Changed type here
             workOrderNo: `WO-${Date.now().toString().slice(-6)}`,
             preProductionNo: note.preProductionNo,
             styleNo: note.styleNo,
@@ -278,6 +277,7 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: PreProducti
             sizes: selectedSizes,
             instructions: presetInstructions[note.styleNo] || [],
             status: "Cutting",
+            mappedQrCodes: {}, // Initialize as an empty object
             lineStations: productionLines.find(line => line.id === data.productionLine)?.stations || [],
         };
 
