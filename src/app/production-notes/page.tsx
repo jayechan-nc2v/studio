@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { type PreProductionNote, fetchPreProductionNote, presetInstructions } from "@/lib/data";
+import { presetInstructions } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -41,11 +41,23 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import type { WorkOrderFormValues } from "@/lib/schemas";
 
+interface ApiSize {
+  qty: number;
+  size: string;
+}
+
+interface ApiProductionNote {
+  id: number;
+  pnno: string;
+  color: string;
+  sizes: ApiSize[];
+}
+
 export default function PreProductionPage() {
   const { toast } = useToast();
-  const [noteNo, setNoteNo] = React.useState("PPN-001");
+  const [noteNo, setNoteNo] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
-  const [noteData, setNoteData] = React.useState<PreProductionNote | null>(null);
+  const [noteData, setNoteData] = React.useState<ApiProductionNote | null>(null);
   const [isCreateWoDialogOpen, setIsCreateWoDialogOpen] = React.useState(false);
 
 
@@ -63,10 +75,15 @@ export default function PreProductionPage() {
     setIsLoading(true);
     setNoteData(null);
     try {
-        const data = await fetchPreProductionNote(noteNo);
-        if (data) {
+        const response = await fetch(`https://publicapi.bfn.app/v1/getPNQty?pn=${noteNo}`);
+        if (!response.ok) {
+            throw new Error(`API error: ${response.statusText}`);
+        }
+        const data: ApiProductionNote = await response.json();
+        if (data && data.pnno) {
             setNoteData(data);
         } else {
+            setNoteData(null);
             toast({
                 variant: "destructive",
                 title: "Not Found",
@@ -74,22 +91,17 @@ export default function PreProductionPage() {
             });
         }
     } catch (error) {
+        setNoteData(null);
         toast({
             variant: "destructive",
             title: "An Error Occurred",
-            description: "Failed to fetch data. Please try again.",
+            description: "Failed to fetch data. Please check the PN No. or try again later.",
         });
     } finally {
         setIsLoading(false);
     }
   };
   
-  // Fetch initial data on load for demo purposes
-  React.useEffect(() => {
-    handleFetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
 
   return (
     <div className="flex flex-col gap-6">
@@ -113,7 +125,7 @@ export default function PreProductionPage() {
               <Input
                 id="noteNo"
                 type="text"
-                placeholder="e.g., PPN-001"
+                placeholder="e.g., JOC25-S0005-01"
                 value={noteNo}
                 onChange={(e) => setNoteNo(e.target.value)}
                 disabled={isLoading}
@@ -137,20 +149,10 @@ export default function PreProductionPage() {
         <>
             <Card>
                 <CardHeader>
-                    <CardTitle>Details for {noteData.preProductionNo}</CardTitle>
-                    <CardDescription>Style: {noteData.styleNo} | Customer: {noteData.customerName}</CardDescription>
+                    <CardTitle>Details for {noteData.pnno}</CardTitle>
+                    <CardDescription>Color: {noteData.color}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <InfoItem label="Style No." value={noteData.styleNo} />
-                        <InfoItem label="Customer Style No." value={noteData.customerStyleNo} />
-                        <InfoItem label="Customer Name" value={noteData.customerName} />
-                        <InfoItem label="Brand" value={noteData.brand} />
-                        <InfoItem label="Destination" value={noteData.destination} />
-                        <InfoItem label="Delivery Date" value={format(noteData.deliveryDate, "PPP")} />
-                        <InfoItem label="Garment Color" value={noteData.garmentColor} />
-                        <InfoItem label="Total Quantity" value={noteData.totalQty.toLocaleString()} />
-                    </div>
                     <div className="mt-6">
                         <h4 className="font-semibold mb-2">Size Breakdown</h4>
                          <div className="border rounded-md">
@@ -165,7 +167,7 @@ export default function PreProductionPage() {
                                     {noteData.sizes.map(size => (
                                         <TableRow key={size.size}>
                                             <TableCell>{size.size}</TableCell>
-                                            <TableCell className="text-right">{size.quantity.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right">{size.qty.toLocaleString()}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -192,13 +194,6 @@ export default function PreProductionPage() {
   );
 }
 
-const InfoItem = ({ label, value }: { label: string; value: string }) => (
-    <div className="space-y-1">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <p className="text-base font-semibold">{value}</p>
-    </div>
-);
-
 const LoadingSkeleton = () => (
     <Card>
         <CardHeader>
@@ -206,14 +201,6 @@ const LoadingSkeleton = () => (
             <Skeleton className="h-4 w-1/3" />
         </CardHeader>
         <CardContent>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(8)].map((_, i) => (
-                    <div key={i} className="space-y-2">
-                        <Skeleton className="h-4 w-2/5" />
-                        <Skeleton className="h-6 w-4/5" />
-                    </div>
-                ))}
-            </div>
              <div className="mt-6">
                 <Skeleton className="h-6 w-1/4 mb-4" />
                 <Skeleton className="h-40 w-full" />
@@ -223,7 +210,7 @@ const LoadingSkeleton = () => (
 );
 
 
-function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: PreProductionNote; open: boolean; onOpenChange: (open: boolean) => void; }) {
+function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: ApiProductionNote; open: boolean; onOpenChange: (open: boolean) => void; }) {
     const { toast } = useToast();
     const { workOrders, addWorkOrder } = useWorkOrderStore();
     const { lines: productionLines } = useProductionLineStore();
@@ -233,7 +220,7 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: PreProducti
         note.sizes.forEach(s => allocations[s.size] = 0);
 
         workOrders
-            .filter(wo => wo.preProductionNo === note.preProductionNo)
+            .filter(wo => wo.preProductionNo === note.pnno)
             .forEach(wo => {
                 wo.sizes.forEach(woSize => {
                     if (allocations[woSize.size] !== undefined) {
@@ -257,27 +244,27 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: PreProducti
             }))
         }
     });
-    // The problem was here: WorkOrderFormValues expects a different structure than WorkOrderCreationFormValues.
+    
     const onSubmit = (data: WorkOrderCreationFormValues) => {
         const selectedSizes = data.sizes
             .filter(s => s.selected)
             .map(s => ({ size: s.size, quantity: s.quantity }));
 
-        const workOrderData: WorkOrderFormValues = { // Changed type here
+        const workOrderData: WorkOrderFormValues = {
             workOrderNo: `WO-${Date.now().toString().slice(-6)}`,
-            preProductionNo: note.preProductionNo,
-            styleNo: note.styleNo,
-            garmentType: note.garmentColor,
-            shipmentDate: note.deliveryDate,
+            preProductionNo: note.pnno,
+            styleNo: `STYLE-${note.pnno}`, // Placeholder as API doesn't provide it
+            garmentType: note.color,
+            shipmentDate: new Date(), // Placeholder
             productionLine: data.productionLine,
             qtyPerBundle: data.qtyPerBundle,
             targetOutputQtyPerDay: data.targetOutputQtyPerDay,
             startDate: data.startDate,
             endDate: data.endDate,
             sizes: selectedSizes,
-            instructions: presetInstructions[note.styleNo] || [],
+            instructions: [], // Placeholder
             status: "Cutting",
-            mappedQrCodes: {}, // Initialize as an empty object
+            mappedQrCodes: {},
             lineStations: productionLines.find(line => line.id === data.productionLine)?.stations || [],
         };
 
@@ -294,7 +281,7 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: PreProducti
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl">
                 <DialogHeader>
-                    <DialogTitle>Create Work Order for {note.preProductionNo}</DialogTitle>
+                    <DialogTitle>Create Work Order for {note.pnno}</DialogTitle>
                     <DialogDescription>
                         Select sizes and quantities to include in this work order.
                     </DialogDescription>
@@ -415,7 +402,7 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: PreProducti
                                     </TableHeader>
                                     <TableBody>
                                         {note.sizes.map((noteSize, index) => {
-                                            const total = noteSize.quantity;
+                                            const total = noteSize.qty;
                                             const allocated = allocatedQuantities[noteSize.size] || 0;
                                             const available = total - allocated;
                                             return (
@@ -480,3 +467,5 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: PreProducti
         </Dialog>
     );
 }
+
+    
