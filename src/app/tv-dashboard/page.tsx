@@ -27,10 +27,13 @@ const generateHourlyPerformanceData = () => {
     "12:30 - 13:30", "13:30 - 14:30", "14:30 - 15:30", "15:30 - 16:30"
   ];
   let isFuture = false;
+  const currentHour = new Date().getHours();
+
 
   for (const hourRange of hours) {
-    const currentHour = new Date().getHours();
     const rangeStartHour = parseInt(hourRange.split(':')[0]);
+    
+    // Once we hit a future hour, all subsequent hours are also in the future.
     if (currentHour < rangeStartHour) {
       isFuture = true;
     }
@@ -68,7 +71,9 @@ export default function TvDashboardPage() {
     const [currentTime, setCurrentTime] = React.useState<Date | null>(null);
 
     React.useEffect(() => {
+        // Set initial time on client mount to avoid hydration mismatch
         setCurrentTime(new Date());
+
         const interval = setInterval(() => {
             setHourlyData(generateHourlyPerformanceData());
             setCurrentTime(new Date());
@@ -134,25 +139,25 @@ export default function TvDashboardPage() {
                                 <TableBody>
                                     {hourlyData.map((row) => (
                                         <TableRow key={row.hour} className="hover:bg-gray-50">
-                                            <TableCell className="border border-gray-400 text-center font-mono h-8 px-2 text-base">{row.hour}</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.target}</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.qc}</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.defect}</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.defectPercent?.toFixed(1)}%</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.output}</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.effPercent?.toFixed(1)}%</TableCell>
+                                            <TableCell className="border border-gray-400 text-center font-mono h-8 px-2 text-lg">{row.hour}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-lg">{row.target}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-lg">{row.qc}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-lg">{row.defect}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-lg">{row.defectPercent?.toFixed(1)}%</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-lg">{row.output}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-lg">{row.effPercent?.toFixed(1)}%</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
                                 <TableFooter>
                                     <TableRow className="bg-gray-200 font-bold hover:bg-gray-200">
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">Total</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.target}</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.qc}</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.defect}</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.totalDefectPercent.toFixed(1)}%</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.output}</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.totalEffPercent.toFixed(1)}%</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-xl">Total</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-xl">{hourlySummary.target}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-xl">{hourlySummary.qc}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-xl">{hourlySummary.defect}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-xl">{hourlySummary.totalDefectPercent.toFixed(1)}%</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-xl">{hourlySummary.output}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-xl">{hourlySummary.totalEffPercent.toFixed(1)}%</TableCell>
                                     </TableRow>
                                 </TableFooter>
                             </Table>
@@ -170,21 +175,32 @@ export default function TvDashboardPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-2">
-                            <table className="w-full border-collapse">
+                             <table className="w-full border-collapse">
                                 <tbody>
-                                    {Object.entries({
-                                        "PN No.": wipDetailData.pnNo,
-                                        "Style No.": wipDetailData.styleNo,
-                                        "Color": wipDetailData.color,
-                                        "PN Qty.": wipDetailData.pnQty,
-                                        "SMV": wipDetailData.smv,
-                                        "Supervisor": wipDetailData.supervisor,
-                                    }).map(([key, value]) => (
-                                        <tr key={key} className="border-b border-gray-400">
-                                            <td className="font-bold p-1 border-r border-gray-400 w-1/3">{key}</td>
-                                            <td className="p-1" colSpan={3}>{value}</td>
-                                        </tr>
-                                    ))}
+                                    <tr className="border-b border-gray-400">
+                                        <td className="font-bold p-1 border-r border-gray-400 w-1/3">PN No.</td>
+                                        <td className="p-1">{wipDetailData.pnNo}</td>
+                                    </tr>
+                                    <tr className="border-b border-gray-400">
+                                        <td className="font-bold p-1 border-r border-gray-400 w-1/3">Style No.</td>
+                                        <td className="p-1">{wipDetailData.styleNo}</td>
+                                    </tr>
+                                    <tr className="border-b border-gray-400">
+                                        <td className="font-bold p-1 border-r border-gray-400 w-1/3">Color</td>
+                                        <td className="p-1">{wipDetailData.color}</td>
+                                    </tr>
+                                    <tr className="border-b border-gray-400">
+                                        <td className="font-bold p-1 border-r border-gray-400 w-1/3">PN Qty.</td>
+                                        <td className="p-1">{wipDetailData.pnQty}</td>
+                                    </tr>
+                                    <tr className="border-b border-gray-400">
+                                        <td className="font-bold p-1 border-r border-gray-400 w-1/3">SMV</td>
+                                        <td className="p-1">{wipDetailData.smv}</td>
+                                    </tr>
+                                    <tr className="border-b border-gray-400">
+                                        <td className="font-bold p-1 border-r border-gray-400 w-1/3">Supervisor</td>
+                                        <td className="p-1">{wipDetailData.supervisor}</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </CardContent>
