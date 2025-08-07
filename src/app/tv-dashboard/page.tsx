@@ -22,12 +22,16 @@ import { cn } from "@/lib/utils";
 // --- Mock Data Generation ---
 const generateHourlyPerformanceData = () => {
   const data = [];
-  for (let i = 7; i <= 16; i++) {
-    const hour = `${String(i).padStart(2, '0')}:00`;
+  const hours = [
+    "07:00 - 08:00", "08:00 - 09:00", "09:00 - 10:00", "10:00 - 11:00", 
+    "11:00 - 12:00", "12:00 - 13:00", "13:00 - 14:00", "14:00 - 15:00", "15:00 - 16:00"
+  ];
+
+  for (const hourRange of hours) {
     const target = 100;
     const qcQty = Math.floor(target * (0.9 + Math.random() * 0.15)); // 90% to 105% of target
     const passedQty = Math.floor(qcQty * (0.95 - Math.random() * 0.1)); // 85% to 95% pass rate
-    data.push({ hour, target, qcQty, passedQty });
+    data.push({ hour: hourRange, target, qcQty, passedQty });
   }
   return data;
 };
@@ -83,8 +87,8 @@ export default function TvDashboardPage() {
     return (
         <div className="bg-gray-900 text-white min-h-screen p-4 font-body flex flex-col">
             <header className="text-center mb-4">
-                <h1 className="text-4xl font-bold tracking-tight">Line 1 Dashboard</h1>
-                <p className="text-xl text-muted-foreground">
+                <h1 className="text-3xl font-bold tracking-tight">Line 1 Dashboard</h1>
+                <p className="text-lg text-muted-foreground">
                     {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     {' | '}
                     {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -94,7 +98,7 @@ export default function TvDashboardPage() {
                 {/* 1. Hourly Performance (Top Left) */}
                 <Card className="bg-gray-800 border-gray-700 text-white flex flex-col">
                     <CardHeader>
-                        <CardTitle className="text-2xl">📊 Hourly Performance</CardTitle>
+                        <CardTitle className="text-xl">📊 Hourly Performance</CardTitle>
                     </CardHeader>
                     <CardContent className="flex-1 overflow-y-auto">
                          <Table>
@@ -108,7 +112,7 @@ export default function TvDashboardPage() {
                             </TableHeader>
                             <TableBody>
                                 {data.hourly.map((hourData) => (
-                                    <TableRow key={hourData.hour} className="border-gray-700">
+                                    <TableRow key={hourData.hour} className="border-gray-700 text-lg">
                                         <TableCell className="font-mono">{hourData.hour}</TableCell>
                                         <TableCell className="text-right">{hourData.target}</TableCell>
                                         <TableCell className="text-right font-bold text-cyan-400">{hourData.qcQty}</TableCell>
@@ -123,7 +127,7 @@ export default function TvDashboardPage() {
                 {/* 2. Style & Order Status (Top Right) */}
                 <Card className="bg-gray-800 border-gray-700 text-white flex flex-col">
                     <CardHeader>
-                        <CardTitle className="text-2xl">🧵 Style & Order Status</CardTitle>
+                        <CardTitle className="text-xl">🧵 Style & Order Status</CardTitle>
                     </CardHeader>
                     <CardContent className="flex-1 overflow-y-auto">
                         <Table>
@@ -137,11 +141,11 @@ export default function TvDashboardPage() {
                             </TableHeader>
                             <TableBody>
                                 {data.styles.map((style) => (
-                                    <TableRow key={style.order} className="border-gray-700">
-                                        <TableCell className="font-mono text-lg">{style.order}</TableCell>
-                                        <TableCell className="text-right text-lg">{style.target.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right text-lg font-bold text-cyan-400">{style.output.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right text-lg">{style.wip.toLocaleString()}</TableCell>
+                                    <TableRow key={style.order} className="border-gray-700 text-lg">
+                                        <TableCell className="font-mono">{style.order}</TableCell>
+                                        <TableCell className="text-right">{style.target.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right font-bold text-cyan-400">{style.output.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right">{style.wip.toLocaleString()}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -152,20 +156,20 @@ export default function TvDashboardPage() {
                 {/* 3. QC Performance Summary (Bottom Left) */}
                 <Card className="bg-gray-800 border-gray-700 text-white flex flex-col justify-center items-center p-2">
                     <CardHeader className="text-center pb-2">
-                        <CardTitle className="text-2xl">✅ QC Performance</CardTitle>
+                        <CardTitle className="text-xl">✅ QC Performance</CardTitle>
                     </CardHeader>
                     <CardContent className="flex items-center gap-4 w-full text-center">
                         <div className="flex-1">
-                            <p className="text-xl text-muted-foreground">Total QC</p>
-                            <p className="text-5xl font-bold">{qcSummary.totalQc.toLocaleString()}</p>
+                            <p className="text-lg text-muted-foreground">Total QC</p>
+                            <p className="text-4xl font-bold">{qcSummary.totalQc.toLocaleString()}</p>
                         </div>
                         <div className="flex-1">
-                            <p className="text-xl text-muted-foreground">Passed</p>
-                            <p className="text-5xl font-bold text-green-400">{qcSummary.totalPassed.toLocaleString()}</p>
+                            <p className="text-lg text-muted-foreground">Passed</p>
+                            <p className="text-4xl font-bold text-green-400">{qcSummary.totalPassed.toLocaleString()}</p>
                         </div>
                         <div className="flex-1">
-                            <p className="text-xl text-muted-foreground">Pass Rate</p>
-                            <p className={cn("text-6xl font-bold", qcSummary.passRate >= 95 ? "text-green-400" : "text-red-400")}>
+                            <p className="text-lg text-muted-foreground">Pass Rate</p>
+                            <p className={cn("text-5xl font-bold", qcSummary.passRate >= 95 ? "text-green-400" : "text-red-400")}>
                                 {qcSummary.passRate.toFixed(1)}%
                             </p>
                         </div>
@@ -175,23 +179,23 @@ export default function TvDashboardPage() {
                 {/* 4. Efficiency Overview (Bottom Right) */}
                 <Card className="bg-gray-800 border-gray-700 text-white flex flex-col justify-center p-2">
                     <CardHeader className="text-center pb-2">
-                        <CardTitle className="text-2xl">⚙️ Efficiency Overview</CardTitle>
+                        <CardTitle className="text-xl">⚙️ Efficiency Overview</CardTitle>
                     </CardHeader>
                     <CardContent className="text-center w-full">
                         <div className="mb-2">
-                            <p className="text-xl text-muted-foreground">Daily Efficiency</p>
-                             <p className={cn("text-6xl font-bold", efficiencySummary.daily >= efficiencySummary.target ? "text-green-400" : "text-yellow-400")}>
+                            <p className="text-lg text-muted-foreground">Daily Efficiency</p>
+                             <p className={cn("text-5xl font-bold", efficiencySummary.daily >= efficiencySummary.target ? "text-green-400" : "text-yellow-400")}>
                                 {efficiencySummary.daily.toFixed(1)}%
                             </p>
                         </div>
                         <div className="flex justify-around items-center">
                              <div>
-                                <p className="text-lg text-muted-foreground">Target</p>
-                                <p className="text-3xl font-semibold text-cyan-400">{efficiencySummary.target.toFixed(1)}%</p>
+                                <p className="text-md text-muted-foreground">Target</p>
+                                <p className="text-2xl font-semibold text-cyan-400">{efficiencySummary.target.toFixed(1)}%</p>
                             </div>
                             <div>
-                                <p className="text-lg text-muted-foreground">This Month</p>
-                                <p className="text-3xl font-semibold">{efficiencySummary.month.toFixed(1)}%</p>
+                                <p className="text-md text-muted-foreground">This Month</p>
+                                <p className="text-2xl font-semibold">{efficiencySummary.month.toFixed(1)}%</p>
                             </div>
                         </div>
                     </CardContent>

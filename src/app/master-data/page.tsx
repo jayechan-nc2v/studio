@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { HardDrive, Route, ListChecks, Tags, ClipboardX, Users, Milestone } from "lucide-react";
+import { HardDrive, Route, ListChecks, Tags, ClipboardX, Users, Milestone, Clock } from "lucide-react";
 
 export default function MasterDataPage() {
   return (
@@ -115,6 +115,21 @@ export default function MasterDataPage() {
             </p>
             <Button asChild variant="secondary">
               <Link href="/master-data/check-points">Manage Check Points</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Clock className="h-8 w-8 text-primary mb-2" />
+            <CardTitle>Working Hours</CardTitle>
+            <CardDescription>Configure factory working schedules.</CardDescription>
+          </CardHeader>
+           <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Set the standard working hours and breaks for each day.
+            </p>
+            <Button asChild variant="secondary">
+              <Link href="/master-data/working-hours">Manage Working Hours</Link>
             </Button>
           </CardContent>
         </Card>
