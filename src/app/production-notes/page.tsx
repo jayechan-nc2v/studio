@@ -168,6 +168,7 @@ export default function PreProductionPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
+                        <InfoItem label="Call Lot" value={noteData.calllot} />
                         <InfoItem label="Style No." value={noteData.styleno} />
                         <InfoItem label="Customer Style" value={noteData.cstyle} />
                         <InfoItem label="Customer Name" value={noteData.cust} />
@@ -497,3 +498,4 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: ApiProducti
         </Dialog>
     );
 }
+
