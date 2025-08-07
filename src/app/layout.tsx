@@ -31,15 +31,15 @@ function RootLayoutContent({
     // This hook must be called on every render to follow the Rules of Hooks.
     React.useEffect(() => {
         // We only want to redirect if not on the login page and no user is found.
-        if (!currentUser && pathname !== '/login') {
+        if (!currentUser && pathname !== '/login' && pathname !== '/tv-dashboard') {
             router.replace('/login');
         }
     }, [currentUser, pathname, router]);
 
     // Conditional rendering logic is safe after all hooks have been called.
 
-    // If we're on the login page, render it without the main AppLayout.
-    if (pathname === '/login') {
+    // If we're on a public page, render it without the main AppLayout.
+    if (pathname === '/login' || pathname === '/tv-dashboard') {
         return <>{children}</>;
     }
 
