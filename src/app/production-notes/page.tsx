@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { presetInstructions } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -51,6 +50,14 @@ interface ApiProductionNote {
   pnno: string;
   color: string;
   sizes: ApiSize[];
+  cust: string;
+  brand: string | null;
+  styleno: string;
+  cstyle: string;
+  calllot: string;
+  qty: number;
+  dest: string;
+  fdate: string;
 }
 
 export default function PreProductionPage() {
@@ -102,6 +109,13 @@ export default function PreProductionPage() {
     }
   };
   
+  const InfoItem = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
+    <div className="space-y-1">
+      <p className="text-sm font-medium text-muted-foreground">{label}</p>
+      <p className="font-semibold">{value || "N/A"}</p>
+    </div>
+  );
+
 
   return (
     <div className="flex flex-col gap-6">
@@ -150,9 +164,19 @@ export default function PreProductionPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Details for {noteData.pnno}</CardTitle>
-                    <CardDescription>Color: {noteData.color}</CardDescription>
+                    <CardDescription>Review the details fetched from the external system.</CardDescription>
                 </CardHeader>
                 <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
+                        <InfoItem label="Style No." value={noteData.styleno} />
+                        <InfoItem label="Customer Style" value={noteData.cstyle} />
+                        <InfoItem label="Customer Name" value={noteData.cust} />
+                        <InfoItem label="Brand" value={noteData.brand} />
+                        <InfoItem label="Destination" value={noteData.dest} />
+                        <InfoItem label="Delivery Date" value={format(new Date(noteData.fdate), "PPP")} />
+                        <InfoItem label="Garment Color" value={noteData.color} />
+                        <InfoItem label="Total Quantity" value={noteData.qty.toLocaleString()} />
+                    </div>
                     <div className="mt-6">
                         <h4 className="font-semibold mb-2">Size Breakdown</h4>
                          <div className="border rounded-md">
@@ -201,6 +225,12 @@ const LoadingSkeleton = () => (
             <Skeleton className="h-4 w-1/3" />
         </CardHeader>
         <CardContent>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
+                <div className="space-y-2"><Skeleton className="h-4 w-1/3" /><Skeleton className="h-6 w-2/3" /></div>
+                <div className="space-y-2"><Skeleton className="h-4 w-1/3" /><Skeleton className="h-6 w-2/3" /></div>
+                <div className="space-y-2"><Skeleton className="h-4 w-1/3" /><Skeleton className="h-6 w-2/3" /></div>
+                <div className="space-y-2"><Skeleton className="h-4 w-1/3" /><Skeleton className="h-6 w-2/3" /></div>
+             </div>
              <div className="mt-6">
                 <Skeleton className="h-6 w-1/4 mb-4" />
                 <Skeleton className="h-40 w-full" />
@@ -253,16 +283,16 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: ApiProducti
         const workOrderData: WorkOrderFormValues = {
             workOrderNo: `WO-${Date.now().toString().slice(-6)}`,
             preProductionNo: note.pnno,
-            styleNo: `STYLE-${note.pnno}`, // Placeholder as API doesn't provide it
+            styleNo: note.styleno,
             garmentType: note.color,
-            shipmentDate: new Date(), // Placeholder
+            shipmentDate: new Date(note.fdate),
             productionLine: data.productionLine,
             qtyPerBundle: data.qtyPerBundle,
             targetOutputQtyPerDay: data.targetOutputQtyPerDay,
             startDate: data.startDate,
             endDate: data.endDate,
             sizes: selectedSizes,
-            instructions: [], // Placeholder
+            instructions: [], // Placeholder for now
             status: "Cutting",
             mappedQrCodes: {},
             lineStations: productionLines.find(line => line.id === data.productionLine)?.stations || [],
@@ -467,3 +497,4 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: ApiProducti
         </Dialog>
     );
 }
+
