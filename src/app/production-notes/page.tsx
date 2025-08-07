@@ -497,4 +497,3 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: ApiProducti
         </Dialog>
     );
 }
-
