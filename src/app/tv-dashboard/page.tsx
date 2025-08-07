@@ -19,208 +19,206 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
-
 // --- Mock Data Generation ---
 const generateHourlyPerformanceData = () => {
   const data = [];
   const hours = [
-    "07:30 - 08:30", "08:30 - 09:30", "09:30 - 10:30", "10:30 - 11:30", 
+    "07:30 - 08:30", "08:30 - 09:30", "09:30 - 10:30", "10:30 - 11:30",
     "12:30 - 13:30", "13:30 - 14:30", "14:30 - 15:30", "15:30 - 16:30"
   ];
+  let isFuture = false;
 
   for (const hourRange of hours) {
-    const isFuture = new Date().getHours() < parseInt(hourRange.split(':')[0]);
-    const target = 100;
-    const qcQty = isFuture ? 0 : Math.floor(target * (0.9 + Math.random() * 0.25));
-    const passedQty = isFuture ? 0 : Math.floor(qcQty * (0.95 - Math.random() * 0.1));
-    data.push({ hour: hourRange, target, qcQty, passedQty });
+    const currentHour = new Date().getHours();
+    const rangeStartHour = parseInt(hourRange.split(':')[0]);
+    if (currentHour < rangeStartHour) {
+      isFuture = true;
+    }
+
+    const target = 35;
+    const qc = isFuture ? null : Math.floor(Math.random() * (target - 15) + 15);
+    const defect = isFuture || qc === null ? null : Math.floor(Math.random() * 3);
+    const output = isFuture || qc === null || defect === null ? null : qc - defect;
+
+    data.push({
+      hour: hourRange,
+      target,
+      qc,
+      defect,
+      defectPercent: qc ? ((defect ?? 0) / qc * 100) : null,
+      output,
+      effPercent: output ? (output / target * 100) : null,
+    });
   }
   return data;
 };
 
-const generateWipWorkOrderData = () => {
-  const styles = [
-    { order: "A0001", qty: 24, output: 20, wip: 4 },
-    { order: "A0002", qty: 24, output: 23, wip: 1 },
-    { order: "A0003", qty: 24, output: 10, wip: 14 },
-    { order: "A0004", qty: 24, output: 0, wip: 24 },
-    { order: "A0005", qty: 24, output: 15, wip: 9 },
-    { order: "A0006", qty: 24, output: 5, wip: 19 },
-
-  ];
-  return styles.map(style => ({
-    ...style,
-    output: Math.min(style.qty, style.output + Math.floor(Math.random() * 2)),
-    wip: Math.max(0, style.qty - (style.output + Math.floor(Math.random() * 2))),
-  }));
+const wipDetailData = {
+    pnNo: "JOC25-S00001-1",
+    styleNo: "JOC2345",
+    color: "BK0001",
+    pnQty: 3500,
+    smv: 21.62,
+    supervisor: "Some One",
 };
-
 
 // --- Main Component ---
 export default function TvDashboardPage() {
-    const [data, setData] = React.useState({
-        hourly: generateHourlyPerformanceData(),
-        styles: generateWipWorkOrderData(),
-    });
+    const [hourlyData, setHourlyData] = React.useState(generateHourlyPerformanceData());
     const [currentTime, setCurrentTime] = React.useState<Date | null>(null);
 
     React.useEffect(() => {
-        // Set initial time on mount
         setCurrentTime(new Date());
-
         const interval = setInterval(() => {
-            setData({
-                hourly: generateHourlyPerformanceData(),
-                styles: generateWipWorkOrderData(),
-            });
+            setHourlyData(generateHourlyPerformanceData());
             setCurrentTime(new Date());
         }, 30000); // Auto-refresh every 30 seconds
 
         return () => clearInterval(interval);
     }, []);
-    
-    const hourlySummary = React.useMemo(() => {
-        const totalTarget = data.hourly.reduce((acc, hour) => acc + hour.target, 0);
-        const totalQc = data.hourly.reduce((acc, hour) => acc + hour.qcQty, 0);
-        const totalPassed = data.hourly.reduce((acc, hour) => acc + hour.passedQty, 0);
-        const passRate = totalQc > 0 ? (totalPassed / totalQc) * 100 : 0;
-        return { totalTarget, totalQc, totalPassed, passRate };
-    }, [data.hourly]);
 
-    const efficiencySummary = {
-        target: 35.0,
-        daily: 34.0,
-        month: 33.0,
-    };
+    const hourlySummary = React.useMemo(() => {
+        const initial = { target: 0, qc: 0, defect: 0, output: 0 };
+        const totals = hourlyData.reduce((acc, hour) => {
+            acc.target += hour.target || 0;
+            acc.qc += hour.qc || 0;
+            acc.defect += hour.defect || 0;
+            acc.output += hour.output || 0;
+            return acc;
+        }, initial);
+        
+        const totalDefectPercent = totals.qc > 0 ? (totals.defect / totals.qc * 100) : 0;
+        const totalEffPercent = totals.target > 0 ? (totals.output / totals.target * 100) : 0;
+
+        return { ...totals, totalDefectPercent, totalEffPercent };
+    }, [hourlyData]);
 
     return (
-        <div className="bg-gray-900 text-white min-h-screen p-4 font-sans flex flex-col">
+        <div className="bg-white text-black min-h-screen p-4 font-sans flex flex-col text-sm">
             <header className="flex justify-between items-baseline mb-4">
-                <h1 className="text-3xl font-bold tracking-tight">Line 1 Dashboard</h1>
-                <p className="text-lg text-muted-foreground">
-                    {currentTime ? (
-                        <>
-                            {currentTime.toLocaleDateString('en-CA')}
-                            {' | '}
-                            {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                        </>
-                    ) : (
-                        'Loading time...'
-                    )}
-                </p>
+                <h1 className="text-xl font-bold tracking-tight">
+                    Line 1 Dashboard
+                    <span className="ml-4 font-normal text-gray-600">
+                        {currentTime ? (
+                            <>
+                                {currentTime.toLocaleDateString('en-CA')}
+                                {' | '}
+                                {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                            </>
+                        ) : (
+                            'Loading time...'
+                        )}
+                    </span>
+                </h1>
             </header>
-            <div className="flex-1 grid grid-cols-2 grid-rows-[3fr_1fr] gap-4">
-                {/* 1. Hourly Performance (Top Left) */}
-                <Card className="bg-gray-800 border-gray-700 text-white flex flex-col">
-                    <CardHeader>
-                        <CardTitle className="text-xl">📊 Hourly Performance</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex-1 overflow-y-auto pr-2">
-                         <Table>
-                            <TableHeader>
-                                <TableRow className="border-gray-600 hover:bg-gray-800">
-                                    <TableHead className="text-white">Hour</TableHead>
-                                    <TableHead className="text-white text-right">Target</TableHead>
-                                    <TableHead className="text-white text-right">QC Qty</TableHead>
-                                    <TableHead className="text-white text-right">Passed Qty</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {data.hourly.map((hourData) => (
-                                    <TableRow key={hourData.hour} className="border-gray-700 text-lg hover:bg-gray-700/50">
-                                        <TableCell className="font-mono">{hourData.hour}</TableCell>
-                                        <TableCell className="text-right">{hourData.target}</TableCell>
-                                        <TableCell className="text-right font-bold text-cyan-400">{hourData.qcQty}</TableCell>
-                                        <TableCell className={cn("text-right font-bold", hourData.passedQty >= hourData.target ? "text-green-400" : "text-yellow-400")}>{hourData.passedQty}</TableCell>
+            
+            <div className="flex-1 grid grid-cols-3 gap-4">
+                {/* Left Column */}
+                <div className="col-span-2 flex flex-col">
+                    <Card className="border-gray-400 flex-1 flex flex-col">
+                        <CardHeader className="p-2 border-b border-gray-400">
+                            <CardTitle className="text-base flex items-center gap-2">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="4" height="16" fill="#4CAF50"/><rect x="6" width="4" height="16" fill="#2196F3"/><rect x="12" width="4" height="16" fill="#FFC107"/></svg>
+                                Hourly Performance
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0 flex-1">
+                            <Table className="border-collapse">
+                                <TableHeader>
+                                    <TableRow className="bg-gray-100 hover:bg-gray-100">
+                                        {['Hour', 'Target', 'QC', 'Defect', 'Defect %', 'Output', 'Eff %'].map(h => 
+                                            <TableHead key={h} className="border border-gray-400 text-black font-semibold text-center h-8 px-2">{h}</TableHead>
+                                        )}
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow className="border-gray-600 font-bold text-lg hover:bg-gray-800">
-                                    <TableCell>Total</TableCell>
-                                    <TableCell className="text-right">{hourlySummary.totalTarget}</TableCell>
-                                    <TableCell className="text-right text-cyan-400">{hourlySummary.totalQc}</TableCell>
-                                    <TableCell className="text-right text-green-400">{hourlySummary.totalPassed}</TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-                    </CardContent>
-                </Card>
-
-                {/* 2. WIP Work Order (Top Right) */}
-                <Card className="bg-gray-800 border-gray-700 text-white flex flex-col">
-                    <CardHeader>
-                        <CardTitle className="text-xl">🧵 WIP Work Order</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex-1 overflow-y-auto pr-2">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="border-gray-600 hover:bg-gray-800">
-                                    <TableHead className="text-white">Work Order</TableHead>
-                                    <TableHead className="text-white text-right">Qty</TableHead>
-                                    <TableHead className="text-white text-right">Output Qty</TableHead>
-                                    <TableHead className="text-white text-right">WIP Qty</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {data.styles.map((style) => (
-                                    <TableRow key={style.order} className="border-gray-700 text-lg hover:bg-gray-700/50">
-                                        <TableCell className="font-mono">{style.order}</TableCell>
-                                        <TableCell className="text-right">{style.qty.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right font-bold text-cyan-400">{style.output.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right">{style.wip.toLocaleString()}</TableCell>
+                                </TableHeader>
+                                <TableBody>
+                                    {hourlyData.map((row) => (
+                                        <TableRow key={row.hour} className="hover:bg-gray-50">
+                                            <TableCell className="border border-gray-400 text-center font-mono h-8 px-2">{row.hour}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.target}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.qc}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.defect}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.defectPercent?.toFixed(1)}%</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.output}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.effPercent?.toFixed(1)}%</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                                <TableFooter>
+                                    <TableRow className="bg-gray-200 font-bold hover:bg-gray-200">
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2">Total</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.target}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.qc}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.defect}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.totalDefectPercent.toFixed(1)}%</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.output}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.totalEffPercent.toFixed(1)}%</TableCell>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                                </TableFooter>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
 
-                {/* 3. QC Performance Summary (Bottom Left) */}
-                <Card className="bg-gray-800 border-gray-700 text-white flex flex-col justify-center p-2">
-                    <CardHeader className="text-center pb-2">
-                        <CardTitle className="text-xl">✅ QC Performance</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex items-center justify-around gap-4 w-full text-center">
-                        <div>
-                            <p className="text-lg text-muted-foreground">Total QC</p>
-                            <p className="text-4xl font-bold">{hourlySummary.totalQc.toLocaleString()}</p>
-                        </div>
-                        <div>
-                            <p className="text-lg text-muted-foreground">Passed</p>
-                            <p className="text-4xl font-bold text-green-400">{hourlySummary.totalPassed.toLocaleString()}</p>
-                        </div>
-                        <div>
-                            <p className="text-lg text-muted-foreground">Pass Rate</p>
-                            <p className={cn("text-4xl font-bold", hourlySummary.passRate >= 95 ? "text-green-400" : "text-red-400")}>
-                                {hourlySummary.passRate.toFixed(1)}%
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* 4. Efficiency Overview (Bottom Right) */}
-                <Card className="bg-gray-800 border-gray-700 text-white flex flex-col justify-center p-2">
-                    <CardHeader className="text-center pb-2">
-                        <CardTitle className="text-xl">⚙️ Efficiency Overview</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex items-center justify-around gap-4 w-full text-center">
-                         <div>
-                            <p className="text-lg text-muted-foreground">Target</p>
-                            <p className="text-4xl font-semibold text-cyan-400">{efficiencySummary.target.toFixed(1)}%</p>
-                        </div>
-                        <div>
-                            <p className="text-lg text-muted-foreground">Daily</p>
-                             <p className={cn("text-4xl font-bold", efficiencySummary.daily >= efficiencySummary.target ? "text-green-400" : "text-yellow-400")}>
-                                {efficiencySummary.daily.toFixed(1)}%
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-lg text-muted-foreground">Average Month</p>
-                            <p className="text-4xl font-semibold">{efficiencySummary.month.toFixed(1)}%</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Right Column */}
+                <div className="col-span-1 flex flex-col gap-4">
+                    <Card className="border-gray-400">
+                         <CardHeader className="p-2 border-b border-gray-400">
+                            <CardTitle className="text-base flex items-center gap-2">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="4" fill="#2196F3"/><rect y="6" width="16" height="4" fill="#4CAF50"/><rect y="12" width="16" height="4" fill="#FFC107"/></svg>
+                                WIP Detail
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-2">
+                            <table className="w-full border-collapse">
+                                <tbody>
+                                    <tr className="border-b border-gray-400">
+                                        <td className="font-bold p-1 border-r border-gray-400 w-1/4">PN No.</td>
+                                        <td className="p-1 border-r border-gray-400 w-1/4">{wipDetailData.pnNo}</td>
+                                        <td className="font-bold p-1 border-r border-gray-400 w-1/4">Style No.</td>
+                                        <td className="p-1 w-1/4">{wipDetailData.styleNo}</td>
+                                    </tr>
+                                    <tr className="border-b border-gray-400">
+                                        <td className="font-bold p-1 border-r border-gray-400">Color</td>
+                                        <td className="p-1 border-r border-gray-400">{wipDetailData.color}</td>
+                                        <td className="font-bold p-1 border-r border-gray-400">PN Qty.</td>
+                                        <td className="p-1">{wipDetailData.pnQty}</td>
+                                    </tr>
+                                    <tr className="border-b border-gray-400">
+                                        <td className="font-bold p-1 border-r border-gray-400">SMV</td>
+                                        <td className="p-1" colSpan={3}>{wipDetailData.smv}</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="font-bold p-1 border-r border-gray-400">Supervisor</td>
+                                        <td className="p-1" colSpan={3}>{wipDetailData.supervisor}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-gray-400 flex-1 flex flex-col">
+                        <CardHeader className="p-2 border-b border-gray-400">
+                            <CardTitle className="text-base flex items-center gap-2">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 0L9.94975 6.05025L16 8L9.94975 9.94975L8 16L6.05025 9.94975L0 8L6.05025 6.05025L8 0Z" fill="#9C27B0"/></svg>
+                                Efficiency Overview
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-1 flex items-center justify-around text-center">
+                             <div>
+                                <p className="text-lg text-gray-600">Target</p>
+                                <p className="text-4xl font-bold">35%</p>
+                            </div>
+                            <div>
+                                <p className="text-lg text-gray-600">Daily</p>
+                                <p className="text-5xl font-bold text-green-600">34%</p>
+                            </div>
+                            <div>
+                                <p className="text-lg text-gray-600">Average Month</p>
+                                <p className="text-4xl font-bold text-orange-600">33%</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     );
