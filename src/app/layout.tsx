@@ -51,7 +51,9 @@ function RootLayoutContent({
                 <Card className="w-full max-w-md">
                     <CardHeader>
                         <CardTitle><Skeleton className="h-8 w-3/4" /></CardTitle>
-                        <CardDescription><Skeleton className="h-4 w-1/2" /></CardDescription>
+                        <div className="text-sm text-muted-foreground pt-1">
+                          <Skeleton className="h-4 w-1/2" />
+                        </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <Skeleton className="h-10 w-full" />
