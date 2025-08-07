@@ -94,7 +94,7 @@ export default function TvDashboardPage() {
     }, [hourlyData]);
 
     return (
-        <div className="bg-white text-black min-h-screen p-4 font-sans flex flex-col text-sm">
+        <div className="bg-white text-black min-h-screen p-4 font-sans flex flex-col">
             <header className="flex justify-between items-baseline mb-4">
                 <h1 className="text-xl font-bold tracking-tight">
                     Line 1 Dashboard
@@ -127,32 +127,32 @@ export default function TvDashboardPage() {
                                 <TableHeader>
                                     <TableRow className="bg-gray-100 hover:bg-gray-100">
                                         {['Hour', 'Target', 'QC', 'Defect', 'Defect %', 'Output', 'Eff %'].map(h => 
-                                            <TableHead key={h} className="border border-gray-400 text-black font-semibold text-center h-8 px-2">{h}</TableHead>
+                                            <TableHead key={h} className="border border-gray-400 text-black font-semibold text-center h-8 px-2 text-base">{h}</TableHead>
                                         )}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {hourlyData.map((row) => (
                                         <TableRow key={row.hour} className="hover:bg-gray-50">
-                                            <TableCell className="border border-gray-400 text-center font-mono h-8 px-2">{row.hour}</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.target}</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.qc}</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.defect}</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.defectPercent?.toFixed(1)}%</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.output}</TableCell>
-                                            <TableCell className="border border-gray-400 text-center h-8 px-2">{row.effPercent?.toFixed(1)}%</TableCell>
+                                            <TableCell className="border border-gray-400 text-center font-mono h-8 px-2 text-base">{row.hour}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.target}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.qc}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.defect}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.defectPercent?.toFixed(1)}%</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.output}</TableCell>
+                                            <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{row.effPercent?.toFixed(1)}%</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
                                 <TableFooter>
                                     <TableRow className="bg-gray-200 font-bold hover:bg-gray-200">
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2">Total</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.target}</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.qc}</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.defect}</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.totalDefectPercent.toFixed(1)}%</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.output}</TableCell>
-                                        <TableCell className="border border-gray-400 text-center h-8 px-2">{hourlySummary.totalEffPercent.toFixed(1)}%</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">Total</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.target}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.qc}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.defect}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.totalDefectPercent.toFixed(1)}%</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.output}</TableCell>
+                                        <TableCell className="border border-gray-400 text-center h-8 px-2 text-base">{hourlySummary.totalEffPercent.toFixed(1)}%</TableCell>
                                     </TableRow>
                                 </TableFooter>
                             </Table>
