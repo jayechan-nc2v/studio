@@ -5,7 +5,6 @@ import * as React from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -17,15 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Legend, Tooltip } from "recharts";
 
 
 // --- Mock Data Generation ---
@@ -55,21 +46,6 @@ const generateStyleStatusData = () => {
   }));
 };
 
-const chartConfig: ChartConfig = {
-  target: {
-    label: "Target",
-    color: "hsl(var(--muted))",
-  },
-  qcQty: {
-    label: "QC Qty",
-    color: "hsl(var(--primary))",
-  },
-  passedQty: {
-    label: "Passed",
-    color: "hsl(var(--chart-2))",
-  },
-};
-
 
 // --- Main Component ---
 export default function TvDashboardPage() {
@@ -77,6 +53,7 @@ export default function TvDashboardPage() {
         hourly: generateHourlyPerformanceData(),
         styles: generateStyleStatusData(),
     });
+    const [currentTime, setCurrentTime] = React.useState(new Date());
 
     React.useEffect(() => {
         const interval = setInterval(() => {
@@ -84,6 +61,7 @@ export default function TvDashboardPage() {
                 hourly: generateHourlyPerformanceData(),
                 styles: generateStyleStatusData(),
             });
+            setCurrentTime(new Date());
         }, 30000); // Auto-refresh every 30 seconds
 
         return () => clearInterval(interval);
@@ -105,59 +83,65 @@ export default function TvDashboardPage() {
     return (
         <div className="bg-gray-900 text-white min-h-screen p-4 font-body flex flex-col">
             <header className="text-center mb-4">
-                <h1 className="text-5xl font-bold tracking-tight">Production Dashboard</h1>
-                <p className="text-2xl text-muted-foreground">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+                <h1 className="text-4xl font-bold tracking-tight">Line 1 Dashboard</h1>
+                <p className="text-xl text-muted-foreground">
+                    {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    {' | '}
+                    {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                </p>
             </header>
             <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-4">
                 {/* 1. Hourly Performance (Top Left) */}
                 <Card className="bg-gray-800 border-gray-700 text-white flex flex-col">
                     <CardHeader>
-                        <CardTitle className="text-3xl">📊 Hourly Performance</CardTitle>
+                        <CardTitle className="text-2xl">📊 Hourly Performance</CardTitle>
                     </CardHeader>
-                    <CardContent className="flex-1">
-                         <ChartContainer config={chartConfig} className="w-full h-full">
-                            <BarChart data={data.hourly} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
-                                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                <XAxis dataKey="hour" tick={{ fill: '#fff' }} />
-                                <YAxis tick={{ fill: '#fff' }} />
-                                <Tooltip
-                                    cursor={{ fill: 'rgba(255,255,255,0.1)' }}
-                                    contentStyle={{
-                                        backgroundColor: '#2d3748',
-                                        borderColor: '#4a5568',
-                                    }}
-                                />
-                                <Legend wrapperStyle={{ color: '#fff' }} />
-                                <Bar dataKey="target" fill="var(--color-target)" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="qcQty" fill="var(--color-qcQty)" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="passedQty" fill="var(--color-passedQty)" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ChartContainer>
+                    <CardContent className="flex-1 overflow-y-auto">
+                         <Table>
+                            <TableHeader>
+                                <TableRow className="border-gray-600">
+                                    <TableHead className="text-white">Hour</TableHead>
+                                    <TableHead className="text-white text-right">Target</TableHead>
+                                    <TableHead className="text-white text-right">QC Qty</TableHead>
+                                    <TableHead className="text-white text-right">Passed</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {data.hourly.map((hourData) => (
+                                    <TableRow key={hourData.hour} className="border-gray-700">
+                                        <TableCell className="font-mono">{hourData.hour}</TableCell>
+                                        <TableCell className="text-right">{hourData.target}</TableCell>
+                                        <TableCell className="text-right font-bold text-cyan-400">{hourData.qcQty}</TableCell>
+                                        <TableCell className={cn("text-right font-bold", hourData.passedQty >= hourData.target ? "text-green-400" : "text-yellow-400")}>{hourData.passedQty}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </CardContent>
                 </Card>
 
                 {/* 2. Style & Order Status (Top Right) */}
-                <Card className="bg-gray-800 border-gray-700 text-white">
+                <Card className="bg-gray-800 border-gray-700 text-white flex flex-col">
                     <CardHeader>
-                        <CardTitle className="text-3xl">🧵 Style & Order Status</CardTitle>
+                        <CardTitle className="text-2xl">🧵 Style & Order Status</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex-1 overflow-y-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow className="border-gray-600">
-                                    <TableHead className="text-white text-lg">Order</TableHead>
-                                    <TableHead className="text-white text-lg text-right">Target</TableHead>
-                                    <TableHead className="text-white text-lg text-right">Output</TableHead>
-                                    <TableHead className="text-white text-lg text-right">WIP</TableHead>
+                                    <TableHead className="text-white">Order</TableHead>
+                                    <TableHead className="text-white text-right">Target</TableHead>
+                                    <TableHead className="text-white text-right">Output</TableHead>
+                                    <TableHead className="text-white text-right">WIP</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {data.styles.map((style) => (
                                     <TableRow key={style.order} className="border-gray-700">
-                                        <TableCell className="font-mono text-xl">{style.order}</TableCell>
-                                        <TableCell className="text-right text-xl">{style.target.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right text-xl font-bold text-cyan-400">{style.output.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right text-xl">{style.wip.toLocaleString()}</TableCell>
+                                        <TableCell className="font-mono text-lg">{style.order}</TableCell>
+                                        <TableCell className="text-right text-lg">{style.target.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right text-lg font-bold text-cyan-400">{style.output.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right text-lg">{style.wip.toLocaleString()}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -166,22 +150,22 @@ export default function TvDashboardPage() {
                 </Card>
 
                 {/* 3. QC Performance Summary (Bottom Left) */}
-                <Card className="bg-gray-800 border-gray-700 text-white flex flex-col justify-center items-center">
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-3xl">✅ QC Performance</CardTitle>
+                <Card className="bg-gray-800 border-gray-700 text-white flex flex-col justify-center items-center p-2">
+                    <CardHeader className="text-center pb-2">
+                        <CardTitle className="text-2xl">✅ QC Performance</CardTitle>
                     </CardHeader>
-                    <CardContent className="flex items-center gap-8 w-full text-center">
+                    <CardContent className="flex items-center gap-4 w-full text-center">
                         <div className="flex-1">
-                            <p className="text-2xl text-muted-foreground">Total QC</p>
-                            <p className="text-6xl font-bold">{qcSummary.totalQc.toLocaleString()}</p>
+                            <p className="text-xl text-muted-foreground">Total QC</p>
+                            <p className="text-5xl font-bold">{qcSummary.totalQc.toLocaleString()}</p>
                         </div>
                         <div className="flex-1">
-                            <p className="text-2xl text-muted-foreground">Passed</p>
-                            <p className="text-6xl font-bold text-green-400">{qcSummary.totalPassed.toLocaleString()}</p>
+                            <p className="text-xl text-muted-foreground">Passed</p>
+                            <p className="text-5xl font-bold text-green-400">{qcSummary.totalPassed.toLocaleString()}</p>
                         </div>
                         <div className="flex-1">
-                            <p className="text-2xl text-muted-foreground">Pass Rate</p>
-                            <p className={cn("text-8xl font-bold", qcSummary.passRate >= 95 ? "text-green-400" : "text-red-400")}>
+                            <p className="text-xl text-muted-foreground">Pass Rate</p>
+                            <p className={cn("text-6xl font-bold", qcSummary.passRate >= 95 ? "text-green-400" : "text-red-400")}>
                                 {qcSummary.passRate.toFixed(1)}%
                             </p>
                         </div>
@@ -189,25 +173,25 @@ export default function TvDashboardPage() {
                 </Card>
 
                 {/* 4. Efficiency Overview (Bottom Right) */}
-                <Card className="bg-gray-800 border-gray-700 text-white flex flex-col justify-center">
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-3xl">⚙️ Efficiency Overview</CardTitle>
+                <Card className="bg-gray-800 border-gray-700 text-white flex flex-col justify-center p-2">
+                    <CardHeader className="text-center pb-2">
+                        <CardTitle className="text-2xl">⚙️ Efficiency Overview</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-center">
-                        <div className="mb-4">
-                            <p className="text-2xl text-muted-foreground">Daily Efficiency</p>
-                             <p className={cn("text-8xl font-bold", efficiencySummary.daily >= efficiencySummary.target ? "text-green-400" : "text-yellow-400")}>
+                    <CardContent className="text-center w-full">
+                        <div className="mb-2">
+                            <p className="text-xl text-muted-foreground">Daily Efficiency</p>
+                             <p className={cn("text-6xl font-bold", efficiencySummary.daily >= efficiencySummary.target ? "text-green-400" : "text-yellow-400")}>
                                 {efficiencySummary.daily.toFixed(1)}%
                             </p>
                         </div>
                         <div className="flex justify-around items-center">
                              <div>
-                                <p className="text-xl text-muted-foreground">Target</p>
-                                <p className="text-4xl font-semibold text-cyan-400">{efficiencySummary.target.toFixed(1)}%</p>
+                                <p className="text-lg text-muted-foreground">Target</p>
+                                <p className="text-3xl font-semibold text-cyan-400">{efficiencySummary.target.toFixed(1)}%</p>
                             </div>
                             <div>
-                                <p className="text-xl text-muted-foreground">This Month</p>
-                                <p className="text-4xl font-semibold">{efficiencySummary.month.toFixed(1)}%</p>
+                                <p className="text-lg text-muted-foreground">This Month</p>
+                                <p className="text-3xl font-semibold">{efficiencySummary.month.toFixed(1)}%</p>
                             </div>
                         </div>
                     </CardContent>

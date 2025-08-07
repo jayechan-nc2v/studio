@@ -71,6 +71,7 @@ import { Separator } from '@/components/ui/separator';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/tv-dashboard', label: 'Line Dashboard', icon: Warehouse },
   { href: '/production-notes', label: 'Pre-Production', icon: StickyNote },
   { href: '/work-orders', label: 'Work Orders', icon: ClipboardList },
   { href: '/generate-qr-code', label: 'Generate QR Code', icon: QrCode },
