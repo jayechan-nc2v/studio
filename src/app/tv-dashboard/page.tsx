@@ -44,6 +44,9 @@ const generateWipWorkOrderData = () => {
     { order: "A0002", qty: 24, output: 23, wip: 1 },
     { order: "A0003", qty: 24, output: 10, wip: 14 },
     { order: "A0004", qty: 24, output: 0, wip: 24 },
+    { order: "A0005", qty: 24, output: 15, wip: 9 },
+    { order: "A0006", qty: 24, output: 5, wip: 19 },
+
   ];
   return styles.map(style => ({
     ...style,
@@ -89,7 +92,7 @@ export default function TvDashboardPage() {
 
     return (
         <div className="bg-gray-900 text-white min-h-screen p-4 font-sans flex flex-col">
-            <header className="text-left mb-4">
+            <header className="flex justify-between items-baseline mb-4">
                 <h1 className="text-3xl font-bold tracking-tight">Line 1 Dashboard</h1>
                 <p className="text-lg text-muted-foreground">
                     {currentTime.toLocaleDateString('en-CA')}
