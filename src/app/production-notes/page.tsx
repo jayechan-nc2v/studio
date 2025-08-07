@@ -164,7 +164,7 @@ export default function PreProductionPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Details for {noteData.pnno}</CardTitle>
-                    <CardDescription>Review the details fetched from the external system.</CardDescription>
+                    <CardDescription>Review the PN details before create work order </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
