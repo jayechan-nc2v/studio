@@ -62,9 +62,12 @@ export default function TvDashboardPage() {
         hourly: generateHourlyPerformanceData(),
         styles: generateWipWorkOrderData(),
     });
-    const [currentTime, setCurrentTime] = React.useState(new Date());
+    const [currentTime, setCurrentTime] = React.useState<Date | null>(null);
 
     React.useEffect(() => {
+        // Set initial time on mount
+        setCurrentTime(new Date());
+
         const interval = setInterval(() => {
             setData({
                 hourly: generateHourlyPerformanceData(),
@@ -95,9 +98,15 @@ export default function TvDashboardPage() {
             <header className="flex justify-between items-baseline mb-4">
                 <h1 className="text-3xl font-bold tracking-tight">Line 1 Dashboard</h1>
                 <p className="text-lg text-muted-foreground">
-                    {currentTime.toLocaleDateString('en-CA')}
-                    {' | '}
-                    {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                    {currentTime ? (
+                        <>
+                            {currentTime.toLocaleDateString('en-CA')}
+                            {' | '}
+                            {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                        </>
+                    ) : (
+                        'Loading time...'
+                    )}
                 </p>
             </header>
             <div className="flex-1 grid grid-cols-2 grid-rows-[3fr_1fr] gap-4">
