@@ -172,26 +172,19 @@ export default function TvDashboardPage() {
                         <CardContent className="p-2">
                             <table className="w-full border-collapse">
                                 <tbody>
-                                    <tr className="border-b border-gray-400">
-                                        <td className="font-bold p-1 border-r border-gray-400 w-1/4">PN No.</td>
-                                        <td className="p-1 border-r border-gray-400 w-1/4">{wipDetailData.pnNo}</td>
-                                        <td className="font-bold p-1 border-r border-gray-400 w-1/4">Style No.</td>
-                                        <td className="p-1 w-1/4">{wipDetailData.styleNo}</td>
-                                    </tr>
-                                    <tr className="border-b border-gray-400">
-                                        <td className="font-bold p-1 border-r border-gray-400">Color</td>
-                                        <td className="p-1 border-r border-gray-400">{wipDetailData.color}</td>
-                                        <td className="font-bold p-1 border-r border-gray-400">PN Qty.</td>
-                                        <td className="p-1">{wipDetailData.pnQty}</td>
-                                    </tr>
-                                    <tr className="border-b border-gray-400">
-                                        <td className="font-bold p-1 border-r border-gray-400">SMV</td>
-                                        <td className="p-1" colSpan={3}>{wipDetailData.smv}</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="font-bold p-1 border-r border-gray-400">Supervisor</td>
-                                        <td className="p-1" colSpan={3}>{wipDetailData.supervisor}</td>
-                                    </tr>
+                                    {Object.entries({
+                                        "PN No.": wipDetailData.pnNo,
+                                        "Style No.": wipDetailData.styleNo,
+                                        "Color": wipDetailData.color,
+                                        "PN Qty.": wipDetailData.pnQty,
+                                        "SMV": wipDetailData.smv,
+                                        "Supervisor": wipDetailData.supervisor,
+                                    }).map(([key, value]) => (
+                                        <tr key={key} className="border-b border-gray-400">
+                                            <td className="font-bold p-1 border-r border-gray-400 w-1/3">{key}</td>
+                                            <td className="p-1" colSpan={3}>{value}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </CardContent>
