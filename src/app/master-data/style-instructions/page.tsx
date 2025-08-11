@@ -20,12 +20,14 @@ import { mockPreProductionNotes } from "@/lib/data";
 
 export default function StyleInstructionsPage() {
   const { toast } = useToast();
-  const { addStyleInstruction } = useStyleInstructionStore();
+  const { styleInstructions, addStyleInstruction, updateStyleInstruction } = useStyleInstructionStore();
   const { machineTypes } = useMachineTypeStore();
 
   const [styleNo, setStyleNo] = React.useState("");
+  const [searchStyleNo, setSearchStyleNo] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isDataLoaded, setIsDataLoaded] = React.useState(false);
+  const [isEditMode, setIsEditMode] = React.useState(false);
 
   const availableMachineTypes = React.useMemo(() => machineTypes.map((mt) => mt.typeName).sort(), [machineTypes]);
 
@@ -45,6 +47,21 @@ export default function StyleInstructionsPage() {
     control: form.control,
     name: "instructions",
   });
+
+  const resetFormState = () => {
+    form.reset({
+      styleNo: "",
+      customerStyleNo: "",
+      garmentType: "",
+      customerName: "",
+      brand: "",
+      instructions: [{ machineType: "", instructionDescription: "", smv: 0.1, target: 100 }],
+    });
+    setIsDataLoaded(false);
+    setIsEditMode(false);
+    setStyleNo("");
+    setSearchStyleNo("");
+  }
 
   const handleFetchData = (e?: React.FormEvent<HTMLFormElement>) => {
     if (e) e.preventDefault();
@@ -68,34 +85,58 @@ export default function StyleInstructionsPage() {
         });
         toast({ title: "Data Fetched", description: `Details for Style No. "${note.styleNo}" have been loaded.` });
         setIsDataLoaded(true);
+        setIsEditMode(false);
       } else {
         toast({ variant: "destructive", title: "Not Found", description: `No data found for Style No. "${styleNo}".` });
-        form.reset();
+        resetFormState();
       }
       setIsLoading(false);
     }, 500);
   };
 
+  const handleSearchStyle = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!searchStyleNo.trim()) {
+        toast({ variant: "destructive", title: "Input Required", description: "Please enter a Style No. to search." });
+        return;
+    }
+    const foundStyle = styleInstructions.find(si => si.styleNo.toLowerCase() === searchStyleNo.toLowerCase());
+    if (foundStyle) {
+        form.reset(foundStyle);
+        setIsDataLoaded(true);
+        setIsEditMode(true);
+        toast({ title: "Record Found", description: `Displaying instructions for Style No. "${foundStyle.styleNo}".` });
+    } else {
+        toast({ variant: "destructive", title: "Not Found", description: `No existing instruction record found for Style No. "${searchStyleNo}".` });
+        resetFormState();
+    }
+  };
+
   const handleManualSetup = () => {
-    form.reset({
-      styleNo: "",
-      customerStyleNo: "",
-      garmentType: "",
-      customerName: "",
-      brand: "",
-      instructions: [{ machineType: "", instructionDescription: "", smv: 0.1, target: 100 }],
-    });
+    resetFormState();
     setIsDataLoaded(true);
+    setIsEditMode(false);
   };
   
   const onSubmit = (data: StyleInstructionFormValues) => {
-    addStyleInstruction(data);
-    toast({
-        title: "Style Instruction Saved!",
-        description: `The instructions for style "${data.styleNo}" have been successfully saved.`,
-    })
-    form.reset();
-    setIsDataLoaded(false);
+    if (isEditMode) {
+      const originalInstruction = styleInstructions.find(si => si.styleNo.toLowerCase() === data.styleNo.toLowerCase());
+      if(originalInstruction) {
+        updateStyleInstruction(originalInstruction.id, data);
+        toast({
+            title: "Style Instruction Updated!",
+            description: `The instructions for style "${data.styleNo}" have been successfully updated.`,
+        });
+      }
+    } else {
+        addStyleInstruction(data);
+        toast({
+            title: "Style Instruction Saved!",
+            description: `The instructions for style "${data.styleNo}" have been successfully saved.`,
+        });
+    }
+    
+    resetFormState();
   };
 
   return (
@@ -105,44 +146,79 @@ export default function StyleInstructionsPage() {
         <p className="text-muted-foreground">Manage standard instructions and SMV for each garment style.</p>
       </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Style</CardTitle>
-          <CardDescription>Fetch style details from the external system or enter them manually.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="fetch">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="fetch">Fetch from System</TabsTrigger>
-              <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-            </TabsList>
-            <TabsContent value="fetch" className="pt-4">
-              <form onSubmit={handleFetchData}>
-                <div className="flex w-full max-w-sm items-center space-x-2">
-                  <Input
-                    id="styleNo"
-                    type="text"
-                    placeholder="Enter Style No..."
-                    value={styleNo}
-                    onChange={(e) => setStyleNo(e.target.value)}
-                    disabled={isLoading}
-                  />
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                    Fetch
-                  </Button>
-                </div>
-              </form>
-            </TabsContent>
-            <TabsContent value="manual" className="pt-4">
-              <Button onClick={handleManualSetup}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create New Style Instruction
-              </Button>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="create" onValueChange={() => resetFormState()}>
+        <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="create">Create New</TabsTrigger>
+            <TabsTrigger value="search">Search & Edit</TabsTrigger>
+        </TabsList>
+        <TabsContent value="create">
+            <Card>
+                <CardHeader>
+                <CardTitle>Select Style</CardTitle>
+                <CardDescription>Fetch style details from the external system or enter them manually.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                <Tabs defaultValue="fetch">
+                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="fetch">Fetch from System</TabsTrigger>
+                    <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="fetch" className="pt-4">
+                    <form onSubmit={handleFetchData}>
+                        <div className="flex w-full max-w-sm items-center space-x-2">
+                        <Input
+                            id="styleNo"
+                            type="text"
+                            placeholder="Enter Style No..."
+                            value={styleNo}
+                            onChange={(e) => setStyleNo(e.target.value)}
+                            disabled={isLoading}
+                        />
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                            Fetch
+                        </Button>
+                        </div>
+                    </form>
+                    </TabsContent>
+                    <TabsContent value="manual" className="pt-4">
+                    <Button onClick={handleManualSetup}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Create New Style Instruction
+                    </Button>
+                    </TabsContent>
+                </Tabs>
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="search">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Search for Existing Style Instruction</CardTitle>
+                    <CardDescription>Enter a Style No. to find and edit an existing record.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <form onSubmit={handleSearchStyle}>
+                        <div className="flex w-full max-w-sm items-center space-x-2">
+                        <Input
+                            id="searchStyleNo"
+                            type="text"
+                            placeholder="Enter Style No..."
+                            value={searchStyleNo}
+                            onChange={(e) => setSearchStyleNo(e.target.value)}
+                            disabled={isLoading}
+                        />
+                        <Button type="submit" disabled={isLoading}>
+                            <Search className="mr-2 h-4 w-4" />
+                            Search
+                        </Button>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
+        </TabsContent>
+      </Tabs>
+      
       
       {isLoading && <Skeleton className="h-96 w-full" />}
 
@@ -156,7 +232,7 @@ export default function StyleInstructionsPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <FormField control={form.control} name="styleNo" render={({ field }) => ( <FormItem><FormLabel>Style No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="styleNo" render={({ field }) => ( <FormItem><FormLabel>Style No.</FormLabel><FormControl><Input {...field} disabled={isEditMode} /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="customerStyleNo" render={({ field }) => ( <FormItem><FormLabel>Customer Style No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="garmentType" render={({ field }) => ( <FormItem><FormLabel>Garment Type</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="customerName" render={({ field }) => ( <FormItem><FormLabel>Customer Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -229,7 +305,7 @@ export default function StyleInstructionsPage() {
               <CardFooter>
                 <Button type="submit">
                   <Save className="mr-2 h-4 w-4" />
-                  Save Style Instruction
+                  {isEditMode ? 'Update Style Instruction' : 'Save Style Instruction'}
                 </Button>
               </CardFooter>
             </Card>

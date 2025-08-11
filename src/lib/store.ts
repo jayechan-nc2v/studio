@@ -475,7 +475,7 @@ interface GlobalSettingsState {
     updateSettings: (newSettings: GlobalSettingsFormValues) => void;
 }
 
-export const useGlobalSettingsStore = create<GlobalSettingsState>((set) => ({
+export const useGlobalSettingsStore = create<GlobalSettingsState>((set, get) => ({
     settings: {
         factoryName: "DMF",
         factoryInCharge: "Mr. Budi",
@@ -483,18 +483,41 @@ export const useGlobalSettingsStore = create<GlobalSettingsState>((set) => ({
         overtimePaid: 2.5
     },
     selectedFactory: "DMF",
-    selectFactory: (factory) => set({ selectedFactory: factory }),
+    selectFactory: (factory) => {
+        const currentSettings = mockGlobalSettings[factory as keyof typeof mockGlobalSettings];
+        if (currentSettings) {
+            set({ 
+                selectedFactory: factory,
+                settings: {
+                    factoryName: factory,
+                    ...currentSettings,
+                }
+            });
+        }
+    },
     updateSettings: (newSettings) => set({ settings: newSettings }),
 }));
 
+const initialStyleInstructions: StyleInstruction[] = [
+    {
+        id: 'SI-1628364872',
+        styleNo: 'DNM-JKT-01',
+        customerStyleNo: 'CUST-DNM-552',
+        garmentType: 'Denim Jacket',
+        customerName: 'Global Fashion Co.',
+        brand: 'Urban Threads',
+        instructions: presetInstructions['DNM-JKT-01']
+    }
+];
 // Store for Style Instructions
 interface StyleInstructionState {
     styleInstructions: StyleInstruction[];
     addStyleInstruction: (data: StyleInstructionFormValues) => void;
+    updateStyleInstruction: (id: string, data: StyleInstructionFormValues) => void;
 }
 
 export const useStyleInstructionStore = create<StyleInstructionState>((set, get) => ({
-    styleInstructions: [],
+    styleInstructions: initialStyleInstructions,
     addStyleInstruction: (data) => {
         const newInstruction: StyleInstruction = {
             id: `SI-${Date.now()}`,
@@ -504,7 +527,15 @@ export const useStyleInstructionStore = create<StyleInstructionState>((set, get)
             styleInstructions: [newInstruction, ...state.styleInstructions],
         }));
     },
+    updateStyleInstruction: (id, data) => {
+        set((state) => ({
+            styleInstructions: state.styleInstructions.map(si => 
+                si.id === id ? { ...si, ...data } : si
+            )
+        }));
+    }
 }));
     
+
 
 
