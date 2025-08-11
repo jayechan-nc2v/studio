@@ -22,6 +22,7 @@ import {
   Route,
   ScanLine,
   Settings,
+  Shirt,
   StickyNote,
   Tags,
   User,
@@ -101,6 +102,7 @@ const navItems = [
         icon: Tags,
       },
       { href: '/master-data/workers', label: 'Workers', icon: Users },
+      { href: '/master-data/style-instructions', label: 'Style Instructions', icon: Shirt },
       {
         href: '/master-data/production-instructions',
         label: 'Instructions',

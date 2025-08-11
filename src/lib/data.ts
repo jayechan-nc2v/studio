@@ -141,6 +141,16 @@ export interface GlobalSettings {
   overtimePaid: number;
 }
 
+export interface StyleInstruction {
+  id: string;
+  styleNo: string;
+  customerStyleNo: string;
+  garmentType: string;
+  customerName: string;
+  brand?: string;
+  instructions: Instruction[];
+}
+
 export const mockFactories = ['DMF', 'SBM'] as const;
 
 // Mock Data for Machines

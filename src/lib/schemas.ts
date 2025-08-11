@@ -205,6 +205,18 @@ export const globalSettingsSchema = z.object({
 });
 
 export type GlobalSettingsFormValues = z.infer<typeof globalSettingsSchema>;
+
+export const styleInstructionSchema = z.object({
+  styleNo: z.string().min(1, "Style No. is required."),
+  customerStyleNo: z.string().min(1, "Customer Style No. is required."),
+  garmentType: z.string().min(1, "Garment Type is required."),
+  customerName: z.string().min(1, "Customer Name is required."),
+  brand: z.string().optional(),
+  instructions: z.array(instructionSchema).min(1, "At least one instruction is required."),
+});
+
+export type StyleInstructionFormValues = z.infer<typeof styleInstructionSchema>;
     
 
     
+

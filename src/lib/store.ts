@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues, NewCheckPointFormValues, NewUserFormValues, GlobalSettingsFormValues } from '@/lib/schemas';
+import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues, NewCheckPointFormValues, NewUserFormValues, GlobalSettingsFormValues, StyleInstructionFormValues } from '@/lib/schemas';
 import { 
     presetInstructions, 
     mockMachineTypes, 
@@ -22,7 +22,8 @@ import {
     type User,
     mockGlobalSettings,
     type GlobalSettings,
-    mockFactories
+    mockFactories,
+    type StyleInstruction,
 } from '@/lib/data';
 
 interface WorkOrderState {
@@ -497,4 +498,23 @@ export const useGlobalSettingsStore = create<GlobalSettingsState>((set, get) => 
     }
 }));
 
+// Store for Style Instructions
+interface StyleInstructionState {
+    styleInstructions: StyleInstruction[];
+    addStyleInstruction: (data: StyleInstructionFormValues) => void;
+}
+
+export const useStyleInstructionStore = create<StyleInstructionState>((set, get) => ({
+    styleInstructions: [],
+    addStyleInstruction: (data) => {
+        const newInstruction: StyleInstruction = {
+            id: `SI-${Date.now()}`,
+            ...data,
+        };
+        set((state) => ({
+            styleInstructions: [newInstruction, ...state.styleInstructions],
+        }));
+    },
+}));
     
+
