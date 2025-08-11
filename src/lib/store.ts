@@ -469,33 +469,22 @@ export const useUserStore = create<UserState>((set, get) => ({
 }));
 
 interface GlobalSettingsState {
-    settings: Record<string, Omit<GlobalSettings, 'factoryName'>>;
+    settings: GlobalSettingsFormValues;
     selectedFactory: string | null;
     selectFactory: (factory: string) => void;
-    updateSettings: (factory: string, newSettings: Omit<GlobalSettingsFormValues, 'factoryName'>) => void;
-    getCurrentSettings: () => GlobalSettings | null;
+    updateSettings: (newSettings: GlobalSettingsFormValues) => void;
 }
 
-export const useGlobalSettingsStore = create<GlobalSettingsState>((set, get) => ({
-    settings: mockGlobalSettings,
-    selectedFactory: null,
-    selectFactory: (factory) => set({ selectedFactory: factory }),
-    updateSettings: (factory, newSettings) => {
-        set((state) => ({
-            settings: {
-                ...state.settings,
-                [factory]: newSettings,
-            }
-        }));
+export const useGlobalSettingsStore = create<GlobalSettingsState>((set) => ({
+    settings: {
+        factoryName: "DMF",
+        factoryInCharge: "Mr. Budi",
+        efficiencyTarget: 85,
+        overtimePaid: 2.5
     },
-    getCurrentSettings: () => {
-        const { settings, selectedFactory } = get();
-        if (!selectedFactory || !settings[selectedFactory]) return null;
-        return {
-            factoryName: selectedFactory,
-            ...settings[selectedFactory],
-        };
-    }
+    selectedFactory: "DMF",
+    selectFactory: (factory) => set({ selectedFactory: factory }),
+    updateSettings: (newSettings) => set({ settings: newSettings }),
 }));
 
 // Store for Style Instructions
@@ -517,4 +506,5 @@ export const useStyleInstructionStore = create<StyleInstructionState>((set, get)
     },
 }));
     
+
 
