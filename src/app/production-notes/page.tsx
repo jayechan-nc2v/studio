@@ -116,7 +116,8 @@ export default function PreProductionPage() {
     setIsLoading(true);
     setNoteData(null);
     try {
-        const response = await fetch(`https://publicapi.bfn.app/v1/getPNQty?pn=${noteNo}`);
+        const apiUrl = process.env.NEXT_PUBLIC_PN_API_URL || 'https://publicapi.bfn.app/v1/getPNQty';
+        const response = await fetch(`${apiUrl}?pn=${noteNo}`);
         if (!response.ok) {
             throw new Error(`API error: ${response.statusText}`);
         }
