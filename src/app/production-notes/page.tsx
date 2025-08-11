@@ -3,9 +3,10 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { Search, Loader2, PlusCircle, CalendarIcon } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { Search, Loader2, PlusCircle, CalendarIcon, Save } from "lucide-react";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -39,6 +40,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import type { WorkOrderFormValues } from "@/lib/schemas";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Trash2 } from "lucide-react";
 
 interface ApiSize {
   qty: number;
@@ -60,6 +63,26 @@ interface ApiProductionNote {
   fdate: string;
 }
 
+const manualSizeSchema = z.object({
+  size: z.string().min(1, "Size is required"),
+  qty: z.coerce.number().min(1, "Quantity must be at least 1"),
+});
+
+const manualNoteSchema = z.object({
+  pnno: z.string().min(1, "Production Note No. is required"),
+  styleno: z.string().min(1, "Style No. is required"),
+  cstyle: z.string().min(1, "Customer Style No. is required"),
+  cust: z.string().min(1, "Customer Name is required"),
+  brand: z.string().optional(),
+  dest: z.string().min(1, "Destination is required"),
+  fdate: z.date({ required_error: "Delivery Date is required" }),
+  color: z.string().min(1, "Garment Color is required"),
+  calllot: z.string().min(1, "Call Lot is required"),
+  sizes: z.array(manualSizeSchema).min(1, "At least one size breakdown is required."),
+});
+
+type ManualNoteFormValues = z.infer<typeof manualNoteSchema>;
+
 export default function PreProductionPage() {
   const { toast } = useToast();
   const [noteNo, setNoteNo] = React.useState("");
@@ -67,6 +90,17 @@ export default function PreProductionPage() {
   const [noteData, setNoteData] = React.useState<ApiProductionNote | null>(null);
   const [isCreateWoDialogOpen, setIsCreateWoDialogOpen] = React.useState(false);
 
+  const manualForm = useForm<ManualNoteFormValues>({
+    resolver: zodResolver(manualNoteSchema),
+    defaultValues: {
+      sizes: [{ size: "", qty: 0 }],
+    },
+  });
+
+  const { fields: sizeFields, append: appendSize, remove: removeSize } = useFieldArray({
+    control: manualForm.control,
+    name: "sizes",
+  });
 
   const handleFetchData = async (e?: React.FormEvent<HTMLFormElement>) => {
     if (e) e.preventDefault();
@@ -109,6 +143,22 @@ export default function PreProductionPage() {
     }
   };
   
+  const handleManualSubmit = (data: ManualNoteFormValues) => {
+    const totalQty = data.sizes.reduce((sum, size) => sum + size.qty, 0);
+    const transformedData: ApiProductionNote = {
+      ...data,
+      id: Date.now(),
+      brand: data.brand || null,
+      fdate: format(data.fdate, "yyyy-MM-dd"),
+      qty: totalQty,
+    };
+    setNoteData(transformedData);
+    toast({
+      title: "Manual Note Created",
+      description: "You can now proceed to create a work order.",
+    });
+  };
+
   const InfoItem = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
     <div className="space-y-1">
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
@@ -116,46 +166,121 @@ export default function PreProductionPage() {
     </div>
   );
 
-
   return (
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Pre-Production</h1>
         <p className="text-muted-foreground">
-          Fetch Pre-Production Note details from the external system.
+          Fetch or manually enter Pre-Production Note details.
         </p>
       </header>
 
-      <Card>
-        <form onSubmit={handleFetchData}>
-          <CardHeader>
-            <CardTitle>Fetch Pre-Production Note</CardTitle>
-            <CardDescription>
-              Enter the Pre-Production Note number to fetch its details.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex w-full max-w-sm items-center space-x-2">
-              <Input
-                id="noteNo"
-                type="text"
-                placeholder="e.g., JOC25-S0005-01"
-                value={noteNo}
-                onChange={(e) => setNoteNo(e.target.value)}
-                disabled={isLoading}
-              />
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Search className="mr-2 h-4 w-4" />
-                )}
-                Fetch
-              </Button>
-            </div>
-          </CardContent>
-        </form>
-      </Card>
+      <Tabs defaultValue="fetch">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="fetch">Fetch from System</TabsTrigger>
+          <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+        </TabsList>
+        <TabsContent value="fetch">
+          <Card>
+            <form onSubmit={handleFetchData}>
+              <CardHeader>
+                <CardTitle>Fetch Pre-Production Note</CardTitle>
+                <CardDescription>
+                  Enter the Pre-Production Note number to fetch its details.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex w-full max-w-sm items-center space-x-2">
+                  <Input
+                    id="noteNo"
+                    type="text"
+                    placeholder="e.g., JOC25-S0005-01"
+                    value={noteNo}
+                    onChange={(e) => setNoteNo(e.target.value)}
+                    disabled={isLoading}
+                  />
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="mr-2 h-4 w-4" />
+                    )}
+                    Fetch
+                  </Button>
+                </div>
+              </CardContent>
+            </form>
+          </Card>
+        </TabsContent>
+        <TabsContent value="manual">
+          <Form {...manualForm}>
+            <form onSubmit={manualForm.handleSubmit(handleManualSubmit)}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Manual Production Note Entry</CardTitle>
+                  <CardDescription>
+                    Fill in the details if the PN is not in the external system.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <FormField control={manualForm.control} name="pnno" render={({ field }) => ( <FormItem><FormLabel>Production Note No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={manualForm.control} name="calllot" render={({ field }) => ( <FormItem><FormLabel>Call Lot</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={manualForm.control} name="styleno" render={({ field }) => ( <FormItem><FormLabel>Style No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={manualForm.control} name="cstyle" render={({ field }) => ( <FormItem><FormLabel>Customer Style No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={manualForm.control} name="cust" render={({ field }) => ( <FormItem><FormLabel>Customer Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={manualForm.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>Brand (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={manualForm.control} name="dest" render={({ field }) => ( <FormItem><FormLabel>Destination</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={manualForm.control} name="color" render={({ field }) => ( <FormItem><FormLabel>Garment Color</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={manualForm.control} name="fdate" render={({ field }) => ( <FormItem className="flex flex-col pt-2"><FormLabel>Delivery Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50" />{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )} />
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Size Breakdown</Label>
+                     <div className="mt-2 border rounded-md">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Size</TableHead>
+                                    <TableHead>Quantity</TableHead>
+                                    <TableHead className="w-[50px]">Action</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {sizeFields.map((field, index) => (
+                                    <TableRow key={field.id}>
+                                        <TableCell>
+                                            <FormField control={manualForm.control} name={`sizes.${index}.size`} render={({ field }) => ( <FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                        </TableCell>
+                                        <TableCell>
+                                            <FormField control={manualForm.control} name={`sizes.${index}.qty`} render={({ field }) => ( <FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button type="button" variant="destructive" size="icon" onClick={() => removeSize(index)} disabled={sizeFields.length <= 1}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                     </div>
+                      <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendSize({ size: "", qty: 0 })}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Size
+                    </Button>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit">
+                    <Save className="mr-2 h-4 w-4" />
+                    Save & Preview
+                  </Button>
+                </CardFooter>
+              </Card>
+            </form>
+          </Form>
+        </TabsContent>
+      </Tabs>
       
       {isLoading && <LoadingSkeleton />}
 
@@ -498,4 +623,3 @@ function CreateWorkOrderDialog({ note, open, onOpenChange }: { note: ApiProducti
         </Dialog>
     );
 }
-
