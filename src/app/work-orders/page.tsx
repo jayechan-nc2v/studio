@@ -5,7 +5,7 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, PlusCircle, Trash2, GripVertical } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle, Trash2, GripVertical, FileText } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 
 import { cn } from "@/lib/utils";
@@ -66,7 +66,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useWorkOrderStore, useProductionLineStore, useQrCodeStore, useNeedleNumberStore, useNeedleTypeStore, useStyleInstructionStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
-import { mockMachines, mockPreProductionNotes } from "@/lib/data";
+import { mockMachines, mockPreProductionNotes, type Instruction } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 
 interface Bundle {
@@ -81,13 +81,12 @@ export default function WorkOrdersPage() {
     const { addWorkOrder } = useWorkOrderStore();
     const { lines: productionLines } = useProductionLineStore();
     const { qrCodes, mapQrCode } = useQrCodeStore();
-    const { needleNumbers } = useNeedleNumberStore();
-    const { needleTypes } = useNeedleTypeStore();
     const { styleInstructions } = useStyleInstructionStore();
 
     const [isMapQrDialogOpen, setIsMapQrDialogOpen] = React.useState(false);
     const [qrCodeInput, setQrCodeInput] = React.useState("");
     const [selectedBundleKey, setSelectedBundleKey] = React.useState<string | null>(null);
+    const [isInstructionDialogOpen, setIsInstructionDialogOpen] = React.useState(false);
 
 
   const form = useForm<WorkOrderFormValues>({
@@ -115,11 +114,6 @@ export default function WorkOrdersPage() {
     name: "sizes",
   });
 
-  const { fields: instructionFields, append: appendInstruction, remove: removeInstruction, move: moveInstruction } = useFieldArray({
-    control: form.control,
-    name: "instructions",
-  });
-
   const { fields: stationFields, append: appendStation, remove: removeStation, replace: replaceStations } = useFieldArray({
     control: form.control,
     name: "lineStations",
@@ -131,6 +125,7 @@ export default function WorkOrdersPage() {
   const watchedStyleNo = form.watch("styleNo");
   const watchedPreProductionNo = form.watch("preProductionNo");
   const watchedMappedQrCodes = form.watch("mappedQrCodes");
+  const watchedInstructions = form.watch("instructions");
 
   function onSubmit(data: WorkOrderFormValues) {
     addWorkOrder(data);
@@ -179,11 +174,7 @@ export default function WorkOrdersPage() {
     if (selectedStyle) {
         form.setValue('instructions', selectedStyle.instructions);
     } else {
-        form.setValue('instructions', [{ 
-          machineType: '', instructionDescription: '', smv: 0.1, target: 100,
-          needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '',
-          accessories: '', needles: '', bobbinLooper: '', notes: ''
-        }]);
+        form.setValue('instructions', []);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedStyleNo, form.setValue]);
@@ -297,13 +288,6 @@ export default function WorkOrdersPage() {
     });
   };
 
-  const onInstructionDragEnd = (result: DropResult) => {
-    if (!result.destination) {
-      return;
-    }
-    moveInstruction(result.source.index, result.destination.index);
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -373,18 +357,24 @@ export default function WorkOrdersPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Style No.</FormLabel>
-                           <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a style" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {styleInstructions.map(style => (
-                                <SelectItem key={style.id} value={style.styleNo}>{style.styleNo}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex items-center gap-2">
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a style" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {styleInstructions.map(style => (
+                                  <SelectItem key={style.id} value={style.styleNo}>{style.styleNo}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button type="button" variant="outline" size="icon" onClick={() => setIsInstructionDialogOpen(true)} disabled={!watchedStyleNo}>
+                                <FileText className="h-4 w-4" />
+                                <span className="sr-only">View Instructions</span>
+                            </Button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -560,9 +550,8 @@ export default function WorkOrdersPage() {
             </Card>
 
             <Tabs defaultValue="bundle" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="bundle">Bundle Details</TabsTrigger>
-                <TabsTrigger value="instructions">Instructions</TabsTrigger>
                 <TabsTrigger value="line-detail">Line Detail</TabsTrigger>
               </TabsList>
               <TabsContent value="bundle">
@@ -678,82 +667,6 @@ export default function WorkOrdersPage() {
                         )}
                     </div>
                   </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="instructions">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Instruction Breakdown</CardTitle>
-                        <CardDescription>
-                            Define the instructional steps for this work order. These are often preset by style.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="border rounded-md overflow-x-auto">
-                           <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[80px]">No.</TableHead>
-                                        <TableHead className="w-[200px]">Machine Type</TableHead>
-                                        <TableHead>Instruction</TableHead>
-                                        <TableHead className="w-[120px]">SMV</TableHead>
-                                        <TableHead className="w-[100px]">Target</TableHead>
-                                        <TableHead className="w-[150px]">Needle No.</TableHead>
-                                        <TableHead className="w-[150px]">Needle Gauge</TableHead>
-                                        <TableHead className="w-[150px]">SPI</TableHead>
-                                        <TableHead className="w-[150px]">Seam Allowance</TableHead>
-                                        <TableHead className="w-[150px]">Edge to Stitch</TableHead>
-                                        <TableHead className="w-[200px]">Accessories</TableHead>
-                                        <TableHead className="w-[150px]">Needle(s)</TableHead>
-                                        <TableHead className="w-[150px]">Bobbin/Looper</TableHead>
-                                        <TableHead className="w-[200px]">Notes</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {instructionFields.map((field, index) => (
-                                        <TableRow key={field.id}>
-                                            <TableCell className="font-medium">{index + 1}</TableCell>
-                                            <TableCell>
-                                              <FormField control={form.control} name={`instructions.${index}.machineType`} render={({ field }) => (
-                                                <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{machineTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
-                                              )} />
-                                            </TableCell>
-                                            <TableCell>
-                                              <FormField control={form.control} name={`instructions.${index}.instructionDescription`} render={({ field }) => (<FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                            </TableCell>
-                                            <TableCell>
-                                              <FormField control={form.control} name={`instructions.${index}.smv`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.0001" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
-                                            </TableCell>
-                                            <TableCell>
-                                              <FormField control={form.control} name={`instructions.${index}.target`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} /></FormControl><FormMessage /></FormItem>)} />
-                                            </TableCell>
-                                            <TableCell>
-                                              <FormField control={form.control} name={`instructions.${index}.needleNo`} render={({ field }) => (
-                                                <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{needleNumbers.map((n) => (<SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
-                                              )} />
-                                            </TableCell>
-                                            <TableCell><FormField control={form.control} name={`instructions.${index}.needleGuage`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={15} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
-                                            <TableCell><FormField control={form.control} name={`instructions.${index}.spi`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
-                                            <TableCell><FormField control={form.control} name={`instructions.${index}.seamAllowance`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={15} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
-                                            <TableCell><FormField control={form.control} name={`instructions.${index}.edgeToStitchWidth`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={15} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
-                                            <TableCell><FormField control={form.control} name={`instructions.${index}.accessories`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={100} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
-                                            <TableCell>
-                                              <FormField control={form.control} name={`instructions.${index}.needles`} render={({ field }) => (
-                                                <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{needleTypes.map((n) => (<SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
-                                              )} />
-                                            </TableCell>
-                                            <TableCell>
-                                              <FormField control={form.control} name={`instructions.${index}.bobbinLooper`} render={({ field }) => (
-                                                <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{needleTypes.map((n) => (<SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
-                                              )} />
-                                            </TableCell>
-                                            <TableCell><FormField control={form.control} name={`instructions.${index}.notes`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={200} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
                 </Card>
               </TabsContent>
               <TabsContent value="line-detail">
@@ -940,6 +853,88 @@ export default function WorkOrdersPage() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <InstructionDialog 
+        open={isInstructionDialogOpen} 
+        onOpenChange={setIsInstructionDialogOpen} 
+        styleNo={watchedStyleNo} 
+        instructions={watchedInstructions}
+      />
     </Form>
   );
 }
+
+function InstructionDialog({ open, onOpenChange, styleNo, instructions }: { open: boolean, onOpenChange: (open: boolean) => void, styleNo: string, instructions: Instruction[] }) {
+    if (!instructions || instructions.length === 0) {
+        return (
+             <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Instruction Details for {styleNo}</DialogTitle>
+                        <DialogDescription>
+                            No instruction details found for this style.
+                        </DialogDescription>
+                    </DialogHeader>
+                     <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Close</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+    
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-7xl">
+                <DialogHeader>
+                    <DialogTitle>Instruction Details for {styleNo}</DialogTitle>
+                    <DialogDescription>
+                        This is a read-only view of the instructions set in the Style Instructions module.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="border rounded-md overflow-auto max-h-[60vh]">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>No.</TableHead>
+                                <TableHead>Machine Type</TableHead>
+                                <TableHead>Instruction</TableHead>
+                                <TableHead>SMV</TableHead>
+                                <TableHead>Target</TableHead>
+                                <TableHead>Needle No.</TableHead>
+                                <TableHead>SPI</TableHead>
+                                <TableHead>Accessories</TableHead>
+                                <TableHead>Needle(s)</TableHead>
+                                <TableHead>Bobbin/Looper</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {instructions.map((inst, index) => (
+                                <TableRow key={index}>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{inst.machineType}</TableCell>
+                                    <TableCell>{inst.instructionDescription}</TableCell>
+                                    <TableCell>{inst.smv}</TableCell>
+                                    <TableCell>{inst.target}</TableCell>
+                                    <TableCell>{inst.needleNo}</TableCell>
+                                    <TableCell>{inst.spi}</TableCell>
+                                    <TableCell>{inst.accessories}</TableCell>
+                                    <TableCell>{inst.needles}</TableCell>
+                                    <TableCell>{inst.bobbinLooper}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Close</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+

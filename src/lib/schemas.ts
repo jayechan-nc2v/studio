@@ -48,7 +48,7 @@ export const workOrderSchema = z.object({
     required_error: "An end date is required.",
   }),
   targetOutputQtyPerDay: z.coerce.number().min(1, "Target Output Qty / Day must be at least 1."),
-  instructions: z.array(instructionSchema).min(1, "At least one instruction is required."),
+  instructions: z.array(instructionSchema).optional(),
   productionLine: z.string().min(1, "Production Line is required."),
   status: z.string(),
   lineStations: z.array(stationSchema).optional(),
