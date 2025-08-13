@@ -297,12 +297,12 @@ export default function StyleInstructionsPage() {
                   <CardTitle>Instruction Breakdown</CardTitle>
                   <CardDescription>Define the instructional steps for this style. Drag and drop to reorder.</CardDescription>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                  <div className="border rounded-md">
+              <CardContent>
+                  <div className="overflow-x-auto border rounded-md">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="sticky left-0 bg-background z-10" style={{ minWidth: '80px' }}>No.</TableHead>
+                                <TableHead style={{ minWidth: '80px' }}>No.</TableHead>
                                 <TableHead style={{ minWidth: '200px' }}>Machine Type</TableHead>
                                 <TableHead style={{ minWidth: '300px' }}>Instruction Description</TableHead>
                                 <TableHead style={{ minWidth: '120px' }}>SMV</TableHead>
@@ -317,7 +317,7 @@ export default function StyleInstructionsPage() {
                                 <TableHead style={{ minWidth: '150px' }}>Needle(s)</TableHead>
                                 <TableHead style={{ minWidth: '150px' }}>Bobbin/Looper</TableHead>
                                 <TableHead style={{ minWidth: '300px' }}>Notes</TableHead>
-                                <TableHead className="sticky right-0 bg-background z-10" style={{ minWidth: '50px' }}><span className="sr-only">Actions</span></TableHead>
+                                <TableHead style={{ minWidth: '50px' }}><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
                          {isClient ? (
@@ -333,7 +333,7 @@ export default function StyleInstructionsPage() {
                                           {...provided.draggableProps}
                                           className={cn(snapshot.isDragging && "bg-accent")}
                                         >
-                                          <TableCell {...provided.dragHandleProps} className="font-medium cursor-grab sticky left-0 bg-background z-10">
+                                          <TableCell {...provided.dragHandleProps} className="font-medium cursor-grab">
                                             <div className="flex items-center gap-2">
                                               <GripVertical className="h-5 w-5 text-muted-foreground" />
                                               <span>{index + 1}</span>
@@ -375,7 +375,7 @@ export default function StyleInstructionsPage() {
                                             )} />
                                           </TableCell>
                                           <TableCell><FormField control={form.control} name={`instructions.${index}.notes`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={200} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
-                                          <TableCell className="sticky right-0 bg-background z-10">
+                                          <TableCell>
                                               <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
                                                   <Trash2 className="h-4 w-4" /><span className="sr-only">Remove Instruction</span>
                                               </Button>
