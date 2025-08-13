@@ -298,7 +298,7 @@ export default function StyleInstructionsPage() {
                   <CardDescription>Define the instructional steps for this style. Drag and drop to reorder.</CardDescription>
               </CardHeader>
               <CardContent>
-                  <div className="overflow-x-auto">
+                  <div className="w-full overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
