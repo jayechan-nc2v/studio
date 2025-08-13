@@ -298,8 +298,8 @@ export default function StyleInstructionsPage() {
                   <CardDescription>Define the instructional steps for this style. Drag and drop to reorder.</CardDescription>
               </CardHeader>
               <CardContent>
-                  <div className="overflow-x-auto border rounded-md">
-                    <Table>
+                  <div className="border rounded-md overflow-x-auto">
+                    <Table className="table-fixed w-full">
                         <TableHeader>
                             <TableRow>
                                 <TableHead style={{ minWidth: '80px' }}>No.</TableHead>
