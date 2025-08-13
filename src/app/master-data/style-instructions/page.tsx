@@ -297,8 +297,8 @@ export default function StyleInstructionsPage() {
                   <CardTitle>Instruction Breakdown</CardTitle>
                   <CardDescription>Define the instructional steps for this style. Drag and drop to reorder.</CardDescription>
               </CardHeader>
-              <CardContent>
-                  <div className="border rounded-md overflow-x-auto">
+              <CardContent className="overflow-x-auto">
+                  <div className="border rounded-md">
                     <Table>
                         <TableHeader>
                             <TableRow>
