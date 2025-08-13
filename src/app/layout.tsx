@@ -28,23 +28,20 @@ function RootLayoutContent({
     const router = useRouter();
     const { currentUser } = useUserStore();
 
-    // This hook must be called on every render to follow the Rules of Hooks.
     React.useEffect(() => {
-        // We only want to redirect if not on the login page and no user is found.
+        // If there's no user and we are not on a public page, redirect to login.
         if (!currentUser && pathname !== '/login' && pathname !== '/tv-dashboard') {
             router.replace('/login');
         }
     }, [currentUser, pathname, router]);
-
-    // Conditional rendering logic is safe after all hooks have been called.
-
-    // If we're on a public page, render it without the main AppLayout.
+    
+    // If we're on a public page, render it directly without the main AppLayout.
     if (pathname === '/login' || pathname === '/tv-dashboard') {
         return <>{children}</>;
     }
 
-    // If we are not on the login page and there is no user, show a loading skeleton.
-    // The useEffect above will handle the redirect.
+    // If we're on a protected page but still waiting for user data, show a loading skeleton.
+    // The useEffect above will handle the redirect if the user doesn't exist.
     if (!currentUser) {
         return (
             <div className="flex h-screen items-center justify-center bg-background">
@@ -65,7 +62,7 @@ function RootLayoutContent({
         );
     }
     
-    // If we have a user and are not on the login page, show the full app layout.
+    // If we have a user and are on a protected page, show the full app layout.
     return (
         <AppLayout>
             {children}
