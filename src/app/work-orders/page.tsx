@@ -5,7 +5,7 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, PlusCircle, Trash2, GripVertical, ChevronsUpDown } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle, Trash2, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 
 import { cn } from "@/lib/utils";
@@ -64,9 +64,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useWorkOrderStore, useProductionLineStore, useQrCodeStore, useNeedleNumberStore, useNeedleTypeStore } from "@/lib/store";
+import { useWorkOrderStore, useProductionLineStore, useQrCodeStore, useNeedleNumberStore, useNeedleTypeStore, useStyleInstructionStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
-import { presetInstructions, mockMachines, mockPreProductionNotes } from "@/lib/data";
+import { mockMachines, mockPreProductionNotes } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 
 interface Bundle {
@@ -83,6 +83,7 @@ export default function WorkOrdersPage() {
     const { qrCodes, mapQrCode } = useQrCodeStore();
     const { needleNumbers } = useNeedleNumberStore();
     const { needleTypes } = useNeedleTypeStore();
+    const { styleInstructions } = useStyleInstructionStore();
 
     const [isMapQrDialogOpen, setIsMapQrDialogOpen] = React.useState(false);
     const [qrCodeInput, setQrCodeInput] = React.useState("");
@@ -93,17 +94,16 @@ export default function WorkOrdersPage() {
     resolver: zodResolver(workOrderSchema),
     defaultValues: {
       workOrderNo: `WO-${Date.now().toString().slice(-5)}`,
-      styleNo: "DNM-JKT-01",
-      garmentType: "Denim Jacket",
-      preProductionNo: "PPN-001",
+      styleNo: "",
+      garmentType: "",
+      preProductionNo: "",
       sizes: [
-        { size: "S", quantity: 50 },
-        { size: "M", quantity: 100 },
+        { size: "", quantity: 0 },
       ],
       qtyPerBundle: 24,
       targetOutputQtyPerDay: 50,
-      instructions: presetInstructions["DNM-JKT-01"] || [],
-      productionLine: "line-3",
+      instructions: [],
+      productionLine: "",
       status: "Cutting",
       lineStations: [],
       mappedQrCodes: {}
@@ -173,10 +173,11 @@ export default function WorkOrdersPage() {
       replaceStations([]);
     }
   }, [watchedProductionLine, replaceStations, productionLines]);
-
+  
   React.useEffect(() => {
-    if (watchedStyleNo && presetInstructions[watchedStyleNo]) {
-        form.setValue('instructions', presetInstructions[watchedStyleNo]);
+    const selectedStyle = styleInstructions.find(si => si.styleNo === watchedStyleNo);
+    if (selectedStyle) {
+        form.setValue('instructions', selectedStyle.instructions);
     } else {
         form.setValue('instructions', [{ 
           machineType: '', instructionDescription: '', smv: 0.1, target: 100,
@@ -379,8 +380,8 @@ export default function WorkOrdersPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {Object.keys(presetInstructions).map(style => (
-                                <SelectItem key={style} value={style}>{style}</SelectItem>
+                              {styleInstructions.map(style => (
+                                <SelectItem key={style.id} value={style.styleNo}>{style.styleNo}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>

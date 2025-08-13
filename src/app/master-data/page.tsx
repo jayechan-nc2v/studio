@@ -1,7 +1,8 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { HardDrive, Route, ListChecks, Tags, ClipboardX, Users, Milestone, Clock, Shirt, Unplug, Gauge, Dna } from "lucide-react";
+import { HardDrive, Route, ListChecks, Tags, ClipboardX, Users, Milestone, Clock, Shirt, Unplug, Dna } from "lucide-react";
 
 export default function MasterDataPage() {
   return (

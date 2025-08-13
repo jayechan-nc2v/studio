@@ -4,7 +4,7 @@
 import * as React from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Search, Loader2, Save, PlusCircle, Trash2 } from "lucide-react";
+import { Search, Loader2, Save, PlusCircle, Trash2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,14 +14,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useStyleInstructionStore, useMachineTypeStore } from "@/lib/store";
+import { useStyleInstructionStore, useMachineTypeStore, useNeedleNumberStore, useNeedleTypeStore } from "@/lib/store";
 import { styleInstructionSchema, type StyleInstructionFormValues } from "@/lib/schemas";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
+import { cn } from "@/lib/utils";
 
 interface ApiStyleInfo {
     style: string;
     cstyle: string;
     cust: string;
-    brand: string;
+    brand: string | null;
     gtype: string;
 }
 
@@ -29,12 +31,20 @@ export default function StyleInstructionsPage() {
   const { toast } = useToast();
   const { styleInstructions, addStyleInstruction, updateStyleInstruction } = useStyleInstructionStore();
   const { machineTypes } = useMachineTypeStore();
-
+  const { needleNumbers } = useNeedleNumberStore();
+  const { needleTypes } = useNeedleTypeStore();
+  
   const [styleNo, setStyleNo] = React.useState("");
   const [searchStyleNo, setSearchStyleNo] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isDataLoaded, setIsDataLoaded] = React.useState(false);
   const [isEditMode, setIsEditMode] = React.useState(false);
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   const availableMachineTypes = React.useMemo(() => machineTypes.map((mt) => mt.typeName).sort(), [machineTypes]);
 
@@ -46,11 +56,15 @@ export default function StyleInstructionsPage() {
       garmentType: "",
       customerName: "",
       brand: "",
-      instructions: [{ machineType: "", instructionDescription: "", smv: 0.1, target: 100 }],
+      instructions: [{ 
+          machineType: "", instructionDescription: "", smv: 0.1, target: 100,
+          needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '',
+          accessories: '', needles: '', bobbinLooper: '', notes: ''
+      }],
     },
   });
 
-  const { fields: instructionFields, append, remove } = useFieldArray({
+  const { fields: instructionFields, append, remove, move } = useFieldArray({
     control: form.control,
     name: "instructions",
   });
@@ -62,7 +76,11 @@ export default function StyleInstructionsPage() {
       garmentType: "",
       customerName: "",
       brand: "",
-      instructions: [{ machineType: "", instructionDescription: "", smv: 0.1, target: 100 }],
+      instructions: [{ 
+          machineType: "", instructionDescription: "", smv: 0.1, target: 100,
+          needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '',
+          accessories: '', needles: '', bobbinLooper: '', notes: ''
+      }],
     });
     setIsDataLoaded(false);
     setIsEditMode(false);
@@ -93,9 +111,13 @@ export default function StyleInstructionsPage() {
             styleNo: data.style,
             customerStyleNo: data.cstyle,
             customerName: data.cust,
-            brand: data.brand,
+            brand: data.brand || '',
             garmentType: data.gtype,
-            instructions: [{ machineType: "", instructionDescription: "", smv: 0.1, target: 100 }],
+            instructions: [{ 
+              machineType: "", instructionDescription: "", smv: 0.1, target: 100,
+              needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '',
+              accessories: '', needles: '', bobbinLooper: '', notes: ''
+            }],
         });
         toast({ title: "Data Fetched", description: `Details for Style No. "${data.style}" have been loaded.` });
         setIsDataLoaded(true);
@@ -159,6 +181,13 @@ export default function StyleInstructionsPage() {
     }
     
     resetFormState();
+  };
+
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) {
+      return;
+    }
+    move(result.source.index, result.destination.index);
   };
 
   return (
@@ -266,60 +295,104 @@ export default function StyleInstructionsPage() {
             <Card>
               <CardHeader>
                   <CardTitle>Instruction Breakdown</CardTitle>
-                  <CardDescription>Define the instructional steps for this style.</CardDescription>
+                  <CardDescription>Define the instructional steps for this style. Drag and drop to reorder.</CardDescription>
               </CardHeader>
               <CardContent>
-                  <div className="border rounded-md">
+                  <div className="border rounded-md overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-[80px]">No.</TableHead>
                                 <TableHead className="w-[200px]">Machine Type</TableHead>
                                 <TableHead>Instruction Description</TableHead>
                                 <TableHead className="w-[120px]">SMV</TableHead>
                                 <TableHead className="w-[100px]">Target</TableHead>
+                                <TableHead className="w-[150px]">Needle No.</TableHead>
+                                <TableHead className="w-[150px]">Needle Gauge</TableHead>
+                                <TableHead className="w-[150px]">SPI</TableHead>
+                                <TableHead className="w-[150px]">Seam Allowance</TableHead>
+                                <TableHead className="w-[150px]">Edge to Stitch</TableHead>
+                                <TableHead className="w-[200px]">Accessories</TableHead>
+                                <TableHead className="w-[150px]">Needle(s)</TableHead>
+                                <TableHead className="w-[150px]">Bobbin/Looper</TableHead>
+                                <TableHead className="w-[200px]">Notes</TableHead>
                                 <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
-                        <TableBody>
-                            {instructionFields.map((field, index) => (
-                                <TableRow key={field.id}>
-                                    <TableCell>
-                                        <FormField control={form.control} name={`instructions.${index}.machineType`} render={({ field }) => (
-                                          <FormItem>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                              <FormControl><SelectTrigger><SelectValue placeholder="Select machine" /></SelectTrigger></FormControl>
-                                              <SelectContent>{availableMachineTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                          </FormItem>
-                                        )} />
-                                    </TableCell>
-                                      <TableCell>
-                                        <FormField control={form.control} name={`instructions.${index}.instructionDescription`} render={({ field }) => (
-                                            <FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                    </TableCell>
-                                    <TableCell>
-                                        <FormField control={form.control} name={`instructions.${index}.smv`} render={({ field }) => (
-                                            <FormItem><FormControl><Input type="number" step="0.0001" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                    </TableCell>
-                                    <TableCell>
-                                        <FormField control={form.control} name={`instructions.${index}.target`} render={({ field }) => (
-                                            <FormItem><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
-                                            <Trash2 className="h-4 w-4" /><span className="sr-only">Remove Instruction</span>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
+                         {isClient ? (
+                          <DragDropContext onDragEnd={onDragEnd}>
+                            <Droppable droppableId="instructions">
+                              {(provided) => (
+                                <TableBody ref={provided.innerRef} {...provided.droppableProps}>
+                                  {instructionFields.map((field, index) => (
+                                    <Draggable key={field.id} draggableId={field.id} index={index}>
+                                      {(provided, snapshot) => (
+                                        <TableRow
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          className={cn(snapshot.isDragging && "bg-accent")}
+                                        >
+                                          <TableCell {...provided.dragHandleProps} className="font-medium cursor-grab">
+                                            <div className="flex items-center gap-2">
+                                              <GripVertical className="h-5 w-5 text-muted-foreground" />
+                                              <span>{index + 1}</span>
+                                            </div>
+                                          </TableCell>
+                                          <TableCell>
+                                              <FormField control={form.control} name={`instructions.${index}.machineType`} render={({ field }) => (
+                                                <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{availableMachineTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+                                              )} />
+                                          </TableCell>
+                                          <TableCell>
+                                            <FormField control={form.control} name={`instructions.${index}.instructionDescription`} render={({ field }) => (<FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                          </TableCell>
+                                          <TableCell>
+                                            <FormField control={form.control} name={`instructions.${index}.smv`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.0001" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
+                                          </TableCell>
+                                          <TableCell>
+                                            <FormField control={form.control} name={`instructions.${index}.target`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} /></FormControl><FormMessage /></FormItem>)} />
+                                          </TableCell>
+                                          <TableCell>
+                                            <FormField control={form.control} name={`instructions.${index}.needleNo`} render={({ field }) => (
+                                              <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{needleNumbers.map((n) => (<SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+                                            )} />
+                                          </TableCell>
+                                          <TableCell><FormField control={form.control} name={`instructions.${index}.needleGuage`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={15} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                          <TableCell><FormField control={form.control} name={`instructions.${index}.spi`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                          <TableCell><FormField control={form.control} name={`instructions.${index}.seamAllowance`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={15} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                          <TableCell><FormField control={form.control} name={`instructions.${index}.edgeToStitchWidth`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={15} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                          <TableCell><FormField control={form.control} name={`instructions.${index}.accessories`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={100} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                          <TableCell>
+                                            <FormField control={form.control} name={`instructions.${index}.needles`} render={({ field }) => (
+                                              <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{needleTypes.map((n) => (<SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+                                            )} />
+                                          </TableCell>
+                                          <TableCell>
+                                            <FormField control={form.control} name={`instructions.${index}.bobbinLooper`} render={({ field }) => (
+                                              <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{needleTypes.map((n) => (<SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+                                            )} />
+                                          </TableCell>
+                                          <TableCell><FormField control={form.control} name={`instructions.${index}.notes`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={200} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                          <TableCell>
+                                              <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                                                  <Trash2 className="h-4 w-4" /><span className="sr-only">Remove Instruction</span>
+                                              </Button>
+                                          </TableCell>
+                                        </TableRow>
+                                      )}
+                                    </Draggable>
+                                  ))}
+                                  {provided.placeholder}
+                                </TableBody>
+                              )}
+                            </Droppable>
+                          </DragDropContext>
+                        ) : (
+                          <TableBody><TableRow><TableCell colSpan={15} className="h-24 text-center">Loading...</TableCell></TableRow></TableBody>
+                        )}
                     </Table>
                   </div>
-                  <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ machineType: '', instructionDescription: '', smv: 0.1, target: 100 })}>
+                  <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ machineType: '', instructionDescription: '', smv: 0.1, target: 100, needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '', accessories: '', needles: '', bobbinLooper: '', notes: '' })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Instruction
                   </Button>
