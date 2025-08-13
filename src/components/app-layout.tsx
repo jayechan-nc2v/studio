@@ -11,6 +11,7 @@ import {
   Clock,
   Cpu,
   Database,
+  Dna,
   Globe,
   HardDrive,
   History,
@@ -30,7 +31,6 @@ import {
   Users,
   Warehouse,
   Unplug,
-  Stitches,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -133,7 +133,7 @@ const navItems = [
       {
         href: '/master-data/needle-types',
         label: 'Needle Types',
-        icon: Stitches,
+        icon: Dna,
       },
     ],
   },

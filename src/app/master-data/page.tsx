@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { HardDrive, Route, ListChecks, Tags, ClipboardX, Users, Milestone, Clock, Shirt, Unplug, Gauge, Stitches, Dna } from "lucide-react";
+import { HardDrive, Route, ListChecks, Tags, ClipboardX, Users, Milestone, Clock, Shirt, Unplug, Gauge, Dna } from "lucide-react";
 
 export default function MasterDataPage() {
   return (
@@ -165,7 +165,7 @@ export default function MasterDataPage() {
         </Card>
         <Card>
           <CardHeader>
-            <Stitches className="h-8 w-8 text-primary mb-2" />
+            <Dna className="h-8 w-8 text-primary mb-2" />
             <CardTitle>Needle Types</CardTitle>
             <CardDescription>Manage needle, bobbin, and looper types.</CardDescription>
           </CardHeader>
