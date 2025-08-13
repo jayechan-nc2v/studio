@@ -16,7 +16,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStyleInstructionStore, useMachineTypeStore } from "@/lib/store";
 import { styleInstructionSchema, type StyleInstructionFormValues } from "@/lib/schemas";
-import { mockPreProductionNotes } from "@/lib/data";
+
+interface ApiStyleInfo {
+    style: string;
+    cstyle: string;
+    cust: string;
+    brand: string;
+    gtype: string;
+}
 
 export default function StyleInstructionsPage() {
   const { toast } = useToast();
@@ -63,7 +70,7 @@ export default function StyleInstructionsPage() {
     setSearchStyleNo("");
   }
 
-  const handleFetchData = (e?: React.FormEvent<HTMLFormElement>) => {
+  const handleFetchData = async (e?: React.FormEvent<HTMLFormElement>) => {
     if (e) e.preventDefault();
     if (!styleNo.trim()) {
       toast({ variant: "destructive", title: "Input Required", description: "Please enter a Style No." });
@@ -72,26 +79,41 @@ export default function StyleInstructionsPage() {
 
     setIsLoading(true);
     setIsDataLoaded(false);
-    setTimeout(() => {
-      const note = mockPreProductionNotes.find(n => n.styleNo.toLowerCase() === styleNo.toLowerCase());
-      if (note) {
-        form.reset({
-          styleNo: note.styleNo,
-          customerStyleNo: note.customerStyleNo,
-          garmentType: note.garmentColor,
-          customerName: note.customerName,
-          brand: note.brand,
-          instructions: [{ machineType: "", instructionDescription: "", smv: 0.1, target: 100 }],
+
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BFN_API_BASE_URL;
+      const response = await fetch(`${baseUrl}/getStyleInfo?styleno=${styleNo}`);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`);
+      }
+      const data: ApiStyleInfo = await response.json();
+      
+      if (data && data.style) {
+         form.reset({
+            styleNo: data.style,
+            customerStyleNo: data.cstyle,
+            customerName: data.cust,
+            brand: data.brand,
+            garmentType: data.gtype,
+            instructions: [{ machineType: "", instructionDescription: "", smv: 0.1, target: 100 }],
         });
-        toast({ title: "Data Fetched", description: `Details for Style No. "${note.styleNo}" have been loaded.` });
+        toast({ title: "Data Fetched", description: `Details for Style No. "${data.style}" have been loaded.` });
         setIsDataLoaded(true);
         setIsEditMode(false);
       } else {
-        toast({ variant: "destructive", title: "Not Found", description: `No data found for Style No. "${styleNo}".` });
+         toast({ variant: "destructive", title: "Not Found", description: `No data found for Style No. "${styleNo}".` });
         resetFormState();
       }
-      setIsLoading(false);
-    }, 500);
+    } catch (error) {
+       toast({
+            variant: "destructive",
+            title: "An Error Occurred",
+            description: "Failed to fetch data. Please check the Style No. or try again later.",
+        });
+        resetFormState();
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleSearchStyle = (e: React.FormEvent<HTMLFormElement>) => {
