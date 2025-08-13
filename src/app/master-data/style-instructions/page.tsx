@@ -302,21 +302,21 @@ export default function StyleInstructionsPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[80px]">No.</TableHead>
-                                <TableHead className="w-[200px]">Machine Type</TableHead>
-                                <TableHead className="w-[300px]">Instruction Description</TableHead>
-                                <TableHead className="w-[120px]">SMV</TableHead>
-                                <TableHead className="w-[100px]">Target</TableHead>
-                                <TableHead className="w-[150px]">Needle No.</TableHead>
-                                <TableHead className="w-[120px]">Needle Gauge</TableHead>
-                                <TableHead className="w-[120px]">SPI</TableHead>
-                                <TableHead className="w-[120px]">Seam Allowance</TableHead>
-                                <TableHead className="w-[120px]">Edge to Stitch</TableHead>
-                                <TableHead className="w-[200px]">Accessories</TableHead>
-                                <TableHead className="w-[150px]">Needle(s)</TableHead>
-                                <TableHead className="w-[150px]">Bobbin/Looper</TableHead>
-                                <TableHead className="w-[300px]">Notes</TableHead>
-                                <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
+                                <TableHead className="min-w-[80px]">No.</TableHead>
+                                <TableHead className="min-w-[200px]">Machine Type</TableHead>
+                                <TableHead className="min-w-[300px]">Instruction Description</TableHead>
+                                <TableHead className="min-w-[120px]">SMV</TableHead>
+                                <TableHead className="min-w-[100px]">Target</TableHead>
+                                <TableHead className="min-w-[150px]">Needle No.</TableHead>
+                                <TableHead className="min-w-[120px]">Needle Gauge</TableHead>
+                                <TableHead className="min-w-[120px]">SPI</TableHead>
+                                <TableHead className="min-w-[120px]">Seam Allowance</TableHead>
+                                <TableHead className="min-w-[120px]">Edge to Stitch</TableHead>
+                                <TableHead className="min-w-[200px]">Accessories</TableHead>
+                                <TableHead className="min-w-[150px]">Needle(s)</TableHead>
+                                <TableHead className="min-w-[150px]">Bobbin/Looper</TableHead>
+                                <TableHead className="min-w-[300px]">Notes</TableHead>
+                                <TableHead className="min-w-[50px]"><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
                          {isClient ? (
