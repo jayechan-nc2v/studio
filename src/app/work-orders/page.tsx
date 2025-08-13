@@ -906,6 +906,7 @@ function InstructionDialog({ open, onOpenChange, styleNo, instructions }: { open
                                 <TableHead>Needle No.</TableHead>
                                 <TableHead>SPI</TableHead>
                                 <TableHead>Accessories</TableHead>
+                                <TableHead>Component</TableHead>
                                 <TableHead>Needle(s)</TableHead>
                                 <TableHead>Bobbin/Looper</TableHead>
                             </TableRow>
@@ -921,6 +922,7 @@ function InstructionDialog({ open, onOpenChange, styleNo, instructions }: { open
                                     <TableCell>{inst.needleNo}</TableCell>
                                     <TableCell>{inst.spi}</TableCell>
                                     <TableCell>{inst.accessories}</TableCell>
+                                    <TableCell>{inst.component}</TableCell>
                                     <TableCell>{inst.needles}</TableCell>
                                     <TableCell>{inst.bobbinLooper}</TableCell>
                                 </TableRow>
@@ -937,4 +939,3 @@ function InstructionDialog({ open, onOpenChange, styleNo, instructions }: { open
         </Dialog>
     );
 }
-

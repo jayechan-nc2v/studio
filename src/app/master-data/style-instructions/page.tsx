@@ -59,7 +59,7 @@ export default function StyleInstructionsPage() {
       instructions: [{ 
           machineType: "", instructionDescription: "", smv: 0.1, target: 100,
           needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '',
-          accessories: '', needles: '', bobbinLooper: '', notes: ''
+          accessories: '', component: '', needles: '', bobbinLooper: '', notes: ''
       }],
     },
   });
@@ -79,7 +79,7 @@ export default function StyleInstructionsPage() {
       instructions: [{ 
           machineType: "", instructionDescription: "", smv: 0.1, target: 100,
           needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '',
-          accessories: '', needles: '', bobbinLooper: '', notes: ''
+          accessories: '', component: '', needles: '', bobbinLooper: '', notes: ''
       }],
     });
     setIsDataLoaded(false);
@@ -116,7 +116,7 @@ export default function StyleInstructionsPage() {
             instructions: [{ 
               machineType: "", instructionDescription: "", smv: 0.1, target: 100,
               needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '',
-              accessories: '', needles: '', bobbinLooper: '', notes: ''
+              accessories: '', component: '', needles: '', bobbinLooper: '', notes: ''
             }],
         });
         toast({ title: "Data Fetched", description: `Details for Style No. "${data.style}" have been loaded.` });
@@ -302,26 +302,27 @@ export default function StyleInstructionsPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="min-w-[80px]">No.</TableHead>
-                                <TableHead className="min-w-[200px]">Machine Type</TableHead>
-                                <TableHead className="min-w-[300px]">Instruction Description</TableHead>
-                                <TableHead className="min-w-[120px]">SMV</TableHead>
-                                <TableHead className="min-w-[100px]">Target</TableHead>
-                                <TableHead className="min-w-[150px]">Needle No.</TableHead>
-                                <TableHead className="min-w-[120px]">Needle Gauge</TableHead>
-                                <TableHead className="min-w-[120px]">SPI</TableHead>
-                                <TableHead className="min-w-[120px]">Seam Allowance</TableHead>
-                                <TableHead className="min-w-[120px]">Edge to Stitch</TableHead>
-                                <TableHead className="min-w-[200px]">Accessories</TableHead>
-                                <TableHead className="min-w-[150px]">Needle(s)</TableHead>
-                                <TableHead className="min-w-[150px]">Bobbin/Looper</TableHead>
-                                <TableHead className="min-w-[300px]">Notes</TableHead>
-                                <TableHead className="min-w-[50px]"><span className="sr-only">Actions</span></TableHead>
+                                <TableHead className="sticky left-0 bg-muted" style={{ minWidth: '80px' }}>No.</TableHead>
+                                <TableHead style={{ minWidth: '200px' }}>Machine Type</TableHead>
+                                <TableHead style={{ minWidth: '300px' }}>Instruction Description</TableHead>
+                                <TableHead style={{ minWidth: '120px' }}>SMV</TableHead>
+                                <TableHead style={{ minWidth: '100px' }}>Target</TableHead>
+                                <TableHead style={{ minWidth: '150px' }}>Needle No.</TableHead>
+                                <TableHead style={{ minWidth: '120px' }}>Needle Gauge</TableHead>
+                                <TableHead style={{ minWidth: '120px' }}>SPI</TableHead>
+                                <TableHead style={{ minWidth: '120px' }}>Seam Allowance</TableHead>
+                                <TableHead style={{ minWidth: '120px' }}>Edge to Stitch</TableHead>
+                                <TableHead style={{ minWidth: '200px' }}>Accessories</TableHead>
+                                <TableHead style={{ minWidth: '200px' }}>Component</TableHead>
+                                <TableHead style={{ minWidth: '150px' }}>Needle(s)</TableHead>
+                                <TableHead style={{ minWidth: '150px' }}>Bobbin/Looper</TableHead>
+                                <TableHead style={{ minWidth: '300px' }}>Notes</TableHead>
+                                <TableHead className="sticky right-0 bg-muted" style={{ minWidth: '50px' }}><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
                          {isClient ? (
                           <DragDropContext onDragEnd={onDragEnd}>
-                            <Droppable droppableId="instructions">
+                            <Droppable droppableId="instructions" direction="vertical">
                               {(provided) => (
                                 <TableBody ref={provided.innerRef} {...provided.droppableProps}>
                                   {instructionFields.map((field, index) => (
@@ -332,7 +333,7 @@ export default function StyleInstructionsPage() {
                                           {...provided.draggableProps}
                                           className={cn(snapshot.isDragging && "bg-accent")}
                                         >
-                                          <TableCell {...provided.dragHandleProps} className="font-medium cursor-grab">
+                                          <TableCell {...provided.dragHandleProps} className="font-medium cursor-grab sticky left-0 bg-card">
                                             <div className="flex items-center gap-2">
                                               <GripVertical className="h-5 w-5 text-muted-foreground" />
                                               <span>{index + 1}</span>
@@ -362,6 +363,7 @@ export default function StyleInstructionsPage() {
                                           <TableCell><FormField control={form.control} name={`instructions.${index}.seamAllowance`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={15} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
                                           <TableCell><FormField control={form.control} name={`instructions.${index}.edgeToStitchWidth`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={15} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
                                           <TableCell><FormField control={form.control} name={`instructions.${index}.accessories`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={100} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                          <TableCell><FormField control={form.control} name={`instructions.${index}.component`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={100} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
                                           <TableCell>
                                             <FormField control={form.control} name={`instructions.${index}.needles`} render={({ field }) => (
                                               <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{needleTypes.map((n) => (<SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
@@ -373,7 +375,7 @@ export default function StyleInstructionsPage() {
                                             )} />
                                           </TableCell>
                                           <TableCell><FormField control={form.control} name={`instructions.${index}.notes`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={200} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
-                                          <TableCell>
+                                          <TableCell className="sticky right-0 bg-card">
                                               <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
                                                   <Trash2 className="h-4 w-4" /><span className="sr-only">Remove Instruction</span>
                                               </Button>
@@ -388,11 +390,11 @@ export default function StyleInstructionsPage() {
                             </Droppable>
                           </DragDropContext>
                         ) : (
-                          <TableBody><TableRow><TableCell colSpan={15} className="h-24 text-center">Loading...</TableCell></TableRow></TableBody>
+                          <TableBody><TableRow><TableCell colSpan={16} className="h-24 text-center">Loading...</TableCell></TableRow></TableBody>
                         )}
                     </Table>
                   </div>
-                  <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ machineType: '', instructionDescription: '', smv: 0.1, target: 100, needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '', accessories: '', needles: '', bobbinLooper: '', notes: '' })}>
+                  <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ machineType: '', instructionDescription: '', smv: 0.1, target: 100, needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '', accessories: '', component: '', needles: '', bobbinLooper: '', notes: '' })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Instruction
                   </Button>

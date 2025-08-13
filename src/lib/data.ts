@@ -35,6 +35,7 @@ export interface Instruction {
     seamAllowance: string;
     edgeToStitchWidth: string;
     accessories: string;
+    component: string;
     needles: string;
     bobbinLooper: string;
     notes: string;
@@ -314,15 +315,15 @@ export const mockWorkers: Worker[] = [
 
 export const presetInstructions: Record<string, Instruction[]> = {
     "DNM-JKT-01": [
-        { machineType: "Lockstitch Machine", instructionDescription: "Front pocket attach", smv: 0.55, target: 120, needleNo: "90/14", needleGuage: "Standard", spi: "8", seamAllowance: "1/4 inch", edgeToStitchWidth: "1/8 inch", accessories: "Denim Thread", needles: "DBx1", bobbinLooper: "Standard Bobbin", notes: "Ensure pocket alignment is perfect." },
-        { machineType: "Overlock Machine", instructionDescription: "Side seam join", smv: 0.80, target: 90, needleNo: "100/16", needleGuage: "Heavy", spi: "10", seamAllowance: "3/8 inch", edgeToStitchWidth: "", accessories: "Polyester Thread", needles: "DCx27", bobbinLooper: "Standard Looper", notes: "" },
-        { machineType: "Buttonhole", instructionDescription: "Create buttonholes", smv: 0.30, target: 200, needleNo: "90/14", needleGuage: "Standard", spi: "N/A", seamAllowance: "N/A", edgeToStitchWidth: "N/A", accessories: "Buttonhole Thread", needles: "DPx5", bobbinLooper: "Standard Bobbin", notes: "Check button size match." },
-        { machineType: "Bar Tack", instructionDescription: "Reinforce stress points", smv: 0.20, target: 250, needleNo: "110/18", needleGuage: "Heavy", spi: "N/A", seamAllowance: "N/A", edgeToStitchWidth: "N/A", accessories: "Heavy Thread", needles: "DPx17", bobbinLooper: "Standard Bobbin", notes: "Bar tack all pocket corners." },
+        { machineType: "Lockstitch Machine", instructionDescription: "Front pocket attach", smv: 0.55, target: 120, needleNo: "90/14", needleGuage: "Standard", spi: "8", seamAllowance: "1/4 inch", edgeToStitchWidth: "1/8 inch", accessories: "Denim Thread", component: "Pocket", needles: "DBx1", bobbinLooper: "Standard Bobbin", notes: "Ensure pocket alignment is perfect." },
+        { machineType: "Overlock Machine", instructionDescription: "Side seam join", smv: 0.80, target: 90, needleNo: "100/16", needleGuage: "Heavy", spi: "10", seamAllowance: "3/8 inch", edgeToStitchWidth: "", accessories: "Polyester Thread", component: "Side Panel", needles: "DCx27", bobbinLooper: "Standard Looper", notes: "" },
+        { machineType: "Buttonhole", instructionDescription: "Create buttonholes", smv: 0.30, target: 200, needleNo: "90/14", needleGuage: "Standard", spi: "N/A", seamAllowance: "N/A", edgeToStitchWidth: "N/A", accessories: "Buttonhole Thread", component: "Front Placket", needles: "DPx5", bobbinLooper: "Standard Bobbin", notes: "Check button size match." },
+        { machineType: "Bar Tack", instructionDescription: "Reinforce stress points", smv: 0.20, target: 250, needleNo: "110/18", needleGuage: "Heavy", spi: "N/A", seamAllowance: "N/A", edgeToStitchWidth: "N/A", accessories: "Heavy Thread", component: "Pocket Corners", needles: "DPx17", bobbinLooper: "Standard Bobbin", notes: "Bar tack all pocket corners." },
     ],
     "TEE-CLASSIC": [
-        { machineType: "Sewing Machine (Juki)", instructionDescription: "Attach collar", smv: 0.60, target: 110, needleNo: "80/12", needleGuage: "Fine", spi: "12", seamAllowance: "1/4 inch", edgeToStitchWidth: "1/16 inch", accessories: "Cotton Thread", needles: "DBx1", bobbinLooper: "Standard Bobbin", notes: "" },
-        { machineType: "Overlock Machine", instructionDescription: "Sleeve join", smv: 0.75, target: 95, needleNo: "80/12", needleGuage: "Fine", spi: "14", seamAllowance: "1/4 inch", edgeToStitchWidth: "", accessories: "Polyester Thread", needles: "DCx27", bobbinLooper: "Standard Looper", notes: "" },
-        { machineType: "Coverstitch", instructionDescription: "Hem bottom", smv: 0.45, target: 140, needleNo: "80/12", needleGuage: "Fine", spi: "12", seamAllowance: "1/2 inch", edgeToStitchWidth: "", accessories: "Polyester Thread", needles: "UYx128GAS", bobbinLooper: "Standard Looper", notes: "Keep hem consistent." },
+        { machineType: "Sewing Machine (Juki)", instructionDescription: "Attach collar", smv: 0.60, target: 110, needleNo: "80/12", needleGuage: "Fine", spi: "12", seamAllowance: "1/4 inch", edgeToStitchWidth: "1/16 inch", accessories: "Cotton Thread", component: "Collar", needles: "DBx1", bobbinLooper: "Standard Bobbin", notes: "" },
+        { machineType: "Overlock Machine", instructionDescription: "Sleeve join", smv: 0.75, target: 95, needleNo: "80/12", needleGuage: "Fine", spi: "14", seamAllowance: "1/4 inch", edgeToStitchWidth: "", accessories: "Polyester Thread", component: "Sleeve", needles: "DCx27", bobbinLooper: "Standard Looper", notes: "" },
+        { machineType: "Coverstitch", instructionDescription: "Hem bottom", smv: 0.45, target: 140, needleNo: "80/12", needleGuage: "Fine", spi: "12", seamAllowance: "1/2 inch", edgeToStitchWidth: "", accessories: "Polyester Thread", component: "Body", needles: "UYx128GAS", bobbinLooper: "Standard Looper", notes: "Keep hem consistent." },
     ]
 };
 

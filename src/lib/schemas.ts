@@ -25,6 +25,7 @@ export const instructionSchema = z.object({
   seamAllowance: z.string().max(15, "Max 15 chars").optional(),
   edgeToStitchWidth: z.string().max(15, "Max 15 chars").optional(),
   accessories: z.string().max(100, "Max 100 chars").optional(),
+  component: z.string().max(100, "Max 100 chars").optional(),
   needles: z.string().min(1, "Needle(s) is required."),
   bobbinLooper: z.string().min(1, "Bobbin/Looper is required."),
   notes: z.string().max(200, "Max 200 chars").optional(),
