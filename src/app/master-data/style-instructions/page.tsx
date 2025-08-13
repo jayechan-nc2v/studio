@@ -287,7 +287,7 @@ export default function StyleInstructionsPage() {
                   <FormField control={form.control} name="customerStyleNo" render={({ field }) => ( <FormItem><FormLabel>Customer Style No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="garmentType" render={({ field }) => ( <FormItem><FormLabel>Garment Type</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="customerName" render={({ field }) => ( <FormItem><FormLabel>Customer Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                  <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>Brand (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>Brand (Optional)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                 </div>
               </CardContent>
             </Card>
@@ -304,18 +304,18 @@ export default function StyleInstructionsPage() {
                             <TableRow>
                                 <TableHead className="w-[80px]">No.</TableHead>
                                 <TableHead className="w-[200px]">Machine Type</TableHead>
-                                <TableHead>Instruction Description</TableHead>
+                                <TableHead className="w-[300px]">Instruction Description</TableHead>
                                 <TableHead className="w-[120px]">SMV</TableHead>
                                 <TableHead className="w-[100px]">Target</TableHead>
                                 <TableHead className="w-[150px]">Needle No.</TableHead>
-                                <TableHead className="w-[150px]">Needle Gauge</TableHead>
-                                <TableHead className="w-[150px]">SPI</TableHead>
-                                <TableHead className="w-[150px]">Seam Allowance</TableHead>
-                                <TableHead className="w-[150px]">Edge to Stitch</TableHead>
+                                <TableHead className="w-[120px]">Needle Gauge</TableHead>
+                                <TableHead className="w-[120px]">SPI</TableHead>
+                                <TableHead className="w-[120px]">Seam Allowance</TableHead>
+                                <TableHead className="w-[120px]">Edge to Stitch</TableHead>
                                 <TableHead className="w-[200px]">Accessories</TableHead>
                                 <TableHead className="w-[150px]">Needle(s)</TableHead>
                                 <TableHead className="w-[150px]">Bobbin/Looper</TableHead>
-                                <TableHead className="w-[200px]">Notes</TableHead>
+                                <TableHead className="w-[300px]">Notes</TableHead>
                                 <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
