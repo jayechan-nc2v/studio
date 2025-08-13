@@ -5,7 +5,8 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle, Trash2, GripVertical, ChevronsUpDown } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useWorkOrderStore, useProductionLineStore, useQrCodeStore } from "@/lib/store";
+import { useWorkOrderStore, useProductionLineStore, useQrCodeStore, useNeedleNumberStore, useNeedleTypeStore } from "@/lib/store";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/schemas";
 import { presetInstructions, mockMachines, mockPreProductionNotes } from "@/lib/data";
 import { Label } from "@/components/ui/label";
@@ -80,6 +81,8 @@ export default function WorkOrdersPage() {
     const { addWorkOrder } = useWorkOrderStore();
     const { lines: productionLines } = useProductionLineStore();
     const { qrCodes, mapQrCode } = useQrCodeStore();
+    const { needleNumbers } = useNeedleNumberStore();
+    const { needleTypes } = useNeedleTypeStore();
 
     const [isMapQrDialogOpen, setIsMapQrDialogOpen] = React.useState(false);
     const [qrCodeInput, setQrCodeInput] = React.useState("");
@@ -112,7 +115,7 @@ export default function WorkOrdersPage() {
     name: "sizes",
   });
 
-  const { fields: instructionFields, append: appendInstruction, remove: removeInstruction } = useFieldArray({
+  const { fields: instructionFields, append: appendInstruction, remove: removeInstruction, move: moveInstruction } = useFieldArray({
     control: form.control,
     name: "instructions",
   });
@@ -175,7 +178,11 @@ export default function WorkOrdersPage() {
     if (watchedStyleNo && presetInstructions[watchedStyleNo]) {
         form.setValue('instructions', presetInstructions[watchedStyleNo]);
     } else {
-        form.setValue('instructions', [{ machineType: '', instructionDescription: '', smv: 0.1, target: 100 }]);
+        form.setValue('instructions', [{ 
+          machineType: '', instructionDescription: '', smv: 0.1, target: 100,
+          needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '',
+          accessories: '', needles: '', bobbinLooper: '', notes: ''
+        }]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedStyleNo, form.setValue]);
@@ -287,6 +294,13 @@ export default function WorkOrdersPage() {
         title: "QR Code Unmapped",
         description: `QR Code ${qrId} has been unmapped from bundle ${bundleKey}.`
     });
+  };
+
+  const onInstructionDragEnd = (result: DropResult) => {
+    if (!result.destination) {
+      return;
+    }
+    moveInstruction(result.source.index, result.destination.index);
   };
 
   return (
@@ -674,112 +688,70 @@ export default function WorkOrdersPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="border rounded-md">
+                        <div className="border rounded-md overflow-x-auto">
                            <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-[80px]">No.</TableHead>
                                         <TableHead className="w-[200px]">Machine Type</TableHead>
-                                        <TableHead>Instruction Description</TableHead>
+                                        <TableHead>Instruction</TableHead>
                                         <TableHead className="w-[120px]">SMV</TableHead>
                                         <TableHead className="w-[100px]">Target</TableHead>
-                                        <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
+                                        <TableHead className="w-[150px]">Needle No.</TableHead>
+                                        <TableHead className="w-[150px]">Needle Gauge</TableHead>
+                                        <TableHead className="w-[150px]">SPI</TableHead>
+                                        <TableHead className="w-[150px]">Seam Allowance</TableHead>
+                                        <TableHead className="w-[150px]">Edge to Stitch</TableHead>
+                                        <TableHead className="w-[200px]">Accessories</TableHead>
+                                        <TableHead className="w-[150px]">Needle(s)</TableHead>
+                                        <TableHead className="w-[150px]">Bobbin/Looper</TableHead>
+                                        <TableHead className="w-[200px]">Notes</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {instructionFields.map((field, index) => (
                                         <TableRow key={field.id}>
+                                            <TableCell className="font-medium">{index + 1}</TableCell>
                                             <TableCell>
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`instructions.${index}.machineType`}
-                                                    render={({ field }) => (
-                                                      <FormItem>
-                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                          <FormControl>
-                                                            <SelectTrigger>
-                                                              <SelectValue placeholder="Select machine" />
-                                                            </SelectTrigger>
-                                                          </FormControl>
-                                                          <SelectContent>
-                                                            {machineTypes.map((type) => (
-                                                              <SelectItem key={type} value={type}>
-                                                                {type}
-                                                              </SelectItem>
-                                                            ))}
-                                                          </SelectContent>
-                                                        </Select>
-                                                        <FormMessage />
-                                                      </FormItem>
-                                                    )}
-                                                />
-                                            </TableCell>
-                                             <TableCell>
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`instructions.${index}.instructionDescription`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormControl>
-                                                                <Input {...field} />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
+                                              <FormField control={form.control} name={`instructions.${index}.machineType`} render={({ field }) => (
+                                                <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{machineTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+                                              )} />
                                             </TableCell>
                                             <TableCell>
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`instructions.${index}.smv`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormControl>
-                                                                <Input type="number" step="0.0001" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
+                                              <FormField control={form.control} name={`instructions.${index}.instructionDescription`} render={({ field }) => (<FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                                             </TableCell>
                                             <TableCell>
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`instructions.${index}.target`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormControl>
-                                                                <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
+                                              <FormField control={form.control} name={`instructions.${index}.smv`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.0001" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
                                             </TableCell>
                                             <TableCell>
-                                                <Button
-                                                  type="button"
-                                                  variant="destructive"
-                                                  size="icon"
-                                                  onClick={() => removeInstruction(index)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                    <span className="sr-only">Remove Instruction</span>
-                                                </Button>
+                                              <FormField control={form.control} name={`instructions.${index}.target`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} /></FormControl><FormMessage /></FormItem>)} />
                                             </TableCell>
+                                            <TableCell>
+                                              <FormField control={form.control} name={`instructions.${index}.needleNo`} render={({ field }) => (
+                                                <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{needleNumbers.map((n) => (<SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+                                              )} />
+                                            </TableCell>
+                                            <TableCell><FormField control={form.control} name={`instructions.${index}.needleGuage`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={15} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                            <TableCell><FormField control={form.control} name={`instructions.${index}.spi`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                            <TableCell><FormField control={form.control} name={`instructions.${index}.seamAllowance`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={15} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                            <TableCell><FormField control={form.control} name={`instructions.${index}.edgeToStitchWidth`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={15} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                            <TableCell><FormField control={form.control} name={`instructions.${index}.accessories`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={100} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
+                                            <TableCell>
+                                              <FormField control={form.control} name={`instructions.${index}.needles`} render={({ field }) => (
+                                                <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{needleTypes.map((n) => (<SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+                                              )} />
+                                            </TableCell>
+                                            <TableCell>
+                                              <FormField control={form.control} name={`instructions.${index}.bobbinLooper`} render={({ field }) => (
+                                                <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{needleTypes.map((n) => (<SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+                                              )} />
+                                            </TableCell>
+                                            <TableCell><FormField control={form.control} name={`instructions.${index}.notes`} render={({ field }) => (<FormItem><FormControl><Input {...field} maxLength={200} /></FormControl><FormMessage /></FormItem>)} /></TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
                         </div>
-                         <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => appendInstruction({ machineType: '', instructionDescription: '', smv: 0.1, target: 100 })}
-                        >
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Add Instruction
-                        </Button>
                     </CardContent>
                 </Card>
               </TabsContent>

@@ -19,6 +19,15 @@ export const instructionSchema = z.object({
   instructionDescription: z.string().min(1, "Description is required."),
   smv: z.coerce.number().positive("SMV must be a positive number."),
   target: z.coerce.number().int().positive("Target must be a positive number."),
+  needleNo: z.string().min(1, "Needle No. is required."),
+  needleGuage: z.string().max(15, "Max 15 chars").optional(),
+  spi: z.string().max(10, "Max 10 chars").optional(),
+  seamAllowance: z.string().max(15, "Max 15 chars").optional(),
+  edgeToStitchWidth: z.string().max(15, "Max 15 chars").optional(),
+  accessories: z.string().max(100, "Max 100 chars").optional(),
+  needles: z.string().min(1, "Needle(s) is required."),
+  bobbinLooper: z.string().min(1, "Bobbin/Looper is required."),
+  notes: z.string().max(200, "Max 200 chars").optional(),
 });
 
 
@@ -207,6 +216,7 @@ export const globalSettingsSchema = z.object({
 export type GlobalSettingsFormValues = z.infer<typeof globalSettingsSchema>;
 
 export const styleInstructionSchema = z.object({
+  id: z.string().optional(),
   styleNo: z.string().min(1, "Style No. is required."),
   customerStyleNo: z.string().min(1, "Customer Style No. is required."),
   garmentType: z.string().min(1, "Garment Type is required."),
@@ -219,4 +229,5 @@ export type StyleInstructionFormValues = z.infer<typeof styleInstructionSchema>;
     
 
     
+
 

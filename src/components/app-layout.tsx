@@ -29,6 +29,8 @@ import {
   UserCog,
   Users,
   Warehouse,
+  Unplug,
+  Stitches,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -122,6 +124,16 @@ const navItems = [
         href: '/master-data/working-hours',
         label: 'Working Hours',
         icon: Clock,
+      },
+      {
+        href: '/master-data/needle-numbers',
+        label: 'Needle Numbers',
+        icon: Unplug,
+      },
+      {
+        href: '/master-data/needle-types',
+        label: 'Needle Types',
+        icon: Stitches,
       },
     ],
   },

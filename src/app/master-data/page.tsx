@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { HardDrive, Route, ListChecks, Tags, ClipboardX, Users, Milestone, Clock, Shirt } from "lucide-react";
+import { HardDrive, Route, ListChecks, Tags, ClipboardX, Users, Milestone, Clock, Shirt, Unplug, Gauge, Stitches, Dna } from "lucide-react";
 
 export default function MasterDataPage() {
   return (
@@ -145,6 +145,36 @@ export default function MasterDataPage() {
             </p>
             <Button asChild variant="secondary">
               <Link href="/master-data/working-hours">Manage Working Hours</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Unplug className="h-8 w-8 text-primary mb-2" />
+            <CardTitle>Needle Numbers</CardTitle>
+            <CardDescription>Manage needle number specifications.</CardDescription>
+          </CardHeader>
+           <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Define the list of needle numbers used in production.
+            </p>
+            <Button asChild variant="secondary">
+              <Link href="/master-data/needle-numbers">Manage Needle Numbers</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Stitches className="h-8 w-8 text-primary mb-2" />
+            <CardTitle>Needle Types</CardTitle>
+            <CardDescription>Manage needle, bobbin, and looper types.</CardDescription>
+          </CardHeader>
+           <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Define types for needles, bobbins, and loopers.
+            </p>
+            <Button asChild variant="secondary">
+              <Link href="/master-data/needle-types">Manage Needle Types</Link>
             </Button>
           </CardContent>
         </Card>

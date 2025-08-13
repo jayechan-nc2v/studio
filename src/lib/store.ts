@@ -24,6 +24,10 @@ import {
     type GlobalSettings,
     mockFactories,
     type StyleInstruction,
+    mockNeedleNumbers,
+    type NeedleNumber,
+    mockNeedleTypes,
+    type NeedleType,
 } from '@/lib/data';
 
 interface WorkOrderState {
@@ -84,8 +88,8 @@ const initialWorkOrders: WorkOrderFormValues[] = [
         productionLine: 'line-2',
         status: 'Cutting',
         instructions: [
-            { machineType: "Fabric Spreader", instructionDescription: "Spread fabric", smv: 0.2, target: 300},
-            { machineType: "Sewing Machine (Brother)", instructionDescription: "Main body sewing", smv: 1.2, target: 60},
+            { machineType: "Fabric Spreader", instructionDescription: "Spread fabric", smv: 0.2, target: 300, needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '', accessories: '', needles: '', bobbinLooper: '', notes: ''},
+            { machineType: "Sewing Machine (Brother)", instructionDescription: "Main body sewing", smv: 1.2, target: 60, needleNo: '', needleGuage: '', spi: '', seamAllowance: '', edgeToStitchWidth: '', accessories: '', needles: '', bobbinLooper: '', notes: ''},
         ],
         mappedQrCodes: {},
     },
@@ -536,6 +540,63 @@ export const useStyleInstructionStore = create<StyleInstructionState>((set, get)
     }
 }));
     
+// Store for Needle Numbers
+interface NeedleNumberState {
+    needleNumbers: NeedleNumber[];
+    addNeedleNumber: (name: string) => void;
+    updateNeedleNumber: (id: string, name: string) => void;
+    deleteNeedleNumber: (id: string) => void;
+}
 
+export const useNeedleNumberStore = create<NeedleNumberState>((set, get) => ({
+    needleNumbers: mockNeedleNumbers,
+    addNeedleNumber: (name) => {
+        const newId = `NN-${(get().needleNumbers.length + 1).toString().padStart(3, '0')}`;
+        const newNeedleNumber: NeedleNumber = { id: newId, name };
+        set((state) => ({ needleNumbers: [newNeedleNumber, ...state.needleNumbers] }));
+    },
+    updateNeedleNumber: (id, name) => {
+        set((state) => ({
+            needleNumbers: state.needleNumbers.map(n => 
+                n.id === id ? { ...n, name } : n
+            )
+        }));
+    },
+    deleteNeedleNumber: (id) => {
+        set((state) => ({
+            needleNumbers: state.needleNumbers.filter(n => n.id !== id)
+        }));
+    }
+}));
+
+
+// Store for Needle Types
+interface NeedleTypeState {
+    needleTypes: NeedleType[];
+    addNeedleType: (name: string) => void;
+    updateNeedleType: (id: string, name: string) => void;
+    deleteNeedleType: (id: string) => void;
+}
+
+export const useNeedleTypeStore = create<NeedleTypeState>((set, get) => ({
+    needleTypes: mockNeedleTypes,
+    addNeedleType: (name) => {
+        const newId = `NT-${(get().needleTypes.length + 1).toString().padStart(3, '0')}`;
+        const newNeedleType: NeedleType = { id: newId, name };
+        set((state) => ({ needleTypes: [newNeedleType, ...state.needleTypes] }));
+    },
+    updateNeedleType: (id, name) => {
+        set((state) => ({
+            needleTypes: state.needleTypes.map(n => 
+                n.id === id ? { ...n, name } : n
+            )
+        }));
+    },
+    deleteNeedleType: (id) => {
+        set((state) => ({
+            needleTypes: state.needleTypes.filter(n => n.id !== id)
+        }));
+    }
+}));
 
 
