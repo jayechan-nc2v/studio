@@ -297,8 +297,8 @@ export default function StyleInstructionsPage() {
                   <CardTitle>Instruction Breakdown</CardTitle>
                   <CardDescription>Define the instructional steps for this style. Drag and drop to reorder.</CardDescription>
               </CardHeader>
-              <CardContent>
-                  <div className="w-full overflow-x-auto">
+              <CardContent className="overflow-x-auto">
+                  <div className="max-w-full w-full">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -412,3 +412,4 @@ export default function StyleInstructionsPage() {
     </div>
   );
 }
+
