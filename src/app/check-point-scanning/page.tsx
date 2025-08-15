@@ -25,8 +25,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useQrCodeStore, useWorkOrderStore, useCheckPointStore, useBundleHistoryStore } from "@/lib/store";
-import type { QrCode, WorkOrderFormValues, CheckPoint } from "@/lib/store";
+import { useQrCodeStore, useWorkOrderStore, useBundleHistoryStore } from "@/lib/store";
+import { useCheckPointStore } from "@/lib/checkpoint-store";
+import type { QrCode, WorkOrderFormValues } from "@/lib/store";
+import type { CheckPoint } from "@/lib/data";
 import { Loader2, Search, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
