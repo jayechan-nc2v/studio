@@ -64,11 +64,13 @@ import { mockCheckPointTypes, type CheckPoint } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserStore } from "@/lib/store";
 
 
 export default function CheckPointsPage() {
   const { toast } = useToast();
   const { checkPoints, fetchCheckPoints, addCheckPoint, updateCheckPoint, deleteCheckPoint, loading, error } = useCheckPointStore();
+  const { selectedFactory } = useUserStore();
   
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -79,8 +81,10 @@ export default function CheckPointsPage() {
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof CheckPoint, direction: 'ascending' | 'descending' } | null>({ key: 'id', direction: 'descending' });
   
   React.useEffect(() => {
-    fetchCheckPoints();
-  }, [fetchCheckPoints]);
+    if (selectedFactory) {
+      fetchCheckPoints(selectedFactory);
+    }
+  }, [selectedFactory, fetchCheckPoints]);
 
   const form = useForm<NewCheckPointFormValues>({
     resolver: zodResolver(checkPointSchema),
@@ -93,15 +97,19 @@ export default function CheckPointsPage() {
   });
 
   const onSubmit = async (data: NewCheckPointFormValues) => {
+    if (!selectedFactory) {
+      toast({ variant: "destructive", title: "Error", description: "No factory selected." });
+      return;
+    }
     try {
       if (dialogMode === "edit" && selectedCheckPoint) {
-        await updateCheckPoint(selectedCheckPoint.id, data);
+        await updateCheckPoint(selectedFactory, selectedCheckPoint.id, data);
         toast({
           title: "Success",
           description: `Check Point "${data.name}" has been updated.`,
         });
       } else {
-        await addCheckPoint(data);
+        await addCheckPoint(selectedFactory, data);
         toast({
           title: "Success",
           description: `Check Point "${data.name}" has been created.`,
@@ -144,9 +152,9 @@ export default function CheckPointsPage() {
   };
 
   const confirmDelete = async () => {
-    if (selectedCheckPoint) {
+    if (selectedCheckPoint && selectedFactory) {
       try {
-        await deleteCheckPoint(selectedCheckPoint.id);
+        await deleteCheckPoint(selectedFactory, selectedCheckPoint.id);
         toast({
           title: "Deleted",
           description: `Check Point "${selectedCheckPoint.name}" has been deleted.`,
@@ -311,7 +319,7 @@ export default function CheckPointsPage() {
                 ) : filteredCheckPoints.length > 0 ? (
                   filteredCheckPoints.map((cp) => (
                     <TableRow key={cp.id} onDoubleClick={() => handleEdit(cp)}>
-                      <TableCell className="font-code">{cp.id}</TableCell>
+                      <TableCell className="font-mono">{cp.id}</TableCell>
                       <TableCell className="font-medium">{cp.name}</TableCell>
                       <TableCell>{cp.type}</TableCell>
                       <TableCell>
