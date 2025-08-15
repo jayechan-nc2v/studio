@@ -1,6 +1,7 @@
 
 "use client";
 
+import "@/lib/firebase"; // Import to initialize Firebase
 import type { Metadata } from "next";
 import { AppLayout } from "@/components/app-layout";
 import { Toaster } from "@/components/ui/toaster";

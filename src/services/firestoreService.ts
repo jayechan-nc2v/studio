@@ -38,18 +38,18 @@ const converter = <T>() => ({
 
 /**
  * Creates a typed reference to a Firestore collection.
- * @param collectionName The name of the collection.
+ * @param collectionPath The full path to the collection.
  */
-const getCollectionRef = <T>(collectionName: string) => 
-    collection(db, collectionName).withConverter(converter<T>());
+const getCollectionRef = <T>(collectionPath: string) => 
+    collection(db, collectionPath).withConverter(converter<T>());
 
 /**
  * Creates a typed reference to a Firestore document.
- * @param collectionName The name of the collection.
+ * @param collectionPath The full path to the collection.
  * @param id The ID of the document.
  */
-const getDocRef = <T>(collectionName: string, id: string) =>
-    doc(db, collectionName, id).withConverter(converter<T>());
+const getDocRef = <T>(collectionPath: string, id: string) =>
+    doc(db, collectionPath, id).withConverter(converter<T>());
 
 /**
  * Fetches all documents from a specified collection path.
@@ -83,9 +83,11 @@ export const getDocument = async <T>(collectionPath: string, id: string): Promis
  * @param data The data for the new document.
  * @returns A promise that resolves to the newly created document's reference.
  */
-export const addDocument = async <T>(collectionPath: string, data: T): Promise<DocumentReference<T>> => {
-    const colRef = getCollectionRef<T>(collectionPath);
-    return addDoc(colRef, data);
+export const addDocument = async <T>(collectionPath: string, data: T): Promise<DocumentReference> => {
+    // Firestore addDoc doesn't work well with converters returning a typed DocumentReference,
+    // so we use the untyped version for broader compatibility.
+    const colRef = collection(db, collectionPath);
+    return addDoc(colRef, data as DocumentData);
 };
 
 /**
@@ -127,6 +129,9 @@ export const createBatch = (): WriteBatch => writeBatch(db);
  * @returns The full path to the sub-collection.
  */
 export const getFactoryCollectionPath = (factoryId: string, collectionName: string): string => {
+    if (!factoryId) {
+        throw new Error("Factory ID cannot be empty.");
+    }
     return `factories/${factoryId}/${collectionName}`;
 };
 
