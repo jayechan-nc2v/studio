@@ -29,17 +29,12 @@ export const useCheckPointStore = create<CheckPointState>((set, get) => ({
         }
     },
     addCheckPoint: async (factoryId, data) => {
-        const newId = await checkPointService.addCheckPoint(factoryId, data);
-        const newCheckPoint = { id: newId, ...data };
-        set((state) => ({ checkPoints: [newCheckPoint, ...state.checkPoints] }));
+        await checkPointService.addCheckPoint(factoryId, data);
+        await get().fetchCheckPoints(factoryId); // Refetch after adding
     },
     updateCheckPoint: async (factoryId, id, data) => {
         await checkPointService.updateCheckPoint(factoryId, id, data);
-        set((state) => ({
-            checkPoints: state.checkPoints.map(cp => 
-                cp.id === id ? { ...cp, ...data } : cp
-            )
-        }));
+        await get().fetchCheckPoints(factoryId); // Refetch after updating
     },
     deleteCheckPoint: async (factoryId, id) => {
         await checkPointService.deleteCheckPoint(factoryId, id);
