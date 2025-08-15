@@ -1,3 +1,4 @@
+
 // This file will contain the core logic for interacting with Firestore.
 // We will build this out in the next steps.
 
@@ -51,24 +52,24 @@ const getDocRef = <T>(collectionName: string, id: string) =>
     doc(db, collectionName, id).withConverter(converter<T>());
 
 /**
- * Fetches all documents from a specified collection.
- * @param collectionName The name of the collection.
+ * Fetches all documents from a specified collection path.
+ * @param collectionPath The full path to the collection.
  * @returns A promise that resolves to an array of documents with their IDs.
  */
-export const getCollectionDocs = async <T>(collectionName: string): Promise<(T & { id: string })[]> => {
-    const colRef = getCollectionRef<T>(collectionName);
+export const getCollectionDocs = async <T>(collectionPath: string): Promise<(T & { id: string })[]> => {
+    const colRef = getCollectionRef<T>(collectionPath);
     const snapshot = await getDocs(colRef);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
 /**
  * Fetches a single document by its ID from a specified collection.
- * @param collectionName The name of the collection.
+ * @param collectionPath The full path to the collection.
  * @param id The ID of the document to fetch.
  * @returns A promise that resolves to the document data with its ID, or null if not found.
  */
-export const getDocument = async <T>(collectionName: string, id: string): Promise<(T & { id: string }) | null> => {
-    const docRef = getDocRef<T>(collectionName, id);
+export const getDocument = async <T>(collectionPath: string, id: string): Promise<(T & { id: string }) | null> => {
+    const docRef = getDocRef<T>(collectionPath, id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         return { id: docSnap.id, ...docSnap.data() };
@@ -78,35 +79,35 @@ export const getDocument = async <T>(collectionName: string, id: string): Promis
 
 /**
  * Adds a new document to a specified collection.
- * @param collectionName The name of the collection.
+ * @param collectionPath The full path to the collection.
  * @param data The data for the new document.
  * @returns A promise that resolves to the newly created document's reference.
  */
-export const addDocument = async <T>(collectionName: string, data: T): Promise<DocumentReference<T>> => {
-    const colRef = getCollectionRef<T>(collectionName);
+export const addDocument = async <T>(collectionPath: string, data: T): Promise<DocumentReference<T>> => {
+    const colRef = getCollectionRef<T>(collectionPath);
     return addDoc(colRef, data);
 };
 
 /**
  * Updates an existing document in a specified collection.
- * @param collectionName The name of the collection.
+ * @param collectionPath The full path to the collection.
  * @param id The ID of the document to update.
  * @param data The data to update, can be partial.
  * @returns A promise that resolves when the update is complete.
  */
-export const updateDocument = async <T>(collectionName: string, id: string, data: Partial<T>): Promise<void> => {
-    const docRef = getDocRef<T>(collectionName, id);
+export const updateDocument = async <T>(collectionPath: string, id: string, data: Partial<T>): Promise<void> => {
+    const docRef = getDocRef<T>(collectionPath, id);
     return setDoc(docRef, data, { merge: true });
 };
 
 /**
  * Deletes a document from a specified collection by its ID.
- * @param collectionName The name of the collection.
+ * @param collectionPath The full path to the collection.
  * @param id The ID of the document to delete.
  * @returns A promise that resolves when the deletion is complete.
  */
-export const deleteDocument = async (collectionName: string, id: string): Promise<void> => {
-    const docRef = getDocRef<any>(collectionName, id);
+export const deleteDocument = async (collectionPath: string, id: string): Promise<void> => {
+    const docRef = getDocRef<any>(collectionPath, id);
     return deleteDoc(docRef);
 };
 

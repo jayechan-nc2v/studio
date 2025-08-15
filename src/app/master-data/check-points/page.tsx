@@ -57,17 +57,18 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, PlusCircle, Trash2, ChevronsUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Pencil, PlusCircle, Trash2, ChevronsUpDown, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { useCheckPointStore } from "@/lib/store";
 import { checkPointSchema, type NewCheckPointFormValues } from "@/lib/schemas";
 import { mockCheckPointTypes, type CheckPoint } from "@/lib/data";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 export default function CheckPointsPage() {
   const { toast } = useToast();
-  const { checkPoints, addCheckPoint, updateCheckPoint, deleteCheckPoint } = useCheckPointStore();
+  const { checkPoints, fetchCheckPoints, addCheckPoint, updateCheckPoint, deleteCheckPoint, loading, error } = useCheckPointStore();
   
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -76,8 +77,10 @@ export default function CheckPointsPage() {
 
   const [filters, setFilters] = React.useState({ name: '', type: 'all' });
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof CheckPoint, direction: 'ascending' | 'descending' } | null>({ key: 'id', direction: 'descending' });
-  const [visibleCount, setVisibleCount] = React.useState(30);
-
+  
+  React.useEffect(() => {
+    fetchCheckPoints();
+  }, [fetchCheckPoints]);
 
   const form = useForm<NewCheckPointFormValues>({
     resolver: zodResolver(checkPointSchema),
@@ -89,23 +92,31 @@ export default function CheckPointsPage() {
     },
   });
 
-  const onSubmit = (data: NewCheckPointFormValues) => {
-    if (dialogMode === "edit" && selectedCheckPoint) {
-      updateCheckPoint(selectedCheckPoint.id, data);
-      toast({
-        title: "Success",
-        description: `Check Point "${data.name}" has been updated.`,
-      });
-    } else {
-      addCheckPoint(data);
-      toast({
-        title: "Success",
-        description: `Check Point "${data.name}" has been created.`,
+  const onSubmit = async (data: NewCheckPointFormValues) => {
+    try {
+      if (dialogMode === "edit" && selectedCheckPoint) {
+        await updateCheckPoint(selectedCheckPoint.id, data);
+        toast({
+          title: "Success",
+          description: `Check Point "${data.name}" has been updated.`,
+        });
+      } else {
+        await addCheckPoint(data);
+        toast({
+          title: "Success",
+          description: `Check Point "${data.name}" has been created.`,
+        });
+      }
+      form.reset();
+      setIsDialogOpen(false);
+      setSelectedCheckPoint(null);
+    } catch (e) {
+       toast({
+        variant: "destructive",
+        title: "An error occurred",
+        description: "Could not save the check point. Please try again.",
       });
     }
-    form.reset();
-    setIsDialogOpen(false);
-    setSelectedCheckPoint(null);
   };
   
   const handleAdd = () => {
@@ -132,16 +143,24 @@ export default function CheckPointsPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedCheckPoint) {
-      deleteCheckPoint(selectedCheckPoint.id);
-      toast({
-        title: "Deleted",
-        description: `Check Point "${selectedCheckPoint.name}" has been deleted.`,
-        variant: "destructive"
-      });
-      setIsDeleteDialogOpen(false);
-      setSelectedCheckPoint(null);
+      try {
+        await deleteCheckPoint(selectedCheckPoint.id);
+        toast({
+          title: "Deleted",
+          description: `Check Point "${selectedCheckPoint.name}" has been deleted.`,
+          variant: "destructive"
+        });
+        setIsDeleteDialogOpen(false);
+        setSelectedCheckPoint(null);
+      } catch (e) {
+        toast({
+          variant: "destructive",
+          title: "An error occurred",
+          description: "Could not delete the check point. Please try again.",
+        });
+      }
     }
   };
 
@@ -155,7 +174,6 @@ export default function CheckPointsPage() {
 
   const handleFilterChange = (filterName: string, value: string) => {
     setFilters(prev => ({ ...prev, [filterName]: value }));
-    setVisibleCount(30);
   }
 
   const filteredCheckPoints = React.useMemo(() => {
@@ -279,8 +297,19 @@ export default function CheckPointsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCheckPoints.length > 0 ? (
-                  filteredCheckPoints.slice(0, visibleCount).map((cp) => (
+                {loading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i}>
+                            <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                            <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                            <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                            <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                            <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                            <TableCell className="text-right"><Skeleton className="h-8 w-16" /></TableCell>
+                        </TableRow>
+                    ))
+                ) : filteredCheckPoints.length > 0 ? (
+                  filteredCheckPoints.map((cp) => (
                     <TableRow key={cp.id} onDoubleClick={() => handleEdit(cp)}>
                       <TableCell className="font-code">{cp.id}</TableCell>
                       <TableCell className="font-medium">{cp.name}</TableCell>
@@ -304,20 +333,13 @@ export default function CheckPointsPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      No check points found matching your criteria.
+                      {error || "No check points found matching your criteria."}
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
-           {visibleCount < filteredCheckPoints.length && (
-                <div className="mt-4 flex justify-center">
-                    <Button variant="secondary" onClick={() => setVisibleCount(prev => prev + 30)}>
-                        Load More
-                    </Button>
-                </div>
-            )}
         </CardContent>
       </Card>
       
@@ -421,7 +443,10 @@ export default function CheckPointsPage() {
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" form="checkpoint-form">{dialogMode === 'edit' ? 'Save Changes' : 'Create Check Point'}</Button>
+            <Button type="submit" form="checkpoint-form" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {dialogMode === 'edit' ? 'Save Changes' : 'Create Check Point'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

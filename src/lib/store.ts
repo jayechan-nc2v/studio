@@ -15,7 +15,6 @@ import {
     type QcFailureReason,
     mockWorkers,
     type Worker,
-    mockCheckPoints,
     type CheckPoint,
     type BundleHistory,
     mockUsers,
@@ -29,6 +28,8 @@ import {
     mockNeedleTypes,
     type NeedleType,
 } from '@/lib/data';
+import * as checkPointService from '@/services/checkPointService';
+
 
 interface WorkOrderState {
   workOrders: WorkOrderFormValues[];
@@ -362,29 +363,42 @@ export const useQrCodeStore = create<QrCodeState>((set, get) => ({
 // Store for Check Points
 interface CheckPointState {
     checkPoints: CheckPoint[];
-    addCheckPoint: (data: NewCheckPointFormValues) => void;
-    updateCheckPoint: (id: string, data: NewCheckPointFormValues) => void;
-    deleteCheckPoint: (id: string) => void;
+    loading: boolean;
+    error: string | null;
+    fetchCheckPoints: () => Promise<void>;
+    addCheckPoint: (data: NewCheckPointFormValues) => Promise<void>;
+    updateCheckPoint: (id: string, data: NewCheckPointFormValues) => Promise<void>;
+    deleteCheckPoint: (id: string) => Promise<void>;
 }
 
 export const useCheckPointStore = create<CheckPointState>((set, get) => ({
-    checkPoints: mockCheckPoints,
-    addCheckPoint: (data) => {
-        const newId = `CP-${(get().checkPoints.length + 1).toString().padStart(3, '0')}`;
-        const newCheckPoint: CheckPoint = {
-            id: newId,
-            ...data,
-        };
+    checkPoints: [],
+    loading: false,
+    error: null,
+    fetchCheckPoints: async () => {
+        set({ loading: true, error: null });
+        try {
+            const data = await checkPointService.getCheckPoints();
+            set({ checkPoints: data, loading: false });
+        } catch (error) {
+            set({ error: "Failed to fetch check points.", loading: false });
+        }
+    },
+    addCheckPoint: async (data) => {
+        const newId = await checkPointService.addCheckPoint(data);
+        const newCheckPoint = { id: newId, ...data };
         set((state) => ({ checkPoints: [newCheckPoint, ...state.checkPoints] }));
     },
-    updateCheckPoint: (id, data) => {
+    updateCheckPoint: async (id, data) => {
+        await checkPointService.updateCheckPoint(id, data);
         set((state) => ({
             checkPoints: state.checkPoints.map(cp => 
                 cp.id === id ? { ...cp, ...data } : cp
             )
         }));
     },
-    deleteCheckPoint: (id) => {
+    deleteCheckPoint: async (id) => {
+        await checkPointService.deleteCheckPoint(id);
         set((state) => ({
             checkPoints: state.checkPoints.filter(cp => cp.id !== id)
         }));
