@@ -58,7 +58,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Pencil, PlusCircle, Trash2, ChevronsUpDown, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
-import { useCheckPointStore } from "@/lib/store";
+import { useCheckPointStore } from "@/lib/checkpoint-store";
 import { checkPointSchema, type NewCheckPointFormValues } from "@/lib/schemas";
 import { mockCheckPointTypes, type CheckPoint } from "@/lib/data";
 import { Label } from "@/components/ui/label";

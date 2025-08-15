@@ -70,7 +70,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useCheckPointStore, useUserStore, useGlobalSettingsStore } from '@/lib/store';
+import { useUserStore, useGlobalSettingsStore } from '@/lib/store';
+import { useCheckPointStore } from '@/lib/checkpoint-store';
 import { Separator } from '@/components/ui/separator';
 
 const navItems = [

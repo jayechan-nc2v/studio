@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues, NewCheckPointFormValues, NewUserFormValues, GlobalSettingsFormValues, StyleInstructionFormValues } from '@/lib/schemas';
+import type { WorkOrderFormValues, NewMachineFormValues, NewProductionInstructionFormValues, NewQcFailureReasonFormValues, NewWorkerFormValues, NewUserFormValues, GlobalSettingsFormValues, StyleInstructionFormValues } from '@/lib/schemas';
 import { 
     presetInstructions, 
     mockMachineTypes, 
@@ -15,7 +15,6 @@ import {
     type QcFailureReason,
     mockWorkers,
     type Worker,
-    type CheckPoint,
     type BundleHistory,
     mockUsers,
     type User,
@@ -28,7 +27,7 @@ import {
     mockNeedleTypes,
     type NeedleType,
 } from '@/lib/data';
-import * as checkPointService from '@/services/checkPointService';
+import { useCheckPointStore } from './checkpoint-store';
 
 
 interface WorkOrderState {
@@ -359,53 +358,6 @@ export const useQrCodeStore = create<QrCodeState>((set, get) => ({
     },
 }));
 
-
-// Store for Check Points
-interface CheckPointState {
-    checkPoints: CheckPoint[];
-    loading: boolean;
-    error: string | null;
-    fetchCheckPoints: () => Promise<void>;
-    addCheckPoint: (data: NewCheckPointFormValues) => Promise<void>;
-    updateCheckPoint: (id: string, data: NewCheckPointFormValues) => Promise<void>;
-    deleteCheckPoint: (id: string) => Promise<void>;
-}
-
-export const useCheckPointStore = create<CheckPointState>((set, get) => ({
-    checkPoints: [],
-    loading: false,
-    error: null,
-    fetchCheckPoints: async () => {
-        set({ loading: true, error: null });
-        try {
-            const data = await checkPointService.getCheckPoints();
-            set({ checkPoints: data, loading: false });
-        } catch (error) {
-            set({ error: "Failed to fetch check points.", loading: false });
-        }
-    },
-    addCheckPoint: async (data) => {
-        const newId = await checkPointService.addCheckPoint(data);
-        const newCheckPoint = { id: newId, ...data };
-        set((state) => ({ checkPoints: [newCheckPoint, ...state.checkPoints] }));
-    },
-    updateCheckPoint: async (id, data) => {
-        await checkPointService.updateCheckPoint(id, data);
-        set((state) => ({
-            checkPoints: state.checkPoints.map(cp => 
-                cp.id === id ? { ...cp, ...data } : cp
-            )
-        }));
-    },
-    deleteCheckPoint: async (id) => {
-        await checkPointService.deleteCheckPoint(id);
-        set((state) => ({
-            checkPoints: state.checkPoints.filter(cp => cp.id !== id)
-        }));
-    }
-}));
-
-
 interface BundleHistoryState {
   history: BundleHistory[];
   addHistoryRecord: (record: Omit<BundleHistory, 'id' | 'timestamp' | 'user'>) => void;
@@ -612,5 +564,3 @@ export const useNeedleTypeStore = create<NeedleTypeState>((set, get) => ({
         }));
     }
 }));
-
-
