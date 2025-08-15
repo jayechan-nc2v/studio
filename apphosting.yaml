@@ -3,7 +3,7 @@
 
 # Specifies the region where the backend is hosted.
 # For a list of supported regions, see: https://firebase.google.com/docs/app-hosting/locations
-location: asia-east1
+location: asia-southeast1
 
 runConfig:
   # Increase this value if you'd like to automatically spin up
